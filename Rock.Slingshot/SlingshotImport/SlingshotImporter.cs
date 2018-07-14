@@ -1831,6 +1831,8 @@ namespace Rock.Slingshot
             var fileName = Path.Combine( this.SlingshotDirectoryName, new T().GetFileName() );
             if ( File.Exists( fileName ) )
             {
+                PreProcessImportFile<T>( willThrowOnMissingField, fileName );
+
                 using ( var slingshotFileStream = File.OpenText( fileName ) )
                 {
                     CsvReader csvReader = new CsvReader( slingshotFileStream );
@@ -1846,6 +1848,42 @@ namespace Rock.Slingshot
             else
             {
                 return new List<T>();
+            }
+        }
+
+        /// <summary>
+        /// Pres the process import file and log any exceptions if there are problems with any rows.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="willThrowOnMissingField">The will throw on missing field.</param>
+        /// <param name="fileName">Name of the file.</param>
+        private static void PreProcessImportFile<T>( bool? willThrowOnMissingField, string fileName ) where T : SlingshotCore.Model.IImportModel, new()
+        {
+            using ( var slingshotFileStream = File.OpenText( fileName ) )
+            {
+                // Pre process file to see if there are errors.
+                CsvReader csvReader = new CsvReader( slingshotFileStream );
+                csvReader.Configuration.HasHeaderRecord = true;
+                if ( willThrowOnMissingField.HasValue )
+                {
+                    csvReader.Configuration.WillThrowOnMissingField = willThrowOnMissingField.Value;
+                    csvReader.Configuration.IgnoreReadingExceptions = true;
+                }
+
+                // We're just reading these to spot any problems on a particular row.
+                int i = 1; // start count at the header row
+                try
+                {
+                    while ( csvReader.Read() )
+                    {
+                        i++;
+                        var record = csvReader.GetRecord<T>();
+                    }
+                }
+                catch ( Exception ex )
+                {
+                    ExceptionLogService.LogException( new CsvBadDataException( $"Row {i} from file {Path.GetFileName(fileName)} cannot be properly read during Slingshot import.", ex ), null );
+                }
             }
         }
 
