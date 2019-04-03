@@ -20,7 +20,6 @@ using System.Runtime.Serialization;
 using Rock.Web.Cache;
 using Rock.Data;
 using Rock.Model;
-using System.Linq;
 
 namespace Rock.CheckIn
 {
@@ -83,47 +82,13 @@ namespace Rock.CheckIn
         public string FileContent { get; set; }
 
         /// <summary>
-        /// Gets the merge fields.
+        /// Gets or sets the merge fields.
         /// </summary>
         /// <value>
         /// The merge fields.
         /// </value>
         [DataMember]
-        public Dictionary<string, string> MergeFields
-        {
-            get
-            {
-                var mergeFields = new Dictionary<string, string>();
-                if ( _mergeCodeDefinedValueIds?.Any() != true )
-                {
-                    // no merge fields
-                    return mergeFields;
-                }
-
-                foreach ( var keyDefinedValueId in _mergeCodeDefinedValueIds )
-                {
-                    var definedValue = DefinedValueCache.Get( keyDefinedValueId.Value );
-                    if ( definedValue != null )
-                    {
-                        string mergeField = definedValue.GetAttributeValue( "MergeField" );
-                        if ( mergeField != null )
-                        {
-                            mergeFields.AddOrIgnore( keyDefinedValueId.Key, mergeField );
-                        }
-                    }
-                }
-
-                return mergeFields;
-            }
-
-            set
-            {
-                // not supported
-            }
-        }
-
-
-        private Dictionary<string, int> _mergeCodeDefinedValueIds = null;
+        public Dictionary<string, string> MergeFields { get; set; }
 
         #region Static Methods
 
@@ -150,11 +115,6 @@ namespace Rock.CheckIn
             return GetOrAddExisting( guid.ToString(), () => Create( guid ), timespan );
         }
 
-        /// <summary>
-        /// Creates the KioskLabel
-        /// </summary>
-        /// <param name="guid">The unique identifier.</param>
-        /// <returns></returns>
         private static KioskLabel Create( Guid guid )
         {
             using ( var rockContext = new RockContext() )
@@ -165,7 +125,7 @@ namespace Rock.CheckIn
                     var label = new KioskLabel();
                     label.Guid = file.Guid;
                     label.Url = string.Format( "{0}GetFile.ashx?id={1}", System.Web.VirtualPathUtility.ToAbsolute( "~" ), file.Id );
-                    label._mergeCodeDefinedValueIds = new Dictionary<string, int>();
+                    label.MergeFields = new Dictionary<string, string>();
                     label.FileContent = file.ContentsToString();
 
                     file.LoadAttributes( rockContext );
@@ -179,14 +139,22 @@ namespace Rock.CheckIn
                         foreach ( string nameValue in nameValues )
                         {
                             string[] nameAndValue = nameValue.Split( new char[] { '^' }, StringSplitOptions.RemoveEmptyEntries );
-
-                            if ( nameAndValue.Length == 2 )
+                            if ( nameAndValue.Length == 2 && !label.MergeFields.ContainsKey( nameAndValue[0] ) )
                             {
-                                string mergeCodeKey = nameAndValue[0];
-                                int? definedValueId = nameAndValue[1].AsIntegerOrNull();
-                                if ( definedValueId.HasValue )
+                                label.MergeFields.Add( nameAndValue[0], nameAndValue[1] );
+
+                                int definedValueId = int.MinValue;
+                                if ( int.TryParse( nameAndValue[1], out definedValueId ) )
                                 {
-                                    label._mergeCodeDefinedValueIds.AddOrIgnore( mergeCodeKey, definedValueId.Value );
+                                    var definedValue = DefinedValueCache.Get( definedValueId );
+                                    if ( definedValue != null )
+                                    {
+                                        string mergeField = definedValue.GetAttributeValue( "MergeField" );
+                                        if ( mergeField != null )
+                                        {
+                                            label.MergeFields[nameAndValue[0]] = mergeField;
+                                        }
+                                    }
                                 }
                             }
                         }
