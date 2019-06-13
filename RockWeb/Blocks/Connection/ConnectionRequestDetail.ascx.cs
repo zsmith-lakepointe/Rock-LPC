@@ -193,14 +193,6 @@ namespace RockWeb.Blocks.Connection
             else
             {
                 hfGroupMemberAttributeValues.Value = GetGroupMemberAttributeValues();
-
-                var connectionRequest = new ConnectionRequest();
-                connectionRequest.Id = hfConnectionRequestId.ValueAsInt();
-                connectionRequest.ConnectionOpportunityId = hfConnectionOpportunityId.ValueAsInt();
-                connectionRequest.LoadAttributes();
-                phEditAttributes.Controls.Clear();
-                Rock.Attribute.Helper.AddEditControls( connectionRequest, phEditAttributes, true, BlockValidationGroup );
-
             }
         }
 
@@ -433,11 +425,7 @@ namespace RockWeb.Blocks.Connection
                         connectionRequestService.Add( connectionRequest );
                     }
 
-                    connectionRequest.LoadAttributes( rockContext );
-                    Rock.Attribute.Helper.GetEditValues( phEditAttributes, connectionRequest );
-
                     rockContext.SaveChanges();
-                    connectionRequest.SaveAttributeValues( rockContext );
 
                     if ( newConnectorPersonAliasId.HasValue && !newConnectorPersonAliasId.Equals( oldConnectorPersonAliasId ) )
                     {
@@ -1466,11 +1454,6 @@ namespace RockWeb.Blocks.Connection
                     else
                     {
                         ShowEditDetails( connectionRequest, rockContext );
-
-                        // This is adding a request, show as Edit since it doesn't exist yet.
-                        connectionRequest.LoadAttributes();
-                        phEditAttributes.Controls.Clear();
-                        Rock.Attribute.Helper.AddEditControls( connectionRequest, phEditAttributes, false, BlockValidationGroup );
                     }
                 }
             }
@@ -1677,10 +1660,6 @@ namespace RockWeb.Blocks.Connection
                         lblWorkflows.Visible = false;
                     }
                 }
-
-                connectionRequest.LoadAttributes();
-                phAttributes.Controls.Clear();
-                Rock.Attribute.Helper.AddDisplayControls( connectionRequest, phAttributes, null, false, false );
 
                 BindConnectionRequestActivitiesGrid( connectionRequest, new RockContext() );
                 BindConnectionRequestWorkflowsGrid();
