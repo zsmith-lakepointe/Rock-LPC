@@ -5982,12 +5982,24 @@ END
             );
         }
 
-        public void SomeHelperMethod( string name )
+        /// <summary>
+        /// Checks if a table column exists.
+        /// </summary>
+        /// <param name="tableName">Name of the table.</param>
+        /// <param name="columnName">Name of the column.</param>
+        /// <returns></returns>
+        public bool ColumnExists( string tableName, string columnName )
         {
-            int count = ( int ) Migration.SqlScalar( "SELECT 1 FROM sys.columns WHERE Name = N'ChannelId' AND Object_ID = Object_ID(N'[dbo].[InteractionComponent]')" );
+            return ((string) Migration.SqlScalar( $"SELECT 1 FROM sys.columns WHERE Name = N'{columnName}' AND Object_ID = Object_ID(N'[dbo].[{tableName}]')" )).AsBoolean();
+        }
 
+        /// <summary>
+        /// Some fake helper method to illustrate the idea...
+        /// </summary>
+        public void SomeHelperMethod( )
+        {
             // Column exists
-            if ( count == 1 )
+            if ( ColumnExists( "InteractionComponent", "ChannelId" ) )
             {
                 Migration.Sql( $@"
                     -- Column Exists
