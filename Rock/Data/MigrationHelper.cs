@@ -5982,6 +5982,26 @@ END
             );
         }
 
+        public void SomeHelperMethod( string name )
+        {
+            int count = ( int ) Migration.SqlScalar( "SELECT 1 FROM sys.columns WHERE Name = N'ChannelId' AND Object_ID = Object_ID(N'[dbo].[InteractionComponent]')" );
+
+            // Column exists
+            if ( count == 1 )
+            {
+                Migration.Sql( $@"
+                    -- Column Exists
+                ");
+            }
+            else
+            {
+                // Column doesn't exist.
+                Migration.Sql( $@"
+                    -- Column Does Not Exist
+                " );
+            }
+        }
+
         /// <summary>
         /// Adds (or Deletes and Adds) the person badge attribute.
         /// </summary>

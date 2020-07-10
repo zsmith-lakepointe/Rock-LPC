@@ -77,6 +77,19 @@ namespace Rock.Migrations
         }
 
         /// <summary>
+        /// Adds an operation to execute a SQL command that returns a scalar value.  Entity Framework Migrations
+        /// APIs are not designed to accept input provided by untrusted sources (such
+        /// as the end user of an application). If input is accepted from such sources
+        /// it should be validated before being passed to these APIs to protect against
+        /// SQL injection attacks etc.
+        /// </summary>
+        /// <param name="sql">The SQL.</param>
+        public object SqlScalar( string sql )
+        {
+            return DbService.ExecuteScaler( sql );
+        }
+
+        /// <summary>
         /// Runs the SQL found in a file.
         /// </summary>
         /// <param name="sqlFile">The file the SQL can be found it relative to the application path.</param>
