@@ -1435,18 +1435,27 @@ namespace RockWeb.Blocks.Event
                         .ToList();
                     groupMemberAttributesIds = groupMemberAttributes.Select( a => a.Id ).Distinct().ToList();
 
-                    // Filter query by any configured person attribute filters
+                    // Filter query by any configured group member attribute filters
                     if ( groupMemberAttributes != null && groupMemberAttributes.Any() )
                     {
                         var groupMemberService = new GroupMemberService( rockContext );
                         var groupMemberQry = groupMemberService.Queryable().AsNoTracking();
+                        var filter = false;
                         foreach ( var attribute in groupMemberAttributes )
                         {
                             var filterControl = phRegistrantsRegistrantFormFieldFilters.FindControl( FILTER_ATTRIBUTE_PREFIX + attribute.Id.ToString() );
-                            groupMemberQry = attribute.FieldType.Field.ApplyAttributeQueryFilter( groupMemberQry, filterControl, attribute, groupMemberService, Rock.Reporting.FilterMode.SimpleFilter );
+                            var filterValues = attribute.FieldType.Field.GetFilterValues( filterControl, attribute.QualifierValues, Rock.Reporting.FilterMode.SimpleFilter );
+                            if ( filterValues != null && filterValues.Count > 0 )
+                            {
+                                filter = true;
+                                groupMemberQry = attribute.FieldType.Field.ApplyAttributeQueryFilter( groupMemberQry, filterControl, attribute, groupMemberService, Rock.Reporting.FilterMode.SimpleFilter );
+                            }
                         }
 
-                        qry = qry.Where( r => groupMemberQry.Any( g => g.Id == r.GroupMemberId ) );
+                        if ( filter )
+                        {
+                            qry = qry.Where( r => groupMemberQry.Any( g => g.Id == r.GroupMemberId ) );
+                        }
                     }
                 }
 
