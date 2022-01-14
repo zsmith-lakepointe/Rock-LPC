@@ -14,27 +14,20 @@
 // limitations under the License.
 // </copyright>
 //
-namespace Rock.Utility.SparkDataApi
+using System.Net;
+
+namespace Rock.SparkData.Api
 {
-    /// <summary>
-    /// Group name and transaction key structure
-    /// </summary>
-    public class GroupNameTransactionKey
+    internal static class HttpStatusCodeExtensions
     {
         /// <summary>
-        /// Gets or sets the group name.
+        /// Returns [true] if the <see cref="HttpStatusCode"/> is NOT <see cref="HttpStatusCode.OK"/> or <see cref="HttpStatusCode.Accepted"/>.
         /// </summary>
-        /// <value>
-        /// The group name.
-        /// </value>
-        public string GroupName { get; set; }
-
-        /// <summary>
-        /// Gets or sets the transaction key.
-        /// </summary>
-        /// <value>
-        /// The transaction key.
-        /// </value>
-        public string TransactionKey { get; set; }
+        /// <param name="statusCode"></param>
+        /// <returns></returns>
+        internal static bool IsErrorResponse( this HttpStatusCode statusCode )
+        {
+            return statusCode != HttpStatusCode.OK && statusCode != HttpStatusCode.Accepted;
+        }
     }
 }

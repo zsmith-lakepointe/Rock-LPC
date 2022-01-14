@@ -30,29 +30,54 @@ using Newtonsoft.Json.Linq;
 using RestSharp;
 
 using Rock.Jobs;
+using Rock.SparkData.Settings;
 
-namespace Rock.Utility.SparkDataApi
+namespace Rock.SparkData.Api
 {
     /// <summary>
     /// NCOA API calls
     /// </summary>
     public class NcoaApi
     {
-        private string NCOA_SERVER = "https://api.truencoa.com";
-        //private string NCOA_SERVER = "https://api.testing.truencoa.com";
-        private int _batchsize = 150;
-        private string _username;
-        private string _password;
+        /// <summary>
+        /// Gets the client singleton instance.
+        /// </summary>
+        public static NcoaApi Instance => _instance;
+
+        /// <summary>
+        /// The client singleton instance.
+        /// </summary>
+        private static readonly NcoaApi _instance = new NcoaApi();
+
+        private const string NCOA_SERVER = "https://api.truencoa.com";
+        //private const string NCOA_SERVER = "https://api.testing.truencoa.com";
+
+        private const int _batchsize = 150;
+
+        /// <summary>
+        /// Credentials.  These can be updated by calling RefreshCredentials().
+        /// </summary>
+        private UsernamePassword _credentials;
+
+        /// <summary>
+        /// Shared <see cref="RestClient"/>.  All NcoaApi clients should use this.
+        /// </summary>
         private RestClient _client = null;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="NcoaApi"/> class.
+        /// Private (singleton) constructor.
         /// </summary>
-        /// <param name="usernamePassword">NCOA's credentials.</param>
-        public NcoaApi( UsernamePassword usernamePassword )
+        private NcoaApi()
         {
-            _username = usernamePassword.UserName;
-            _password = usernamePassword.Password;
+            CreateRestClient();
+        }
+
+        /// <summary>
+        /// Refreshes the API Credentials.  This method should be called before initiating any new API actions
+        /// if the time since the last action is not known.
+        /// </summary>
+        public void RefreshCredentials()
+        {
             CreateRestClient();
         }
 
@@ -61,9 +86,10 @@ namespace Rock.Utility.SparkDataApi
         /// </summary>
         private void CreateRestClient()
         {
+            _credentials = SparkDataApi.Instance.GetNcoaApiCredentials();
             _client = new RestClient( NCOA_SERVER );
-            _client.AddDefaultHeader( "user_name", _username );
-            _client.AddDefaultHeader( "password", _password );
+            _client.AddDefaultHeader( "user_name", _credentials.UserName );
+            _client.AddDefaultHeader( "password", _credentials.Password );
             _client.AddDefaultHeader( "Content-Type", "application/x-www-form-urlencoded" );
         }
 

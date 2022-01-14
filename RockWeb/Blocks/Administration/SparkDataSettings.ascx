@@ -103,7 +103,7 @@
                                         AutoPostBack="true" OnCheckedChanged="cbNcoaConfiguration_CheckedChanged" />
                                 </div>
                                 <div class="pull-right">
-                                    <asp:LinkButton ID="lbStartNcoa" runat="server" CssClass="btn btn-default" OnClick="btnStartNcoa_Click" ToolTip="Start NCOA"><i class="fa fa-play"></i> Run Manually</asp:LinkButton>
+                                    <asp:LinkButton ID="lbStartNcoa" runat="server" CssClass="btn btn-default btn-xs" OnClick="btnStartNcoa_Click" ToolTip="Start NCOA"><i class="fa fa-play"></i> Run Manually</asp:LinkButton>
                                 </div>
                             </div>
                         </div>

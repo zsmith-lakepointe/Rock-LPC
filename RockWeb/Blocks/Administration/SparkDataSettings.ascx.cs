@@ -22,9 +22,9 @@ using Rock.Web.Cache;
 using Rock.Data;
 using Rock.Model;
 using Rock.SystemKey;
-using Rock.Utility;
-using Rock.Utility.Settings.SparkData;
-using Rock.Utility.SparkDataApi;
+using Rock.SparkData;
+using Rock.SparkData.Settings;
+using Rock.SparkData.Api;
 using Rock.Web.UI;
 using Rock.Web.UI.Controls;
 using Rock.Tasks;
@@ -39,12 +39,6 @@ namespace RockWeb.Blocks.Administration
     [Description( "Block used to set values specific to Spark Data (NCOA, Etc)." )]
     public partial class SparkDataSettings : RockBlock
     {
-        #region private variables
-
-        private SparkDataConfig _sparkDataConfig = new SparkDataConfig();
-
-        #endregion
-
         #region Base Control Methods
 
         /// <summary>
@@ -79,7 +73,7 @@ namespace RockWeb.Blocks.Administration
             }
         }
 
-        #endregion
+        #endregion Base Control Methods
 
         #region Events
 
@@ -92,6 +86,7 @@ namespace RockWeb.Blocks.Administration
         /// <param name="e">The <see cref="EventArgs"/> instance containing the event data.</param>
         protected void Block_BlockUpdated( object sender, EventArgs e )
         {
+            NavigateToCurrentPageReference();
         }
 
         /// <summary>
@@ -102,12 +97,11 @@ namespace RockWeb.Blocks.Administration
         protected void btnSaveLogin_Click( object sender, EventArgs e )
         {
             // Get Spark Data
-            _sparkDataConfig = Ncoa.GetSettings();
+            var sparkDataConfig = SparkDataConfig.Instance;
 
-            _sparkDataConfig.GlobalNotificationApplicationGroupId = grpNotificationGroupLogin.GroupId;
-            _sparkDataConfig.SparkDataApiKey = txtSparkDataApiKeyLogin.Text;
-
-            Rock.Web.SystemSettings.SetValue( SystemSetting.SPARK_DATA, _sparkDataConfig.ToJson() );
+            sparkDataConfig.GlobalNotificationApplicationGroupId = grpNotificationGroupLogin.GroupId;
+            sparkDataConfig.SparkDataApiKey = txtSparkDataApiKeyLogin.Text;
+            sparkDataConfig.Save();
 
             GetSettings();
         }
@@ -144,17 +138,15 @@ namespace RockWeb.Blocks.Administration
         protected void btnSaveEdit_Click( object sender, EventArgs e )
         {
             // Get Spark Data
-            _sparkDataConfig = Ncoa.GetSettings();
-
-            _sparkDataConfig.GlobalNotificationApplicationGroupId = grpNotificationGroupEdit.GroupId;
-            _sparkDataConfig.SparkDataApiKey = txtSparkDataApiKeyEdit.Text;
-
-            Rock.Web.SystemSettings.SetValue( SystemSetting.SPARK_DATA, _sparkDataConfig.ToJson() );
+            var sparkDataConfig = SparkDataConfig.Instance;
+            sparkDataConfig.GlobalNotificationApplicationGroupId = grpNotificationGroupEdit.GroupId;
+            sparkDataConfig.SparkDataApiKey = txtSparkDataApiKeyEdit.Text;
+            sparkDataConfig.Save();
 
             GetSettings();
         }
 
-        #endregion
+        #endregion Spark Data Events
 
         #region NCOA Events
 
@@ -175,11 +167,9 @@ namespace RockWeb.Blocks.Administration
         /// <param name="e">The <see cref="EventArgs" /> instance containing the event data.</param>
         protected void cbNcoaConfiguration_CheckedChanged( object sender, EventArgs e )
         {
-            _sparkDataConfig = Ncoa.GetSettings();
-
-            _sparkDataConfig.NcoaSettings.IsEnabled = cbNcoaConfiguration.Checked;
-
-            Rock.Web.SystemSettings.SetValue( SystemSetting.SPARK_DATA, _sparkDataConfig.ToJson() );
+            var sparkDataConfig = SparkDataConfig.Instance;
+            sparkDataConfig.NcoaSettings.IsEnabled = cbNcoaConfiguration.Checked;
+            sparkDataConfig.Save();
 
             // Save job active status
             using ( var rockContext = new RockContext() )
@@ -216,10 +206,9 @@ namespace RockWeb.Blocks.Administration
         protected void cbNcoaAcceptTerms_CheckedChanged( object sender, EventArgs e )
         {
             // Update Spark Data settings
-            _sparkDataConfig = Ncoa.GetSettings();
-
-            _sparkDataConfig.NcoaSettings.IsAcceptedTerms = cbNcoaAcceptTerms.Checked;
-            Rock.Web.SystemSettings.SetValue( SystemSetting.SPARK_DATA, _sparkDataConfig.ToJson() );
+            var sparkDataConfig = SparkDataConfig.Instance;
+            sparkDataConfig.NcoaSettings.IsAcceptedTerms = cbNcoaAcceptTerms.Checked;
+            sparkDataConfig.Save();
 
             // Update if Run Manually button is enabled
             SetStartNcoaEnabled();
@@ -233,10 +222,9 @@ namespace RockWeb.Blocks.Administration
         protected void cbNcoaAckPrice_CheckedChanged( object sender, EventArgs e )
         {
             // Update Spark Data settings
-            _sparkDataConfig = Ncoa.GetSettings();
-
-            _sparkDataConfig.NcoaSettings.IsAckPrice = cbNcoaAckPrice.Checked;
-            Rock.Web.SystemSettings.SetValue( SystemSetting.SPARK_DATA, _sparkDataConfig.ToJson() );
+            var sparkDataConfig = SparkDataConfig.Instance;
+            sparkDataConfig.NcoaSettings.IsAckPrice = cbNcoaAckPrice.Checked;
+            sparkDataConfig.Save();
 
             // Update if Run Manually button is enabled
             SetStartNcoaEnabled();
@@ -249,7 +237,7 @@ namespace RockWeb.Blocks.Administration
         /// <param name="e">The <see cref="EventArgs"/> instance containing the event data.</param>
         protected void btnStartNcoa_Click( object sender, EventArgs e )
         {
-            var addresses = new Ncoa().GetAddresses( dvpNcoaPersonDataView.SelectedValue.AsIntegerOrNull() );
+            var addresses = NcoaUtility.GetAddresses( dvpNcoaPersonDataView.SelectedValue.AsIntegerOrNull() );
             if ( addresses == null || addresses.Count < SparkDataConfig.NCOA_MIN_ADDRESSES )
             {
                 mdGridWarning.Show( string.Format( "Only {0} addresses were selected to be processed. NCOA will not run because it is below the minimum of {1} addresses.", addresses.Count, SparkDataConfig.NCOA_MIN_ADDRESSES ), ModalAlertType.Information );
@@ -268,11 +256,11 @@ namespace RockWeb.Blocks.Administration
         /// <param name="e">The <see cref="EventArgs"/> instance containing the event data.</param>
         protected void mdRunNcoa_SaveClick( object sender, EventArgs e)
         {
-            Ncoa ncoa = new Ncoa();
-            var sparkDataConfig = Ncoa.GetSettings();
+            var sparkDataConfig = SparkDataConfig.Instance;
             sparkDataConfig.NcoaSettings.PersonFullName = CurrentPerson != null ? CurrentPerson.FullName : null;
             sparkDataConfig.NcoaSettings.CurrentReportStatus = "Start";
-            Ncoa.SaveSettings( sparkDataConfig );
+            sparkDataConfig.Save();
+
             using ( RockContext rockContext = new RockContext() )
             {
                 ServiceJob job = new ServiceJobService( rockContext ).Get( Rock.SystemGuid.ServiceJob.GET_NCOA.AsGuid() );
@@ -348,9 +336,9 @@ namespace RockWeb.Blocks.Administration
             SetNcoaEditNotSaved();
         }
 
-        #endregion
+        #endregion NCOA Events
 
-        #endregion
+        #endregion Events
 
         #region Methods
 
@@ -399,8 +387,9 @@ namespace RockWeb.Blocks.Administration
         private void GetSettings()
         {
             // Get Spark Data settings
-            _sparkDataConfig = Ncoa.GetSettings();
-            if ( _sparkDataConfig.SparkDataApiKey.IsNullOrWhiteSpace() )
+            var sparkDataConfig = SparkDataConfig.Instance;
+
+            if ( sparkDataConfig.SparkDataApiKey.IsNullOrWhiteSpace() )
             {
                 pnlSparkDataEdit.Visible = false;
                 pnlSignIn.Visible = true;
@@ -408,8 +397,8 @@ namespace RockWeb.Blocks.Administration
                 pwNcoaConfiguration.Visible = false;
                 bbtnNcoaSaveConfig.Visible = false;
 
-                txtSparkDataApiKeyLogin.Text = _sparkDataConfig.SparkDataApiKey;
-                grpNotificationGroupLogin.GroupId = _sparkDataConfig.GlobalNotificationApplicationGroupId;
+                txtSparkDataApiKeyLogin.Text = sparkDataConfig.SparkDataApiKey;
+                grpNotificationGroupLogin.GroupId = sparkDataConfig.GlobalNotificationApplicationGroupId;
             }
             else
             {
@@ -424,34 +413,28 @@ namespace RockWeb.Blocks.Administration
                 cbNcoa48MonAsPrevious.Checked = Rock.Web.SystemSettings.GetValue( SystemSetting.NCOA_SET_48_MONTH_AS_PREVIOUS ).AsBoolean();
                 cbNcoaInvalidAddressAsPrevious.Checked = Rock.Web.SystemSettings.GetValue( SystemSetting.NCOA_SET_INVALID_AS_PREVIOUS ).AsBoolean();
 
-                txtSparkDataApiKeyEdit.Text = _sparkDataConfig.SparkDataApiKey;
-                grpNotificationGroupEdit.GroupId = _sparkDataConfig.GlobalNotificationApplicationGroupId;
+                txtSparkDataApiKeyEdit.Text = sparkDataConfig.SparkDataApiKey;
+                grpNotificationGroupEdit.GroupId = sparkDataConfig.GlobalNotificationApplicationGroupId;
 
-                // Get NCOA settings
-                if ( _sparkDataConfig.NcoaSettings == null )
+                dvpNcoaPersonDataView.SetValue( sparkDataConfig.NcoaSettings.PersonDataViewId );
+                cbNcoaRecurringEnabled.Checked = sparkDataConfig.NcoaSettings.RecurringEnabled;
+                nbNcoaRecurrenceInterval.Enabled = sparkDataConfig.NcoaSettings.RecurringEnabled;
+                nbNcoaRecurrenceInterval.Text = sparkDataConfig.NcoaSettings.RecurrenceInterval.ToStringSafe();
+                cbNcoaAcceptTerms.Checked = sparkDataConfig.NcoaSettings.IsAcceptedTerms;
+                cbNcoaAckPrice.Checked = sparkDataConfig.NcoaSettings.IsAckPrice;
+                if ( sparkDataConfig.NcoaSettings.InactiveRecordReasonId.HasValue )
                 {
-                    _sparkDataConfig.NcoaSettings = new NcoaSettings();
-                }
-
-                dvpNcoaPersonDataView.SetValue( _sparkDataConfig.NcoaSettings.PersonDataViewId );
-                cbNcoaRecurringEnabled.Checked = _sparkDataConfig.NcoaSettings.RecurringEnabled;
-                nbNcoaRecurrenceInterval.Enabled = _sparkDataConfig.NcoaSettings.RecurringEnabled;
-                nbNcoaRecurrenceInterval.Text = _sparkDataConfig.NcoaSettings.RecurrenceInterval.ToStringSafe();
-                cbNcoaAcceptTerms.Checked = _sparkDataConfig.NcoaSettings.IsAcceptedTerms;
-                cbNcoaAckPrice.Checked = _sparkDataConfig.NcoaSettings.IsAckPrice;
-                if ( _sparkDataConfig.NcoaSettings.InactiveRecordReasonId.HasValue )
-                {
-                    dvpNcoaInactiveRecordReason.SetValue( _sparkDataConfig.NcoaSettings.InactiveRecordReasonId.Value );
+                    dvpNcoaInactiveRecordReason.SetValue( sparkDataConfig.NcoaSettings.InactiveRecordReasonId.Value );
                 }
 
                 nbNcoaCreditCard.Visible = false;
 
-                if ( _sparkDataConfig.NcoaSettings.CurrentReportStatus == null )
+                if ( sparkDataConfig.NcoaSettings.CurrentReportStatus == null )
                 {
-                    _sparkDataConfig.NcoaSettings.CurrentReportStatus = string.Empty;
+                    sparkDataConfig.NcoaSettings.CurrentReportStatus = string.Empty;
                 }
 
-                if ( _sparkDataConfig.SparkDataApiKey.IsNullOrWhiteSpace() )
+                if ( sparkDataConfig.SparkDataApiKey.IsNullOrWhiteSpace() )
                 {
                     pnlSignIn.Visible = true;
                     pnlSparkDataEdit.Visible = false;
@@ -462,10 +445,9 @@ namespace RockWeb.Blocks.Administration
                     pnlSignIn.Visible = false;
                     bool accountValid = false;
 
-                    SparkDataApi sparkDataApi = new SparkDataApi();
                     try
                     {
-                        var accountStatus = sparkDataApi.CheckAccount( _sparkDataConfig.SparkDataApiKey );
+                        var accountStatus = SparkDataApi.Instance.CheckAccount();
                         switch ( accountStatus )
                         {
                             case SparkDataApi.AccountStatus.AccountNoName:
@@ -504,7 +486,7 @@ namespace RockWeb.Blocks.Administration
                                 break;
                         }
 
-                        string cost = sparkDataApi.GetPrice( "CF20766E-80F9-E282-432F-6A9E19F0BFF1" );
+                        string cost = SparkDataApi.Instance.GetPrice( "CF20766E-80F9-E282-432F-6A9E19F0BFF1" );
                         cbNcoaAckPrice.Text = cbNcoaAckPrice.Text.Replace( "$xx", "$" + cost );
                     }
                     catch
@@ -513,7 +495,7 @@ namespace RockWeb.Blocks.Administration
                         hlAccountStatus.Text = "Error connecting to Spark server";
                     }
 
-                    cbNcoaConfiguration.Checked = _sparkDataConfig.NcoaSettings.IsEnabled && accountValid;
+                    cbNcoaConfiguration.Checked = sparkDataConfig.NcoaSettings.IsEnabled && accountValid;
                     cbNcoaConfiguration.Enabled = accountValid;
                     SetStartNcoaEnabled();
                     SetPanels();
@@ -532,17 +514,17 @@ namespace RockWeb.Blocks.Administration
             Rock.Web.SystemSettings.SetValue( SystemSetting.NCOA_SET_INVALID_AS_PREVIOUS, cbNcoaInvalidAddressAsPrevious.Checked.ToString() );
 
             // Get Spark Data
-            _sparkDataConfig = Ncoa.GetSettings();
+            var sparkDataConfig = SparkDataConfig.Instance;
 
-            _sparkDataConfig.NcoaSettings.PersonDataViewId = dvpNcoaPersonDataView.SelectedValue.AsIntegerOrNull();
-            _sparkDataConfig.NcoaSettings.RecurringEnabled = cbNcoaRecurringEnabled.Checked;
-            _sparkDataConfig.NcoaSettings.RecurrenceInterval = nbNcoaRecurrenceInterval.Text.AsInteger();
-            _sparkDataConfig.NcoaSettings.IsEnabled = cbNcoaConfiguration.Checked;
-            _sparkDataConfig.NcoaSettings.IsAckPrice = cbNcoaAckPrice.Checked;
-            _sparkDataConfig.NcoaSettings.IsAcceptedTerms = cbNcoaAcceptTerms.Checked;
-            _sparkDataConfig.NcoaSettings.InactiveRecordReasonId = dvpNcoaInactiveRecordReason.SelectedValueAsId();
+            sparkDataConfig.NcoaSettings.PersonDataViewId = dvpNcoaPersonDataView.SelectedValue.AsIntegerOrNull();
+            sparkDataConfig.NcoaSettings.RecurringEnabled = cbNcoaRecurringEnabled.Checked;
+            sparkDataConfig.NcoaSettings.RecurrenceInterval = nbNcoaRecurrenceInterval.Text.AsInteger();
+            sparkDataConfig.NcoaSettings.IsEnabled = cbNcoaConfiguration.Checked;
+            sparkDataConfig.NcoaSettings.IsAckPrice = cbNcoaAckPrice.Checked;
+            sparkDataConfig.NcoaSettings.IsAcceptedTerms = cbNcoaAcceptTerms.Checked;
+            sparkDataConfig.NcoaSettings.InactiveRecordReasonId = dvpNcoaInactiveRecordReason.SelectedValueAsId();
 
-            Rock.Web.SystemSettings.SetValue( SystemSetting.SPARK_DATA, _sparkDataConfig.ToJson() );
+            sparkDataConfig.Save();
 
             bbtnNcoaSaveConfig.Enabled = false;
             SetStartNcoaEnabled();
@@ -555,12 +537,9 @@ namespace RockWeb.Blocks.Administration
         /// </summary>
         private void SetStartNcoaEnabled()
         {
-            if ( _sparkDataConfig == null )
-            {
-                _sparkDataConfig = Ncoa.GetSettings();
-            }
+            var sparkDataConfig = SparkDataConfig.Instance;
 
-            if ( _sparkDataConfig.NcoaSettings.CurrentReportStatus.Contains( "Pending" ) )
+            if ( sparkDataConfig.NcoaSettings.CurrentReportStatus.Contains( "Pending" ) )
             {
                 lbStartNcoa.Enabled = false;
             }
@@ -570,7 +549,7 @@ namespace RockWeb.Blocks.Administration
                     cbNcoaAckPrice.Checked &&
                     cbNcoaConfiguration.Checked &&
                     !bbtnNcoaSaveConfig.Enabled &&
-                    _sparkDataConfig.NcoaSettings.IsValid();
+                    sparkDataConfig.NcoaSettings.IsValid();
             }
         }
 
@@ -583,8 +562,8 @@ namespace RockWeb.Blocks.Administration
             SetStartNcoaEnabled();
         }
 
-        #endregion
+        #endregion NCOA Methods
 
-        #endregion
+        #endregion Methods
     }
 }

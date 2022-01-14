@@ -26,7 +26,7 @@ using Rock;
 using Rock.Attribute;
 using Rock.Data;
 using Rock.Model;
-using Rock.Utility;
+using Rock.SparkData;
 using Rock.Web;
 using Rock.Web.Cache;
 using Rock.Web.UI;
@@ -300,10 +300,9 @@ namespace RockWeb.Blocks.Crm
 
                         var changes = new History.HistoryChangeList();
 
-                        Ncoa ncoa = new Ncoa();
                         var previousValue = DefinedValueCache.Get( Rock.SystemGuid.DefinedValue.GROUP_LOCATION_TYPE_PREVIOUS.AsGuid() );
                         int? previousValueId = previousValue == null ? ( int? ) null : previousValue.Id;
-                        var previousGroupLocation = ncoa.MarkAsPreviousLocation( ncoaHistory, groupLocationService, previousValueId, changes );
+                        var previousGroupLocation = NcoaUtility.MarkAsPreviousLocation( ncoaHistory, groupLocationService, previousValueId, changes );
                         if ( previousGroupLocation != null )
                         {
                             ncoaHistory.Processed = Processed.Complete;
@@ -339,8 +338,8 @@ namespace RockWeb.Blocks.Crm
             {
                 using ( RockContext rockContext = new RockContext() )
                 {
-                    var ncoa = ( new NcoaHistoryService( rockContext ) ).Get( ncoaHistoryId.Value );
-                    ncoa.Processed = Processed.Complete;
+                    var ncoaHistory = ( new NcoaHistoryService( rockContext ) ).Get( ncoaHistoryId.Value );
+                    ncoaHistory.Processed = Processed.Complete;
                     rockContext.SaveChanges();
                 }
             }

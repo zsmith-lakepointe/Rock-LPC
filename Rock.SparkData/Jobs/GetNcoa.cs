@@ -22,12 +22,12 @@ using System.Web;
 using Quartz;
 
 using Rock.Data;
+using Rock.Jobs;
 using Rock.Model;
-using Rock.Utility;
-using Rock.Utility.Settings.SparkData;
-using Rock.Utility.SparkDataApi;
+using Rock.SparkData.Api;
+using Rock.SparkData.Settings;
 
-namespace Rock.Jobs
+namespace Rock.SparkData.Jobs
 {
     /// <summary>
     /// Job to get a National Change of Address (NCOA) report for all active people's addresses.
@@ -61,7 +61,7 @@ namespace Rock.Jobs
             Exception exception = null;
             // Get the job setting(s)
             JobDataMap dataMap = context.JobDetail.JobDataMap;
-            SparkDataConfig sparkDataConfig = Ncoa.GetSettings();
+            var sparkDataConfig = SparkDataConfig.Instance;
 
             if ( !sparkDataConfig.NcoaSettings.IsEnabled || !sparkDataConfig.NcoaSettings.IsValid() )
             {
@@ -83,24 +83,24 @@ namespace Rock.Jobs
                     case null:
                         if ( sparkDataConfig.NcoaSettings.RecurringEnabled )
                         {
-                            StatusStart( sparkDataConfig );
+                            StatusStart();
                         }
 
                         break;
                     case "Start":
-                        StatusStart( sparkDataConfig );
+                        StatusStart();
                         break;
                     case "Failed":
-                        StatusFailed( sparkDataConfig );
+                        StatusFailed();
                         break;
                     case "Pending: Report":
-                        StatusPendingReport( sparkDataConfig );
+                        StatusPendingReport();
                         break;
                     case "Pending: Export":
-                        StatusPendingExport( sparkDataConfig );
+                        StatusPendingExport();
                         break;
                     case "Complete":
-                        StatusComplete( sparkDataConfig );
+                        StatusComplete();
                         break;
                 }
             }
@@ -133,20 +133,13 @@ namespace Rock.Jobs
                     }
 
                     sparkDataConfig.Messages.Add( sb.ToString() );
-                    Ncoa.SaveSettings( sparkDataConfig );
+                    sparkDataConfig.Save();
 
                     try
                     {
-                        var ncoa = new Ncoa();
-                        ncoa.SendNotification( sparkDataConfig, "failed" );
+                        NcoaUtility.SendNotification( "failed" );
                     }
                     catch { }
-
-
-                    if ( sparkDataConfig.SparkDataApiKey.IsNotNullOrWhiteSpace() && sparkDataConfig.NcoaSettings.FileName.IsNotNullOrWhiteSpace() )
-                    {
-                        SparkDataApi sparkDataApi = new SparkDataApi();
-                    }
 
                     Exception ex = new AggregateException( "NCOA job failed.", exception );
                     HttpContext context2 = HttpContext.Current;
@@ -161,7 +154,7 @@ namespace Rock.Jobs
                         using ( RockContext rockContext = new RockContext() )
                         {
                             NcoaHistoryService ncoaHistoryService = new NcoaHistoryService( rockContext );
-                            msg = $"NCOA request processed, {ncoaHistoryService.Count()} {(ncoaHistoryService.Count() == 1 ? "address" : "addresses")} processed, {ncoaHistoryService.MovedCount()} {(ncoaHistoryService.MovedCount() > 1 ? "were" : "was")} marked as 'moved'";
+                            msg = $"NCOA request processed, {ncoaHistoryService.Count()} {( ncoaHistoryService.Count() == 1 ? "address" : "addresses" )} processed, {ncoaHistoryService.MovedCount()} {( ncoaHistoryService.MovedCount() > 1 ? "were" : "was" )} marked as 'moved'";
                         }
                     }
                     else
@@ -171,7 +164,7 @@ namespace Rock.Jobs
 
                     context.Result = msg;
                     sparkDataConfig.Messages.Add( $"{msg}: {RockDateTime.Now.ToString()}" );
-                    Ncoa.SaveSettings( sparkDataConfig );
+                    sparkDataConfig.Save();
                 }
             }
         }
@@ -179,22 +172,21 @@ namespace Rock.Jobs
         /// <summary>
         /// Current State is Failed. If recurring is enabled, retry.
         /// </summary>
-        /// <param name="sparkDataConfig">The spark data configuration.</param>
-        private void StatusFailed( SparkDataConfig sparkDataConfig )
+        private void StatusFailed()
         {
-            StatusStart( sparkDataConfig );
+            StatusStart();
         }
 
         /// <summary>
         /// Current state is start. Start NCOA
         /// </summary>
-        /// <param name="sparkDataConfig">The spark data configuration.</param>
-        private void StatusStart( SparkDataConfig sparkDataConfig )
+        private static void StatusStart()
         {
+            var sparkDataConfig = SparkDataConfig.Instance;
+
             if ( sparkDataConfig.NcoaSettings.IsAckPrice && sparkDataConfig.NcoaSettings.IsAcceptedTerms )
             {
-                var ncoa = new Ncoa();
-                ncoa.Start( sparkDataConfig );
+                NcoaUtility.Start();
             }
             else
             {
@@ -217,40 +209,42 @@ namespace Rock.Jobs
         /// Current state is complete. Check if recurring is enabled and recurring interval have been reached,
         /// and if so set the state back to Start.
         /// </summary>
-        /// <param name="sparkDataConfig">The spark data configuration.</param>
-        private void StatusComplete( SparkDataConfig sparkDataConfig )
+        private void StatusComplete()
         {
-            if ( sparkDataConfig.NcoaSettings.IsEnabled &&
-                (
-                    !sparkDataConfig.NcoaSettings.LastRunDate.HasValue ||
-                    ( sparkDataConfig.NcoaSettings.RecurringEnabled && sparkDataConfig.NcoaSettings.LastRunDate.Value.AddDays( sparkDataConfig.NcoaSettings.RecurrenceInterval ) < RockDateTime.Now )
-                ) )
+            var sparkDataConfig = SparkDataConfig.Instance;
+            bool isScheduledToRun = false;
+
+            var hasRunDate = sparkDataConfig.NcoaSettings.IsEnabled && sparkDataConfig.NcoaSettings.LastRunDate.HasValue;
+            if ( hasRunDate )
+            {
+                var nextRunDate = sparkDataConfig.NcoaSettings.LastRunDate.Value.AddDays( sparkDataConfig.NcoaSettings.RecurrenceInterval );
+                isScheduledToRun = ( sparkDataConfig.NcoaSettings.RecurringEnabled && nextRunDate < RockDateTime.Now );
+            }
+
+            if ( isScheduledToRun )
             {
                 sparkDataConfig.NcoaSettings.CurrentReportStatus = "Start";
                 sparkDataConfig.NcoaSettings.PersonFullName = null;
-                Ncoa.SaveSettings( sparkDataConfig );
-                StatusStart( sparkDataConfig );
+                sparkDataConfig.Save();
+                StatusStart();
             }
         }
 
         /// <summary>
         /// Current state is pending report. Try to resume a pending report.
         /// </summary>
-        /// <param name="sparkDataConfig">The spark data configuration.</param>
-        private void StatusPendingReport( SparkDataConfig sparkDataConfig )
+        private void StatusPendingReport()
         {
-            var ncoa = new Ncoa();
-            ncoa.PendingReport( sparkDataConfig );
+            NcoaUtility.PendingReport();
         }
 
         /// <summary>
         /// Current state is pending export report. Try to resume a pending export report.
         /// </summary>
-        /// <param name="sparkDataConfig">The spark data configuration.</param>
-        private void StatusPendingExport( SparkDataConfig sparkDataConfig )
+        private void StatusPendingExport()
         {
-            var ncoa = new Ncoa();
-            ncoa.PendingExport( sparkDataConfig );
+            NcoaUtility.PendingExport();
         }
     }
 }
+

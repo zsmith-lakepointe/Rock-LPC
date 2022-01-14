@@ -18,34 +18,22 @@ using System;
 
 using Rock.Data;
 
-namespace Rock.Utility.Settings.SparkData
+namespace Rock.SparkData.Settings
 {
     /// <summary>
-    /// Settings for NCOA
+    /// NCOA Settings class.  This class should initialize all members with default values directly (inline or
+    /// in the constructor) and all members will be serialized.  See <seealso cref="SparkDataConfigBase"/> for
+    /// more detail.
     /// </summary>
     public class NcoaSettings
     {
-        /// <summary>
-        /// Initializes a new instance of the <see cref="NcoaSettings"/> class.
-        /// </summary>
-        public NcoaSettings()
-        {
-            IsEnabled = false;
-            RecurringEnabled = true;
-            FileName = string.Empty;
-            CurrentReportKey = string.Empty;
-            CurrentReportStatus = string.Empty;
-            IsAcceptedTerms = false;
-            IsAckPrice = false;
-        }
-
         /// <summary>
         /// Gets or sets a value indicating whether this instance is enabled.
         /// </summary>
         /// <value>
         ///   <c>true</c> if this instance is enabled; otherwise, <c>false</c>.
         /// </value>
-        public bool IsEnabled { get; set; }
+        public bool IsEnabled { get; set; } = false;
 
         /// <summary>
         /// Gets or sets the person full name.
@@ -53,7 +41,7 @@ namespace Rock.Utility.Settings.SparkData
         /// <value>
         /// The person full name.
         /// </value>
-        public string PersonFullName { get; set; }
+        public string PersonFullName { get; set; } = string.Empty;
 
         /// <summary>
         /// Gets or sets the last NCOA run date.
@@ -61,7 +49,7 @@ namespace Rock.Utility.Settings.SparkData
         /// <value>
         /// The last NCOA run date.
         /// </value>
-        public DateTime? LastRunDate { get; set; }
+        public DateTime? LastRunDate { get; set; } = null;
 
         /// <summary>
         /// Gets or sets a value indicating whether [recurring enabled].
@@ -69,7 +57,7 @@ namespace Rock.Utility.Settings.SparkData
         /// <value>
         ///   <c>true</c> if [recurring enabled]; otherwise, <c>false</c>.
         /// </value>
-        public bool RecurringEnabled { get; set; }
+        public bool RecurringEnabled { get; set; } = true;
 
         /// <summary>
         /// Gets or sets the recurrence interval.
@@ -85,7 +73,7 @@ namespace Rock.Utility.Settings.SparkData
         /// <value>
         /// The name of the NCOA file.
         /// </value>
-        public string FileName { get; set; }
+        public string FileName { get; set; } = string.Empty;
 
         /// <summary>
         /// Gets or sets the current NCOA report key.
@@ -93,7 +81,7 @@ namespace Rock.Utility.Settings.SparkData
         /// <value>
         /// The current NCOA report key.
         /// </value>
-        public string CurrentReportKey { get; set; }
+        public string CurrentReportKey { get; set; } = string.Empty;
 
         /// <summary>
         /// Gets or sets the current NCOA report export key.
@@ -101,7 +89,7 @@ namespace Rock.Utility.Settings.SparkData
         /// <value>
         /// The current NCOA report export key.
         /// </value>
-        public string CurrentReportExportKey { get; set; }
+        public string CurrentReportExportKey { get; set; } = string.Empty;
 
         /// <summary>
         /// Gets or sets the current report status.
@@ -109,7 +97,7 @@ namespace Rock.Utility.Settings.SparkData
         /// <value>
         /// The current report status.
         /// </value>
-        public string CurrentReportStatus { get; set; }
+        public string CurrentReportStatus { get; set; } = string.Empty;
 
         /// <summary>
         /// Gets or sets the person data view Id.
@@ -117,7 +105,7 @@ namespace Rock.Utility.Settings.SparkData
         /// <value>
         /// The person data view Id.
         /// </value>
-        public int? PersonDataViewId { get; set; }
+        public int? PersonDataViewId { get; set; } = null;
 
         /// <summary>
         /// Gets or sets the current upload count to NCOA.
@@ -125,7 +113,7 @@ namespace Rock.Utility.Settings.SparkData
         /// <value>
         /// The current upload count to NCOA.
         /// </value>
-        public int? CurrentUploadCount { get; set; }
+        public int? CurrentUploadCount { get; set; } = null;
 
         /// <summary>
         /// Gets or sets a value indicating whether this instance is accepted terms.
@@ -133,7 +121,7 @@ namespace Rock.Utility.Settings.SparkData
         /// <value>
         ///   <c>true</c> if this instance is accepted terms; otherwise, <c>false</c>.
         /// </value>
-        public bool IsAcceptedTerms { get; set; }
+        public bool IsAcceptedTerms { get; set; } = false;
 
         /// <summary>
         /// Gets or sets a value indicating whether this instance is acknowledging price.
@@ -141,7 +129,7 @@ namespace Rock.Utility.Settings.SparkData
         /// <value>
         ///   <c>true</c> if this instance is acknowledging price; otherwise, <c>false</c>.
         /// </value>
-        public bool IsAckPrice { get; set; }
+        public bool IsAckPrice { get; set; } = false;
 
         /// <summary>
         /// Gets or sets the Id of the Inactive Record Reason <see cref="Rock.Model.DefinedValue"/> to use when inactivating people due to moving beyond the configured number of miles.
@@ -150,7 +138,7 @@ namespace Rock.Utility.Settings.SparkData
         /// A <see cref="System.Int32"/> representing the Id of the Inactive Record Reason <see cref="Rock.Model.DefinedValue"/> to use when inactivating people due to moving beyond the configured number of miles.
         /// </value>
         [DefinedValue( SystemGuid.DefinedType.PERSON_RECORD_STATUS_REASON )]
-        public int? InactiveRecordReasonId { get; set; }
+        public int? InactiveRecordReasonId { get; set; } = null;
 
         /// <summary>
         /// Returns true if the NCOA Settings are valid.
@@ -164,6 +152,14 @@ namespace Rock.Utility.Settings.SparkData
                 InactiveRecordReasonId.Value != 0 &&
                 PersonDataViewId.HasValue &&
                 PersonDataViewId.Value != 0;
+        }
+
+        /// <summary>
+        /// Constructor.  Internal because only the parent SparkDataConfig should ever initialize this class.
+        /// </summary>
+        internal NcoaSettings()
+        {
+            // Property or field members may be initialized here, if they are too complicated to initialize inline.
         }
     }
 }

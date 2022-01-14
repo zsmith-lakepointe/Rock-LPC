@@ -14,7 +14,7 @@
 // limitations under the License.
 // </copyright>
 //
-namespace Rock.Utility.SparkDataApi
+namespace Rock.SparkData.Api
 {
     /// <summary>
     /// The Person and Address data used to pass to NCOA
@@ -115,6 +115,5 @@ namespace Rock.Utility.SparkDataApi
         /// The country.
         /// </value>
         public string Country { get; set; }
-
     }
 }

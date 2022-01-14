@@ -20,25 +20,23 @@ using System.Data;
 using System.Data.Entity;
 using System.Data.Entity.Spatial;
 using System.Linq;
-using System.Web.UI.WebControls;
 
 using Rock;
 using Rock.Communication;
 using Rock.Data;
 using Rock.Jobs;
 using Rock.Model;
-using Rock.SystemKey;
-using Rock.Utility.Settings.SparkData;
-using Rock.Utility.SparkDataApi;
+using Rock.SparkData.Api;
+using Rock.SparkData.Settings;
 using Rock.Web;
 using Rock.Web.Cache;
 
-namespace Rock.Utility
+namespace Rock.SparkData
 {
     /// <summary>
     /// Make NCOA calls to get change of address information
     /// </summary>
-    public class Ncoa
+    public static class NcoaUtility
     {
         #region Get Addresses
 
@@ -48,7 +46,7 @@ namespace Rock.Utility
         /// <param name="dataViewId">The data view identifier.</param>
         /// <param name="rockContext">The rock context.</param>
         /// <returns>Returns a directory of people IDs that result from applying the DataView filter</returns>
-        public Dictionary<int, int> DataViewPeopleDirectory( int dataViewId, RockContext rockContext )
+        public static Dictionary<int, int> DataViewPeopleDirectory( int dataViewId, RockContext rockContext )
         {
             var dataViewService = new DataViewService( rockContext );
             var dataView = dataViewService.GetNoTracking( dataViewId );
@@ -75,7 +73,7 @@ namespace Rock.Utility
         /// </summary>
         /// <param name="dataViewId">The data view identifier.</param>
         /// <returns>Directory of addresses</returns>
-        public Dictionary<int, PersonAddressItem> GetAddresses( int? dataViewId )
+        public static Dictionary<int, PersonAddressItem> GetAddresses( int? dataViewId )
         {
             if ( !dataViewId.HasValue )
             {
@@ -174,38 +172,33 @@ namespace Rock.Utility
             }
         }
 
-        #endregion
+        #endregion Get Addresses
 
         #region Executing NCOA states
 
         /// <summary>
         /// Starts the NCOA request: Check if there is a valid credit card on the Spark Data server. If there is a valid credit card, then get the addresses, initialize a report on NCOA, upload the addresses to NCOA and delete the previous NcoaHistory data.
         /// </summary>
-        /// <param name="sparkDataConfig">The spark data configuration.</param>
-        public void Start( SparkDataConfig sparkDataConfig )
+        public static void Start()
         {
-            if ( sparkDataConfig == null )
-            {
-                sparkDataConfig = GetSettings();
-            }
-
-            SparkDataApi.SparkDataApi sparkDataApi = new SparkDataApi.SparkDataApi();
-            var accountStatus = sparkDataApi.CheckAccount( sparkDataConfig.SparkDataApiKey );
+            var accountStatus = SparkDataApi.Instance.CheckAccount();
             switch ( accountStatus )
             {
-                case SparkDataApi.SparkDataApi.AccountStatus.AccountNoName:
+                case SparkDataApi.AccountStatus.AccountNoName:
                     throw new NoRetryException( "Init NCOA: Account does not have a name." );
-                case SparkDataApi.SparkDataApi.AccountStatus.AccountNotFound:
+                case SparkDataApi.AccountStatus.AccountNotFound:
                     throw new NoRetryException( "Init NCOA: Account not found." );
-                case SparkDataApi.SparkDataApi.AccountStatus.Disabled:
+                case SparkDataApi.AccountStatus.Disabled:
                     throw new NoRetryException( "Init NCOA: Account is disabled." );
-                case SparkDataApi.SparkDataApi.AccountStatus.EnabledCardExpired:
+                case SparkDataApi.AccountStatus.EnabledCardExpired:
                     throw new NoRetryException( "Init NCOA: Credit card on Spark server expired." );
-                case SparkDataApi.SparkDataApi.AccountStatus.EnabledNoCard:
+                case SparkDataApi.AccountStatus.EnabledNoCard:
                     throw new NoRetryException( "Init NCOA: No credit card found on Spark server." );
-                case SparkDataApi.SparkDataApi.AccountStatus.InvalidSparkDataKey:
+                case SparkDataApi.AccountStatus.InvalidSparkDataKey:
                     throw new NoRetryException( "Init NCOA: Invalid Spark Data Key." );
             }
+
+            var sparkDataConfig = SparkDataConfig.Instance;
 
             var addresses = GetAddresses( sparkDataConfig.NcoaSettings.PersonDataViewId );
             if ( addresses.Count < SparkDataConfig.NCOA_MIN_ADDRESSES )
@@ -216,12 +209,12 @@ namespace Rock.Utility
             GroupNameTransactionKey groupNameTransactionKey = null;
             if ( sparkDataConfig.NcoaSettings.FileName.IsNotNullOrWhiteSpace() )
             {
-                groupNameTransactionKey = sparkDataApi.NcoaRetryReport( sparkDataConfig.SparkDataApiKey, sparkDataConfig.NcoaSettings.FileName );
+                groupNameTransactionKey = SparkDataApi.Instance.NcoaRetryReport( sparkDataConfig.NcoaSettings.FileName );
             }
 
             if ( groupNameTransactionKey == null )
             {
-                groupNameTransactionKey = sparkDataApi.NcoaInitiateReport( sparkDataConfig.SparkDataApiKey, addresses.Count, sparkDataConfig.NcoaSettings.PersonFullName );
+                groupNameTransactionKey = SparkDataApi.Instance.NcoaInitiateReport( addresses.Count, sparkDataConfig.NcoaSettings.PersonFullName );
             }
 
             if ( groupNameTransactionKey == null )
@@ -237,8 +230,8 @@ namespace Rock.Utility
 
             sparkDataConfig.NcoaSettings.FileName = groupNameTransactionKey.TransactionKey;
 
-            var credentials = sparkDataApi.NcoaGetCredentials( sparkDataConfig.SparkDataApiKey );
-            var ncoaApi = new NcoaApi( credentials );
+            var ncoaApi = NcoaApi.Instance;
+            ncoaApi.RefreshCredentials();
 
             string id;
             ncoaApi.CreateFile( sparkDataConfig.NcoaSettings.FileName, groupNameTransactionKey.GroupName, out id );
@@ -258,23 +251,19 @@ namespace Rock.Utility
             }
 
             sparkDataConfig.NcoaSettings.CurrentReportStatus = "Pending: Report";
-            SaveSettings( sparkDataConfig );
+            sparkDataConfig.Save();
         }
 
         /// <summary>
         /// Resume a pending report: Checks if the report is complete. If the report is complete, then sent a create report command to NCOA.
         /// </summary>
-        /// <param name="sparkDataConfig">The spark data configuration.</param>
-        public void PendingReport( SparkDataConfig sparkDataConfig = null )
+        public static void PendingReport()
         {
-            if ( sparkDataConfig == null )
-            {
-                sparkDataConfig = GetSettings();
-            }
+            var sparkDataConfig = SparkDataConfig.Instance;
 
-            SparkDataApi.SparkDataApi sparkDataApi = new SparkDataApi.SparkDataApi();
-            var credentials = sparkDataApi.NcoaGetCredentials( sparkDataConfig.SparkDataApiKey );
-            var ncoaApi = new NcoaApi( credentials );
+            var ncoaApi = NcoaApi.Instance;
+            ncoaApi.RefreshCredentials();
+
             if ( !ncoaApi.IsReportCreated( sparkDataConfig.NcoaSettings.CurrentReportKey ) )
             {
                 return;
@@ -285,24 +274,18 @@ namespace Rock.Utility
 
             sparkDataConfig.NcoaSettings.CurrentReportExportKey = exportFileId;
             sparkDataConfig.NcoaSettings.CurrentReportStatus = "Pending: Export";
-            SaveSettings( sparkDataConfig );
+            sparkDataConfig.Save();
         }
 
         /// <summary>
         /// Resume a pending export: Checks if the export is complete. If the export is complete, then download the export, process the addresses and sent a notification.
         /// </summary>
-        /// <param name="sparkDataConfig">The spark data configuration.</param>
-        public void PendingExport( SparkDataConfig sparkDataConfig = null )
+        public static void PendingExport()
         {
-            if ( sparkDataConfig == null )
-            {
-                sparkDataConfig = GetSettings();
-            }
+            var sparkDataConfig = SparkDataConfig.Instance;
+            var ncoaApi = NcoaApi.Instance;
+            ncoaApi.RefreshCredentials();
 
-            SparkDataApi.SparkDataApi sparkDataApi = new SparkDataApi.SparkDataApi();
-            var credentials = sparkDataApi.NcoaGetCredentials( sparkDataConfig.SparkDataApiKey );
-
-            var ncoaApi = new NcoaApi( credentials );
             if ( !ncoaApi.IsReportExportCreated( sparkDataConfig.NcoaSettings.FileName ) )
             {
                 return;
@@ -335,17 +318,17 @@ namespace Rock.Utility
                     }
                 }
 
-                ProcessNcoaResults( ncoaReturnRecords, sparkDataConfig );
+                ProcessNcoaResults( ncoaReturnRecords );
 
-                sparkDataApi.NcoaCompleteReport( sparkDataConfig.SparkDataApiKey, sparkDataConfig.NcoaSettings.FileName, sparkDataConfig.NcoaSettings.CurrentReportExportKey );
+                SparkDataApi.Instance.NcoaCompleteReport( sparkDataConfig.NcoaSettings.FileName, sparkDataConfig.NcoaSettings.CurrentReportExportKey );
 
                 //Notify group
-                SendNotification( sparkDataConfig, "finished" );
+                SendNotification( "finished" );
 
                 sparkDataConfig.NcoaSettings.LastRunDate = RockDateTime.Now;
                 sparkDataConfig.NcoaSettings.CurrentReportStatus = "Complete";
                 sparkDataConfig.NcoaSettings.FileName = null;
-                SaveSettings( sparkDataConfig );
+                sparkDataConfig.Save();
             }
             catch ( Exception ex )
             {
@@ -357,14 +340,10 @@ namespace Rock.Utility
         /// Processes the NCOA results.
         /// </summary>
         /// <param name="ncoaReturnRecords">The NCOA return records.</param>
-        /// <param name="sparkDataConfig">The spark data configuration.</param>
         /// <exception cref="NoRetryException">Inactive Record Reason value is empty.</exception>
-        private void ProcessNcoaResults( List<NcoaReturnRecord> ncoaReturnRecords, SparkDataConfig sparkDataConfig = null )
+        private static void ProcessNcoaResults( List<NcoaReturnRecord> ncoaReturnRecords )
         {
-            if ( sparkDataConfig == null )
-            {
-                sparkDataConfig = GetSettings();
-            }
+            var sparkDataConfig = SparkDataConfig.Instance;
 
             if ( sparkDataConfig.NcoaSettings.InactiveRecordReasonId == null )
             {
@@ -386,7 +365,7 @@ namespace Rock.Utility
             ProcessNcoaResults( inactiveReason, markInvalidAsPrevious, mark48MonthAsPrevious, minMoveDistance, ncoaReturnRecords );
         }
 
-        #endregion
+        #endregion Executing NCOA states
 
         #region Process NCOA results
 
@@ -394,7 +373,7 @@ namespace Rock.Utility
         /// Marks the duplicate locations as ManualUpdateRequired so that they are not processed.
         /// </summary>
         /// <param name="ncoaHistoryList">The NCOA history list.</param>
-        private void FilterDuplicateLocations( List<NcoaHistory> ncoaHistoryList )
+        private static void FilterDuplicateLocations( List<NcoaHistory> ncoaHistoryList )
         {
             // Get all duplicate addresses/locations and sort the result by move date descending.
             var duplicateLocations = ncoaHistoryList.OrderByDescending( x => x.MoveDate ).GroupBy( x => x.PersonAliasId + "_" + x.FamilyId + "_" + x.LocationId )
@@ -465,7 +444,7 @@ namespace Rock.Utility
         /// <param name="mark48MonthAsPrevious">if a 48 month move should be marked as previous, set to <c>true</c>.</param>
         /// <param name="minMoveDistance">The minimum move distance.</param>
         /// <param name="ncoaReturnRecords">The NCOA return records.</param>
-        private void ProcessNcoaResults( DefinedValueCache inactiveReason, bool markInvalidAsPrevious, bool mark48MonthAsPrevious, decimal? minMoveDistance, List<NcoaReturnRecord> ncoaReturnRecords )
+        private static void ProcessNcoaResults( DefinedValueCache inactiveReason, bool markInvalidAsPrevious, bool mark48MonthAsPrevious, decimal? minMoveDistance, List<NcoaReturnRecord> ncoaReturnRecords )
         {
             // Get the ID's for the "Home" and "Previous" family group location types
             int? homeValueId = DefinedValueCache.Get( SystemGuid.DefinedValue.GROUP_LOCATION_TYPE_HOME.AsGuid() )?.Id;
@@ -483,7 +462,7 @@ namespace Rock.Utility
         /// </summary>
         /// <param name="markInvalidAsPrevious">If invalid addresses should be marked as previous, set to <c>true</c>.</param>
         /// <param name="previousValueId">The previous value identifier.</param>
-        private void ProcessNcoaResultsInvalidAddress( bool markInvalidAsPrevious, int? previousValueId )
+        private static void ProcessNcoaResultsInvalidAddress( bool markInvalidAsPrevious, int? previousValueId )
         {
             List<int> ncoaIds = null;
             using ( var rockContext = new RockContext() )
@@ -560,7 +539,7 @@ namespace Rock.Utility
         /// </summary>
         /// <param name="mark48MonthAsPrevious">if a 48 month move should be marked as previous, set to <c>true</c>.</param>
         /// <param name="previousValueId">The previous value identifier.</param>
-        private void ProcessNcoaResults48MonthMove( bool mark48MonthAsPrevious, int? previousValueId )
+        private static void ProcessNcoaResults48MonthMove( bool mark48MonthAsPrevious, int? previousValueId )
         {
             List<int> ncoaIds = null;
             // Process the '48 Month Move' NCOA Types
@@ -637,7 +616,7 @@ namespace Rock.Utility
         /// Gets the Geo points of all the campuses.
         /// </summary>
         /// <returns></returns>
-        private List<DbGeography> GetCampusGeoPoints()
+        private static List<DbGeography> GetCampusGeoPoints()
         {
             List<DbGeography> campusGeoPoints = new List<DbGeography>();
             var campusLocations = CampusCache.All( false ).Select( c => c.Location );
@@ -673,7 +652,7 @@ namespace Rock.Utility
         /// <param name="campusGeoPoints">The Geo points of all the campuses.</param>
         /// <param name="ncoaReturnRecords">The NCOA return records.</param>
         /// <returns></returns>
-        private bool IsCloseToCampus( NcoaHistory ncoaHistory, decimal? minMoveDistance, List<DbGeography> campusGeoPoints, List<NcoaReturnRecord> ncoaReturnRecords )
+        private static bool IsCloseToCampus( NcoaHistory ncoaHistory, decimal? minMoveDistance, List<DbGeography> campusGeoPoints, List<NcoaReturnRecord> ncoaReturnRecords )
         {
             if ( ncoaHistory.MoveDistance.HasValue && minMoveDistance.HasValue &&
                 ncoaHistory.MoveDistance.Value >= minMoveDistance.Value )
@@ -733,7 +712,7 @@ namespace Rock.Utility
         /// <param name="previousValueId">The previous value identifier.</param>
         /// <param name="ncoaReturnRecords">The NCOA return records.</param>
         /// <param name="campusGeoPoints">The campus Geo points.</param>
-        private void ProcessNcoaResultsFamilyMove( DefinedValueCache inactiveReason, decimal? minMoveDistance, int? homeValueId, int? previousValueId, List<NcoaReturnRecord> ncoaReturnRecords, List<DbGeography> campusGeoPoints )
+        private static void ProcessNcoaResultsFamilyMove( DefinedValueCache inactiveReason, decimal? minMoveDistance, int? homeValueId, int? previousValueId, List<NcoaReturnRecord> ncoaReturnRecords, List<DbGeography> campusGeoPoints )
         {
             List<int> ncoaIds = null;
             // Process 'Move' NCOA Types (The 'Family' move types will be processed first)
@@ -846,7 +825,7 @@ namespace Rock.Utility
         /// <param name="previousValueId">The previous value identifier.</param>
         /// <param name="ncoaReturnRecords">The NCOA return records.</param>
         /// <param name="campusGeoPoints">The campus Geo points.</param>
-        private void ProcessNcoaResultsIndividualMove( DefinedValueCache inactiveReason, decimal? minMoveDistance, int? homeValueId, int? previousValueId, List<NcoaReturnRecord> ncoaReturnRecords, List<DbGeography> campusGeoPoints )
+        private static void ProcessNcoaResultsIndividualMove( DefinedValueCache inactiveReason, decimal? minMoveDistance, int? homeValueId, int? previousValueId, List<NcoaReturnRecord> ncoaReturnRecords, List<DbGeography> campusGeoPoints )
         {
             List<int> ncoaIds = null;
             // Process 'Move' NCOA Types (For the remaining Individual move types that weren't updated with the family move)
@@ -969,7 +948,7 @@ namespace Rock.Utility
         /// <param name="previousValueId">The previous value identifier.</param>
         /// <param name="changes">The changes.</param>
         /// <returns></returns>
-        public GroupLocation MarkAsPreviousLocation( NcoaHistory ncoaHistory, GroupLocationService groupLocationService, int? previousValueId, History.HistoryChangeList changes )
+        public static GroupLocation MarkAsPreviousLocation( NcoaHistory ncoaHistory, GroupLocationService groupLocationService, int? previousValueId, History.HistoryChangeList changes )
         {
             if ( ncoaHistory.LocationId.HasValue && previousValueId.HasValue )
             {
@@ -1006,7 +985,7 @@ namespace Rock.Utility
         /// <param name="isMailingLocation">Is the location a mailing location.</param>
         /// <param name="isMappedLocation">Is the location a mapped location.</param>
         /// <returns></returns>
-        private bool AddNewHomeLocation( NcoaHistory ncoaHistory, LocationService locationService, GroupLocationService groupLocationService, int? homeValueId, History.HistoryChangeList changes, bool isMailingLocation, bool isMappedLocation )
+        private static bool AddNewHomeLocation( NcoaHistory ncoaHistory, LocationService locationService, GroupLocationService groupLocationService, int? homeValueId, History.HistoryChangeList changes, bool isMailingLocation, bool isMappedLocation )
         {
             if ( homeValueId.HasValue )
             {
@@ -1035,15 +1014,16 @@ namespace Rock.Utility
             return false;
         }
 
-        #endregion
+        #endregion Process NCOA results
 
         /// <summary>
         /// Sends a notification that NCOA finished or failed
         /// </summary>
-        /// <param name="sparkDataConfig">The spark data configuration.</param>
         /// <param name="status">The status to put in the notification.</param>
-        public void SendNotification( SparkDataConfig sparkDataConfig, string status )
+        public static void SendNotification( string status )
         {
+            var sparkDataConfig = SparkDataConfig.Instance;
+
             if ( !sparkDataConfig.GlobalNotificationApplicationGroupId.HasValue || sparkDataConfig.GlobalNotificationApplicationGroupId.Value == 0 )
             {
                 return;
@@ -1077,43 +1057,5 @@ namespace Rock.Utility
                 emailMessage.Send();
             }
         }
-
-        #region Get/Set Settings
-        /// <summary>
-        /// Gets the settings.
-        /// </summary>
-        /// <returns>The spark data configuration.</returns>
-        public static SparkDataConfig GetSettings( SparkDataConfig sparkDataConfig = null )
-        {
-            // Get Spark Data settings
-            if ( sparkDataConfig == null )
-            {
-                sparkDataConfig = Rock.Web.SystemSettings.GetValue( SystemSetting.SPARK_DATA ).FromJsonOrNull<SparkDataConfig>() ?? new SparkDataConfig();
-            }
-
-            if ( sparkDataConfig.NcoaSettings == null )
-            {
-                sparkDataConfig.NcoaSettings = new NcoaSettings();
-            }
-
-            if ( sparkDataConfig.Messages == null )
-            {
-                sparkDataConfig.Messages = new Extension.FixedSizeList<string>( 30 );
-            }
-
-            return sparkDataConfig;
-        }
-
-        /// <summary>
-        /// Saves the settings.
-        /// </summary>
-        /// <param name="sparkDataConfig">The spark data configuration.</param>
-        public static void SaveSettings( SparkDataConfig sparkDataConfig )
-        {
-            Rock.Web.SystemSettings.SetValue( SystemSetting.SPARK_DATA, sparkDataConfig.ToJson() );
-        }
-
-        #endregion
-
     }
 }
