@@ -471,6 +471,20 @@ namespace Rock.SystemGuid
 
         #endregion
 
+        #region Group Type - Project Type        
+
+        /// <summary>
+        /// The group project type [in-person].
+        /// </summary>
+        public const string GROUP_PROJECT_TYPE_IN_PERSON = "5E46E02C-2D1E-4A65-8C4B-59EAF90E623B";
+
+        /// <summary>
+        /// The group project type [project due].
+        /// </summary>
+        public const string GROUP_PROJECT_TYPE_PROJECT_DUE = "FB7619A2-2E56-449F-BDFD-571E3AE38180";
+
+        #endregion Group Type - Project Type
+
         #region Group RSVP
 
         /// <summary>

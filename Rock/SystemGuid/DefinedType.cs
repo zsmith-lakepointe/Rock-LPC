@@ -449,6 +449,11 @@ namespace Rock.SystemGuid
         public const string LANGUAGES = "6060ba8b-4085-4a29-bf19-a4862b95556a";
 
         /// <summary>
+        /// The project type
+        /// </summary>
+        public const string PROJECT_TYPE = "6D9F8D66-BFB7-4687-A133-5D8F29E37BA0";
+
+        /// <summary>
         /// The statement generator lava template (Legacy)
         /// </summary>
         [Obsolete("Use FinancialStatementTemplate instead")]

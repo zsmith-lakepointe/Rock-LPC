@@ -2163,8 +2163,8 @@ END" );
         /// <param name="defaultValue">The default value.</param>
         /// <param name="guid">The GUID.</param>
         /// <param name="key">The key. Defaults to Name without Spaces. If this is a core global attribute, specify the key with a 'core_' prefix</param>
-        [Obsolete("Use AddOrUpdateEntityAttribute instead.")]
-        [RockObsolete("1.13")]
+        [Obsolete( "Use AddOrUpdateEntityAttribute instead." )]
+        [RockObsolete( "1.13" )]
         public void AddEntityAttribute( string entityTypeName, string fieldTypeGuid, string entityTypeQualifierColumn, string entityTypeQualifierValue, string name, string category, string description, int order, string defaultValue, string guid, string key = null )
         {
             if ( !string.IsNullOrWhiteSpace( category ) )
@@ -2233,8 +2233,8 @@ END" );
         /// <param name="defaultValue">The default value.</param>
         /// <param name="guid">The unique identifier.</param>
         /// <param name="key">The key.  Defaults to Name without Spaces. If this is a core global attribute, specify the key with a 'core_' prefix</param>
-        [Obsolete("Use AddNewEntityAttributeDeletingAllAttributeValues or AddOrUpdateEntityAttribute instead.")]
-        [RockObsolete("1.13")]
+        [Obsolete( "Use AddNewEntityAttributeDeletingAllAttributeValues or AddOrUpdateEntityAttribute instead." )]
+        [RockObsolete( "1.13" )]
         public void AddNewEntityAttribute( string entityTypeName, string fieldTypeGuid, string entityTypeQualifierColumn, string entityTypeQualifierValue, string name, string abbreviatedName, string description, int order, string defaultValue, string guid, string key )
         {
             AddNewEntityAttributeDeletingAllAttributeValues( entityTypeName, fieldTypeGuid, entityTypeQualifierColumn, entityTypeQualifierValue, name, abbreviatedName, description, order, defaultValue, guid, key );
@@ -2383,9 +2383,9 @@ END" );
                         , 0
                         , '{defaultValue?.Replace( "'", "''" ) ?? string.Empty}'
                         , 0
-                        , {(isRequired == true ? 1 : 0)}
+                        , {( isRequired == true ? 1 : 0 )}
                         , '{guid}')
-                END");
+                END" );
         }
 
         /// <summary>
@@ -4578,7 +4578,7 @@ END
                     , [EntityTypeId] = (SELECT [Id] FROM [EntityType] WHERE [Guid] = '{entityTypeGuid}')
                     , [UserSelectable] = {userSelectable.Bit()}
                     , [IsSystem] = {IsSystem.Bit()}
-                    , [IconCssClass] = {(iconCssClass.IsNullOrWhiteSpace() ? "NULL" : $"'{iconCssClass}'")}
+                    , [IconCssClass] = {( iconCssClass.IsNullOrWhiteSpace() ? "NULL" : $"'{iconCssClass}'" )}
                     , [AllowsWatching] = {AllowWatching.Bit()}
                 WHERE [Guid] = '{guid}'" );
         }
@@ -5254,6 +5254,37 @@ END
                     ( string.IsNullOrEmpty( inheritedGroupTypeGuid ) ) ? "NULL" : "'" + inheritedGroupTypeGuid + "'",
                     locationSelectionMode,
                     ( string.IsNullOrEmpty( groupTypePurposeValueGuid ) ) ? "NULL" : "'" + groupTypePurposeValueGuid + "'"
+            ) );
+        }
+
+        /// <summary>
+        /// Adds the group type association.
+        /// </summary>
+        /// <param name="groupTypeGuid">The group type unique identifier.</param>
+        /// <param name="childGroupTypeGuid">The child group type unique identifier.</param>
+        public void AddGroupTypeAssociation( string groupTypeGuid, string childGroupTypeGuid )
+        {
+            Migration.Sql( string.Format( @"
+
+                -- Update or insert a group type association...
+
+                DECLARE @GroupTypeId int = ( SELECT TOP 1 [Id] FROM [GroupType] WHERE [Guid] = '{0}' )
+                DECLARE @ChildGroupTypeId int = ( SELECT TOP 1 [Id] FROM [GroupType] WHERE [Guid] = '{1}' )
+
+                IF NOT EXISTS (
+                    SELECT [GroupTypeId]
+                    FROM [GroupTypeAssociation]
+                    WHERE [GroupTypeId] = @GroupTypeId AND [ChildGroupTypeId] = @ChildGroupTypeId )
+                
+                BEGIN
+                    INSERT INTO [GroupTypeAssociation] (
+                        [GroupTypeId]
+                        ,[ChildGroupTypeId]
+                        )
+                    VALUES(@GroupTypeId, @ChildGroupTypeId)
+                END
+",
+                   groupTypeGuid, childGroupTypeGuid
             ) );
         }
 

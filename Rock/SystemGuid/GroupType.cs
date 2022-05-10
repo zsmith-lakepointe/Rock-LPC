@@ -14,7 +14,6 @@
 // limitations under the License.
 // </copyright>
 //
-using System;
 
 namespace Rock.SystemGuid
 {
@@ -107,5 +106,10 @@ namespace Rock.SystemGuid
         /// Campus Team group type guid
         /// </summary>
         public const string GROUPTYPE_CAMPUS_TEAM = "BADD7A6C-1FB3-4E11-A721-6D1377C6958C";
+
+        /// <summary>
+        /// The Signup group type guid.
+        /// </summary>
+        public const string GROUPTYPE_SIGNUP_GROUP = "2F2F34ED-08C0-45AC-9D06-642337128786";
     }
 }

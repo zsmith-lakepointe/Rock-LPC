@@ -78,7 +78,7 @@ namespace Rock.Model
                     !v.EntityId.HasValue )
                 .FirstOrDefault();
         }
-
+            
         #region Static Methods
 
         /// <summary>

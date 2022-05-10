@@ -815,6 +815,7 @@
     <Compile Include="Jobs\PostV127DataMigrationsRebuildGroupSalutations.cs" />
     <Compile Include="Jobs\PostV13DataMigrationsAddInteractionComponentIndexToInteraction.cs" />
     <Compile Include="Jobs\ProcessElevatedSecurity.cs" />
+    <Compile Include="Jobs\SignupGroupProcessing.cs" />
     <Compile Include="Lava\Blocks\ReturnTag.cs" />
     <Compile Include="Lava\RockLiquid\Blocks\Return.cs" />
     <Compile Include="Mobile\MobileNavigationAction.cs" />
@@ -3715,6 +3716,7 @@
     <Compile Include="Workflow\Action\Groups\AddNoteToGroupMember.cs" />
     <Compile Include="Workflow\Action\Groups\AddPersonToGroup.cs" />
     <Compile Include="Workflow\Action\Groups\AddPersonToGroupAttribute.cs" />
+    <Compile Include="Workflow\Action\Groups\GroupAdd.cs" />
     <Compile Include="Workflow\Action\Groups\GroupGetChildGroupForCampus.cs" />
     <Compile Include="Workflow\Action\Groups\PostAttendanceToGroup.cs" />
     <Compile Include="Workflow\Action\Groups\RemovePersonFromGroup.cs" />
