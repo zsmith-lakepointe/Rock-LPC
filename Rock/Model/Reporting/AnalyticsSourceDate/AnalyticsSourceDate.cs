@@ -32,11 +32,9 @@ namespace Rock.Model
     [DataContract]
     [HideFromReporting]
     [CodeGenExclude( CodeGenFeature.ViewModelFile )]
-    [IncludeForModelMap]
-    public partial class AnalyticsSourceDate
+    public partial class AnalyticsSourceDate : ModelMapEntity
     {
         #region Entity Properties
-
         /// <summary>
         /// Gets or sets the date key in YYYYMMDD format
         /// </summary>
@@ -487,4 +485,5 @@ namespace Rock.Model
 
         #endregion Entity Properties Specific to Analytics
     }
+   
 }

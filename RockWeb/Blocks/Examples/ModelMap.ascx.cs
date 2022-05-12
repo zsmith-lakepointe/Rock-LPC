@@ -251,7 +251,7 @@ namespace RockWeb.Blocks.Examples
             foreach ( var entity in EntityTypeCache.All().Where( t => t.IsEntity ) )
             {
                 var type = entity.GetEntityType();
-                if ( type != null && type.InheritsOrImplements( typeof( Rock.Data.Entity<> )) || type.GetCustomAttribute(typeof( IncludeForModelMapAttribute )) != null ) 
+                if ( type != null && type.InheritsOrImplements( typeof( Rock.Data.Entity<> )) || type.InheritsOrImplements(typeof( ModelMapEntity ))) 
                 {
                     string category = "Other";
                     var domainAttr = type.GetCustomAttribute<RockDomainAttribute>( false );

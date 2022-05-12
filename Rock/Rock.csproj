@@ -780,7 +780,6 @@
     <Compile Include="Communication\Transport\EmailSendResponse.cs" />
     <Compile Include="Communication\EmailTransportComponent.cs" />
     <Compile Include="Communication\Transport\ThrottleHelper.cs" />
-    <Compile Include="Data\IncludeForModelMapAttribute.cs" />
     <Compile Include="Data\EntityContextState.cs" />
     <Compile Include="Data\EntitySaveHook.cs" />
     <Compile Include="Data\IEntitySaveEntry.cs" />
@@ -1270,6 +1269,7 @@
     <Compile Include="Model\Reporting\Report\Report.WebForms.cs" />
     <Compile Include="Model\Reporting\Report\Report.Logic.cs" />
     <Compile Include="Model\Reporting\ReportField\ReportFieldType.cs" />
+    <Compile Include="Model\Utility\ModelMapEntity.cs" />
     <Compile Include="Model\WebFarm\WebFarmNodeLog\SeverityLevel.cs" />
     <Compile Include="Model\WebFarm\WebFarmNodeLog\WebFarmNodeLog.Logic.cs" />
     <Compile Include="Model\WebFarm\WebFarmNodeMetric\WebFarmNodeMetric.Logic.cs" />
