@@ -960,6 +960,9 @@
     <Compile Include="Model\Group\GroupMember\GroupMemberService.WebForms.cs" />
     <Compile Include="Model\Event\InteractiveExperienceScheduleCampus\InteractiveExperienceScheduleCampus.cs" />
     <Compile Include="Model\Group\GroupMemberRequirement\GroupMemberRequirementService.cs" />
+    <Compile Include="Model\Group\Group\GroupTptTest\GroupTptTest2.cs" />
+    <Compile Include="Model\Group\Group\GroupTptTest\GroupTptTest1Service.cs" />
+    <Compile Include="Model\Group\Group\GroupTptTest\GroupTptTest1.cs" />
     <Compile Include="Personalization\PersonalizationRequestFilters\EnvironmentRequestFilter.cs" />
     <Compile Include="Net\IRequest.cs" />
     <Compile Include="Personalization\PersonalizationSegmentFilter.cs" />
