@@ -15,7 +15,7 @@
 	<param name='GroupIds' datatype='varchar(max)'>Optional list of group ids to limit attendance to</param>
 	<param name='CampusIds' datatype='varchar(max)'>Optional list of campus ids to limit attendance to</param>
 	<param name='IncludeNullCampusIds' datatype='bit'>Flag indicating if attendance not tied to campus should be included</param>
-	<remarks>	
+	<remarks>
 	</remarks>
 	<code>
         EXEC [dbo].[spCheckin_AttendanceAnalyticsQuery_AttendeeFirstDates] '18,19,20,21,22,23,25', '24,25,26,27,28,29,30,31,32,56,57,58,59,111,112,113,114,115,116,117,118', '2019-09-17 00:00:00', '2019-10-23 00:00:00', null, 0, null
@@ -37,66 +37,80 @@ AS
 
 BEGIN
 
-    --  get the SundayDates within the StartDate and EndDate so we can query against AttendanceOccurrence.SundayDate
-	DECLARE @startDateSundayDate DATE
-	DECLARE @endDateSundayDate DATE
+    -- Calculate the SundayDates within the StartDate and EndDate so we can filter by AttendanceOccurrence.SundayDate
+    DECLARE @startDateSundayDate DATE
+    DECLARE @endDateSundayDate DATE
 
-	SELECT @startDateSundayDate = x.StartSundayDate
-		,@endDateSundayDate = x.EndSundayDate
-	FROM dbo.ufnUtility_GetSundayDateRange(@StartDate, @EndDate) x
+    SELECT
+        @startDateSundayDate = sdr.StartSundayDate
+        , @endDateSundayDate = sdr.EndSundayDate
+    FROM
+        [dbo].ufnUtility_GetSundayDateRange(@StartDate, @EndDate) sdr;
 
-	DECLARE @CampusTbl TABLE ( [Id] int )
-	INSERT INTO @CampusTbl SELECT [Item] FROM ufnUtility_CsvToTable( ISNULL(@CampusIds,'') )
-
-	DECLARE @ScheduleTbl TABLE ( [Id] int )
-	INSERT INTO @ScheduleTbl SELECT [Item] FROM ufnUtility_CsvToTable( ISNULL(@ScheduleIds,'') )
-
-	DECLARE @GroupTbl TABLE ( [Id] int )
-	INSERT INTO @GroupTbl SELECT [Item] FROM ufnUtility_CsvToTable( ISNULL(@GroupIds,'') )
-
-	DECLARE @GroupTypeTbl TABLE ( [Id] int )
-	INSERT INTO @GroupTypeTbl SELECT [Item] FROM ufnUtility_CsvToTable( ISNULL(@GroupTypeIds,'') )
-
-	-- Get all the attendees
-	DECLARE @PersonIdTbl TABLE ( [PersonId] INT NOT NULL )
-	INSERT INTO @PersonIdTbl
-	SELECT DISTINCT PA.[PersonId]
-	FROM [Attendance] A
-	INNER JOIN [AttendanceOccurrence] O ON O.[Id] = A.[OccurrenceId]
-    INNER JOIN [PersonAlias] PA ON PA.[Id] = A.[PersonAliasId]
-	INNER JOIN @GroupTbl [G] ON [G].[Id] = O.[GroupId]
-	LEFT OUTER JOIN @CampusTbl [C] ON [C].[id] = [A].[CampusId]
-	LEFT OUTER JOIN @ScheduleTbl [S] ON [S].[id] = [O].[ScheduleId]
-    WHERE o.[SundayDate] BETWEEN @startDateSundayDate AND @endDateSundayDate
-	AND [DidAttend] = 1
-	AND ( 
-		( @CampusIds IS NULL OR [C].[Id] IS NOT NULL ) OR  
-		( @IncludeNullCampusIds = 1 AND A.[CampusId] IS NULL ) 
-	)
-	AND ( @ScheduleIds IS NULL OR [S].[Id] IS NOT NULL  )
-
-	-- Get the first 5 occasions on which each person attended any of the selected group types regardless of group or campus.
-	-- Multiple attendances on the same date are considered as a single occasion.
-	SELECT DISTINCT
-	    [PersonId]
-	    , [TimeAttending]
-	    , [StartDate]
-	FROM (
-	    SELECT 
-	        [P].[Id] AS [PersonId]
-	        , DENSE_RANK() OVER ( PARTITION BY [P].[Id] ORDER BY [AO].[OccurrenceDate] ) AS [TimeAttending]
-	        , [AO].[OccurrenceDate] AS [StartDate]
-	    FROM
-	        [Attendance] [A]
-	        INNER JOIN [AttendanceOccurrence] [AO] ON [AO].[Id] = [A].[OccurrenceId]
-	        INNER JOIN [Group] [G] ON [G].[Id] = [AO].[GroupId]
-	        INNER JOIN [PersonAlias] [PA] ON [PA].[Id] = [A].[PersonAliasId] 
-	        INNER JOIN [Person] [P] ON [P].[Id] = [PA].[PersonId]
-	        INNER JOIN @GroupTypeTbl [GT] ON [GT].[id] = [G].[GroupTypeId]
-	    WHERE 
-	        [P].[Id] IN ( SELECT [PersonId] FROM @PersonIdTbl )
-	        AND [DidAttend] = 1
-	) [X]
-    WHERE [X].[TimeAttending] <= 5
+    -- Define the CTEs for the lookup data needed to calculate the attendance.
+    WITH
+    CampusIdList AS
+    (
+        SELECT CONVERT( int, [Item]) AS [Id] FROM [dbo].ufnUtility_CsvToTable( ISNULL(@CampusIds,'') )
+    ),
+    ScheduleIdList AS
+    (
+        SELECT CONVERT( int, [Item]) AS [Id] FROM [dbo].ufnUtility_CsvToTable( ISNULL(@ScheduleIds,'') )
+    ),
+    GroupIdList AS
+    (
+        SELECT CONVERT( int, [Item]) AS [Id] FROM [dbo].ufnUtility_CsvToTable( ISNULL(@GroupIds,'') )
+    ),
+    GroupTypeIdList AS
+    (
+        SELECT CONVERT( int, [Item]) AS [Id] FROM [dbo].ufnUtility_CsvToTable( ISNULL(@GroupTypeIds,'') )
+    ),
+    AttendeePersonIdList AS
+    (
+        -- Get the set of people who have attended any of the selected groups/schedules/campuses during the
+		-- reporting period.
+        SELECT DISTINCT
+            pa.[PersonId]
+        FROM
+		    [dbo].[Attendance] a
+            INNER JOIN [dbo].[AttendanceOccurrence] o ON o.[Id] = a.[OccurrenceId]
+            INNER JOIN [dbo].[PersonAlias] pa ON pa.[Id] = a.[PersonAliasId]
+            INNER JOIN GroupIdList g ON g.[Id] = o.[GroupId]
+            LEFT OUTER JOIN CampusIdList c ON c.[id] = a.[CampusId]
+            LEFT OUTER JOIN ScheduleIdList s ON s.[id] = o.[ScheduleId]
+        WHERE
+            o.[SundayDate] BETWEEN @startDateSundayDate AND @endDateSundayDate
+            AND [DidAttend] = 1
+            AND (
+                ( @CampusIds IS NULL OR c.[Id] IS NOT NULL ) OR
+                ( @IncludeNullCampusIds = 1 AND a.[CampusId] IS NULL )
+            )
+            AND ( @ScheduleIds IS NULL OR s.[Id] IS NOT NULL )
+    )
+        -- For each person who has attended during the reporting period, get the first
+		-- 5 occasions on which they attended one of the selected group types, for any group or campus.
+        -- Multiple attendances on the same date are considered as a single occasion.
+        SELECT DISTINCT
+            [PersonId]
+            , [TimeAttending]
+            , [StartDate]
+        FROM (
+            SELECT
+                p.[Id] AS [PersonId]
+                , DENSE_RANK() OVER ( PARTITION BY p.[Id] ORDER BY ao.[OccurrenceDate] ) AS [TimeAttending]
+                , ao.[OccurrenceDate] AS [StartDate]
+            FROM
+                [dbo].[Attendance] a
+                INNER JOIN [dbo].[AttendanceOccurrence] ao ON ao.[Id] = a.[OccurrenceId]
+                INNER JOIN [dbo].[Group] g ON g.[Id] = ao.[GroupId]
+                INNER JOIN [dbo].[PersonAlias] pa ON pa.[Id] = a.[PersonAliasId]
+                INNER JOIN [dbo].[Person] p ON p.[Id] = pa.[PersonId]
+                INNER JOIN GroupTypeIdList gt ON gt.[id] = g.[GroupTypeId]
+            WHERE
+                p.[Id] IN ( SELECT [PersonId] FROM AttendeePersonIdList )
+                AND [DidAttend] = 1
+            ) x
+        WHERE
+		    x.[TimeAttending] <= 5
 
 END
