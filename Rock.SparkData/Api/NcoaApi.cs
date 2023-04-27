@@ -31,7 +31,7 @@ using RestSharp;
 
 using Rock.Jobs;
 
-namespace Rock.Utility.SparkDataApi
+namespace Rock.SparkData.Api
 {
     /// <summary>
     /// NCOA API calls

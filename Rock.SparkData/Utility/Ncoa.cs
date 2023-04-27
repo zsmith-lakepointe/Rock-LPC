@@ -20,7 +20,6 @@ using System.Data;
 using System.Data.Entity;
 using System.Data.Entity.Spatial;
 using System.Linq;
-using System.Web.UI.WebControls;
 
 using Rock;
 using Rock.Communication;
@@ -28,12 +27,12 @@ using Rock.Data;
 using Rock.Jobs;
 using Rock.Model;
 using Rock.SystemKey;
-using Rock.Utility.Settings.SparkData;
-using Rock.Utility.SparkDataApi;
+using Rock.SparkData.Api;
+using Rock.SparkData.Settings;
 using Rock.Web;
 using Rock.Web.Cache;
 
-namespace Rock.Utility
+namespace Rock.SparkData.Utility
 {
     /// <summary>
     /// Make NCOA calls to get change of address information
@@ -189,21 +188,21 @@ namespace Rock.Utility
                 sparkDataConfig = GetSettings();
             }
 
-            SparkDataApi.SparkDataApi sparkDataApi = new SparkDataApi.SparkDataApi();
+            var sparkDataApi = new SparkDataApi();
             var accountStatus = sparkDataApi.CheckAccount( sparkDataConfig.SparkDataApiKey );
             switch ( accountStatus )
             {
-                case SparkDataApi.SparkDataApi.AccountStatus.AccountNoName:
+                case SparkDataApi.AccountStatus.AccountNoName:
                     throw new NoRetryException( "Init NCOA: Account does not have a name." );
-                case SparkDataApi.SparkDataApi.AccountStatus.AccountNotFound:
+                case SparkDataApi.AccountStatus.AccountNotFound:
                     throw new NoRetryException( "Init NCOA: Account not found." );
-                case SparkDataApi.SparkDataApi.AccountStatus.Disabled:
+                case SparkDataApi.AccountStatus.Disabled:
                     throw new NoRetryException( "Init NCOA: Account is disabled." );
-                case SparkDataApi.SparkDataApi.AccountStatus.EnabledCardExpired:
+                case SparkDataApi.AccountStatus.EnabledCardExpired:
                     throw new NoRetryException( "Init NCOA: Credit card on Spark server expired." );
-                case SparkDataApi.SparkDataApi.AccountStatus.EnabledNoCard:
+                case SparkDataApi.AccountStatus.EnabledNoCard:
                     throw new NoRetryException( "Init NCOA: No credit card found on Spark server." );
-                case SparkDataApi.SparkDataApi.AccountStatus.InvalidSparkDataKey:
+                case SparkDataApi.AccountStatus.InvalidSparkDataKey:
                     throw new NoRetryException( "Init NCOA: Invalid Spark Data Key." );
             }
 
@@ -272,7 +271,7 @@ namespace Rock.Utility
                 sparkDataConfig = GetSettings();
             }
 
-            SparkDataApi.SparkDataApi sparkDataApi = new SparkDataApi.SparkDataApi();
+            var sparkDataApi = new SparkDataApi();
             var credentials = sparkDataApi.NcoaGetCredentials( sparkDataConfig.SparkDataApiKey );
             var ncoaApi = new NcoaApi( credentials );
             if ( !ncoaApi.IsReportCreated( sparkDataConfig.NcoaSettings.CurrentReportKey ) )
@@ -299,7 +298,7 @@ namespace Rock.Utility
                 sparkDataConfig = GetSettings();
             }
 
-            SparkDataApi.SparkDataApi sparkDataApi = new SparkDataApi.SparkDataApi();
+            var sparkDataApi = new SparkDataApi();
             var credentials = sparkDataApi.NcoaGetCredentials( sparkDataConfig.SparkDataApiKey );
 
             var ncoaApi = new NcoaApi( credentials );

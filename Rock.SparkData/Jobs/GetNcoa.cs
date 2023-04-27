@@ -21,9 +21,9 @@ using System.Web;
 
 using Rock.Data;
 using Rock.Model;
-using Rock.Utility;
-using Rock.Utility.Settings.SparkData;
-using Rock.Utility.SparkDataApi;
+using Rock.SparkData.Api;
+using Rock.SparkData.Settings;
+using Rock.SparkData.Utility;
 
 namespace Rock.Jobs
 {

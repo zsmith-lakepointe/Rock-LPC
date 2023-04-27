@@ -14,7 +14,7 @@
 // limitations under the License.
 // </copyright>
 //
-namespace Rock.Utility.SparkDataApi
+namespace Rock.SparkData.Api
 {
     /// <summary>
     /// The Person and Address data used to pass to NCOA

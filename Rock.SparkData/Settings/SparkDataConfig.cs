@@ -18,7 +18,7 @@ using Newtonsoft.Json;
 
 using Rock.Extension;
 
-namespace Rock.Utility.Settings.SparkData
+namespace Rock.SparkData.Settings
 {
     /// <summary>
     /// Settings for Spark Data

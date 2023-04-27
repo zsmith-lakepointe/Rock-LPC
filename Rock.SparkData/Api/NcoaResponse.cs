@@ -14,27 +14,43 @@
 // limitations under the License.
 // </copyright>
 //
-namespace Rock.Utility.SparkDataApi
+namespace Rock.SparkData.Api
 {
     /// <summary>
-    /// Group name and transaction key structure
+    /// The NCOA server response
     /// </summary>
-    public class GroupNameTransactionKey
+    internal class NcoaResponse
     {
         /// <summary>
-        /// Gets or sets the group name.
+        /// Gets or sets the file name on the NCOA server.
         /// </summary>
         /// <value>
-        /// The group name.
+        /// The NCOA file name.
         /// </value>
-        public string GroupName { get; set; }
+        public string Name { get; set; }
 
         /// <summary>
-        /// Gets or sets the transaction key.
+        /// Gets or sets the status.
         /// </summary>
         /// <value>
-        /// The transaction key.
+        /// The status.
         /// </value>
-        public string TransactionKey { get; set; }
+        public string Status { get; set; }
+
+        /// <summary>
+        /// Gets or sets the identifier.
+        /// </summary>
+        /// <value>
+        /// The identifier.
+        /// </value>
+        public string Id { get; set; }
+
+        /// <summary>
+        /// Gets or sets the record count.
+        /// </summary>
+        /// <value>
+        /// The record count.
+        /// </value>
+        public int RecordCount { get; set; }
     }
 }

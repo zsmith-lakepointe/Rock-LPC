@@ -20,7 +20,7 @@ using Newtonsoft.Json;
 
 using Rock.Model;
 
-namespace Rock.Utility.SparkDataApi
+namespace Rock.SparkData.Api
 {
     /// <summary>
     /// The record that NCOA server returns.

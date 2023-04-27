@@ -18,7 +18,7 @@ using System;
 
 using Rock.Data;
 
-namespace Rock.Utility.Settings.SparkData
+namespace Rock.SparkData.Settings
 {
     /// <summary>
     /// Settings for NCOA

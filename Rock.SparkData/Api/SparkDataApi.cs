@@ -21,9 +21,9 @@ using System.Web.Http;
 
 using RestSharp;
 
-using Rock.Utility.Settings.SparkData;
+using Rock.SparkData.Settings;
 
-namespace Rock.Utility.SparkDataApi
+namespace Rock.SparkData.Api
 {
     /// <summary>
     ///API Calls to Spark Data server. 
