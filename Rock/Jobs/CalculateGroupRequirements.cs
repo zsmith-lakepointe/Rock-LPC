@@ -50,6 +50,209 @@ namespace Rock.Jobs
         /// <inheritdoc cref="RockJob.Execute()"/>
         public override void Execute()
         {
+            Execute_Old();
+        }
+        public void Execute_Old()
+        {
+            var rockContext = new RockContext();
+
+            // NOTE: This is required to allow the job to complete.
+            rockContext.Database.CommandTimeout = 300;
+
+            var groupRequirementService = new GroupRequirementService( rockContext );
+            var groupMemberRequirementService = new GroupMemberRequirementService( rockContext );
+            var groupMemberService = new GroupMemberService( rockContext );
+            var groupService = new GroupService( rockContext );
+
+            // we only need to consider group requirements that are based on a DataView or SQL
+            var groupRequirementQry = groupRequirementService.Queryable()
+                .Where( a => a.GroupRequirementType.RequirementCheckType != RequirementCheckType.Manual )
+                .AsNoTracking();
+
+            // Lists for warnings of skipped groups, workflows, or people from the job.
+            List<string> skippedGroupNames = new List<string>();
+            List<string> skippedWorkflowNames = new List<string>();
+            List<string> skippedPersonIds = new List<string>();
+            List<int> groupRequirementsCalculatedPersonIds = new List<int>();
+
+            foreach ( var groupRequirement in groupRequirementQry.Include( i => i.GroupRequirementType ).Include( a => a.GroupRequirementType.DataView ).Include( a => a.GroupRequirementType.WarningDataView ).AsNoTracking().ToList() )
+            {
+                // Only calculate group requirements for Active groups (if an inactive group becomes active again, this job will take care of re-calculating the requirements again).
+                var groupQuery = groupService.Queryable().Where( a => a.IsActive );
+                if ( groupRequirement.GroupId.HasValue )
+                {
+                    groupQuery = groupQuery.Where( g => g.Id == groupRequirement.GroupId );
+                }
+                else if ( groupRequirement.GroupTypeId.HasValue )
+                {
+                    groupQuery = groupQuery.Where( g => g.GroupTypeId == groupRequirement.GroupTypeId );
+                }
+                else
+                {
+                    // Shouldn't happen, but Group Requirement doesn't have a groupId or a GroupTypeId.
+                    break;
+                }
+
+                var groupIdNameQuery = groupQuery.Select( a => new { a.Id, a.Name } );
+
+                foreach ( var groupIdName in groupIdNameQuery )
+                {
+                    this.UpdateLastStatusMessage( $"Calculating group requirement '{groupRequirement.GroupRequirementType.Name}' for {groupIdName.Name}" );
+                    try
+                    {
+                        var currentDateTime = RockDateTime.Now;
+                        var qryGroupMemberRequirementsAlreadyOK = groupMemberRequirementService.Queryable().Where( a => a.GroupRequirementId == groupRequirement.Id && a.GroupMember.GroupId == groupIdName.Id );
+
+                        if ( groupRequirement.GroupRequirementType.CanExpire && groupRequirement.GroupRequirementType.ExpireInDays.HasValue )
+                        {
+                            // Group requirement can expire: don't recalculate members that already met the requirement within the expire days (unless they are flagged with a warning)
+                            var expireDaysCount = groupRequirement.GroupRequirementType.ExpireInDays.Value;
+                            qryGroupMemberRequirementsAlreadyOK = qryGroupMemberRequirementsAlreadyOK.Where( a => !a.RequirementWarningDateTime.HasValue && a.RequirementMetDateTime.HasValue && SqlFunctions.DateDiff( "day", a.RequirementMetDateTime, currentDateTime ) < expireDaysCount );
+                        }
+                        else
+                        {
+                            // No Expiration: don't recalculate members that already met the requirement
+                            qryGroupMemberRequirementsAlreadyOK = qryGroupMemberRequirementsAlreadyOK.Where( a => a.RequirementMetDateTime.HasValue );
+                        }
+
+                        // Only run the group requirements calculation on group members that are not inactive.
+                        var groupMemberQry = groupMemberService.Queryable().Where( gm => gm.GroupMemberStatus != GroupMemberStatus.Inactive );
+
+                        if ( groupRequirement.GroupId.HasValue )
+                        {
+                            groupMemberQry = groupMemberQry.Where( g => g.GroupId == groupRequirement.GroupId );
+                        }
+                        else if ( groupRequirement.GroupTypeId.HasValue )
+                        {
+                            groupMemberQry = groupMemberQry.Where( g => ( g.Group.GroupTypeId == groupRequirement.GroupTypeId ) && g.GroupId == groupIdName.Id );
+                        }
+                        else
+                        {
+                            // Should not happen, but break if Group Requirement doesn't have a GroupId or a GroupTypeId.
+                            break;
+                        }
+
+                        var groupMembersThatDoNotMeetRequirementsPersonQry = groupMemberQry.Where( a => !qryGroupMemberRequirementsAlreadyOK.Any( r => r.GroupMemberId == a.Id ) ).Select( a => a.Person );
+
+                        var personGroupRequirementStatuses = groupRequirement.PersonQueryableMeetsGroupRequirement( rockContext, groupMembersThatDoNotMeetRequirementsPersonQry, groupIdName.Id, groupRequirement.GroupRoleId ).ToList();
+
+                        foreach ( var personGroupRequirementStatus in personGroupRequirementStatuses )
+                        {
+                            try
+                            {
+                                // Use a fresh rockContext per result so that ChangeTracker doesn't get bogged down.
+                                using ( var rockContextUpdate = new RockContext() )
+                                {
+                                    groupRequirement.UpdateGroupMemberRequirementResult( rockContextUpdate, personGroupRequirementStatus.PersonId, groupIdName.Id, personGroupRequirementStatus.MeetsGroupRequirement );
+
+                                    bool shouldRunNotMetWorkflow = personGroupRequirementStatus.MeetsGroupRequirement == MeetsGroupRequirement.NotMet &&
+                                        groupRequirement.GroupRequirementType.ShouldAutoInitiateDoesNotMeetWorkflow &&
+                                        groupRequirement.GroupRequirementType.DoesNotMeetWorkflowTypeId.HasValue;
+                                    bool shouldRunWarningWorkflow = personGroupRequirementStatus.MeetsGroupRequirement == MeetsGroupRequirement.MeetsWithWarning &&
+                                        groupRequirement.GroupRequirementType.ShouldAutoInitiateWarningWorkflow &&
+                                        groupRequirement.GroupRequirementType.WarningWorkflowTypeId.HasValue;
+
+                                    if ( shouldRunNotMetWorkflow || shouldRunWarningWorkflow )
+                                    {
+                                        // Get the full name of the group member person to add to the workflow name.
+                                        var personForWorkflow = groupMembersThatDoNotMeetRequirementsPersonQry.FirstOrDefault( p => p.Id == personGroupRequirementStatus.PersonId )?.FullName;
+                                        var workflowName = personForWorkflow + " (" + groupRequirement.GroupRequirementType.Name + ")";
+
+                                        try
+                                        {
+                                            // Only one of these two should be possible by the logic of the Requirement Card.
+                                            if ( shouldRunNotMetWorkflow )
+                                            {
+                                                var workflowTypeCache = WorkflowTypeCache.Get( groupRequirement.GroupRequirementType.DoesNotMeetWorkflowTypeId.Value );
+                                                workflowName = $"({workflowTypeCache.Name}) {workflowName}";
+                                                LaunchRequirementWorkflow( rockContextUpdate, workflowTypeCache, workflowName, personGroupRequirementStatus, groupIdName.Id, shouldRunNotMetWorkflow, false );
+                                            }
+                                            else if ( shouldRunWarningWorkflow )
+                                            {
+                                                var workflowTypeCache = WorkflowTypeCache.Get( groupRequirement.GroupRequirementType.WarningWorkflowTypeId.Value );
+                                                workflowName = $"({workflowTypeCache.Name}) {workflowName}";
+                                                LaunchRequirementWorkflow( rockContextUpdate, workflowTypeCache, workflowName, personGroupRequirementStatus, groupIdName.Id, false, shouldRunWarningWorkflow );
+                                            }
+                                        }
+                                        catch ( Exception ex )
+                                        {
+                                            // Record workflow exception as warning or debug for RockLog instead of creating multiple exception logs and ending.
+                                            Log( RockLogLevel.Warning, $"Could not launch workflow: '{workflowName}' with group requirement: '{groupRequirement}' for person.Id: {personGroupRequirementStatus.PersonId} so the workflow was skipped." );
+                                            Log( RockLogLevel.Debug, ex, "Error when launching workflow for requirement." );
+
+                                            skippedWorkflowNames.Add( workflowName, true );
+                                        }
+                                    }
+
+                                    rockContextUpdate.SaveChanges();
+
+                                    // Add the calculated person's ID to the list (if it is not already there) after it was successfully calculated.
+                                    groupRequirementsCalculatedPersonIds.Add( personGroupRequirementStatus.PersonId, true );
+                                }
+                            }
+                            catch ( Exception ex )
+                            {
+                                // Record group member 'Person' exception as warning or debug for RockLog and continue job instead of adding to exception logs and ending.
+                                Log( RockLogLevel.Warning, $"Could not update group requirement result: '{groupRequirement}' for Person.Id: {personGroupRequirementStatus.PersonId} in Group: '{groupIdName.Name}' so the person was skipped." );
+                                Log( RockLogLevel.Debug, ex, "Error when calculating person for group requirement." );
+
+                                skippedPersonIds.Add( personGroupRequirementStatus.PersonId.ToString(), true );
+                            }
+                        }
+                    }
+                    catch ( Exception ex )
+                    {
+                        // Record group exception as warning or debug for RockLog and continue job instead of adding to exception logs and ending.
+                        Log( RockLogLevel.Warning, $"Could not update group when calculating group requirement: '{groupRequirement}' in Group '{groupIdName.Name}' (Group.Id: {groupIdName.Id}) so the group was skipped." );
+                        Log( RockLogLevel.Debug, ex, "Error when calculating group for requirement." );
+
+                        skippedGroupNames.Add( groupIdName.Name, true );
+                    }
+                }
+            }
+
+            JobSummary jobSummary = new JobSummary();
+            jobSummary.Successes.Add( $"{groupRequirementQry.Count()} group {"requirement".PluralizeIf( groupRequirementQry.Count() != 1 )} " +
+                $"re-calculated for {groupRequirementsCalculatedPersonIds.Distinct().Count()} " +
+                $"{"person".PluralizeIf( groupRequirementsCalculatedPersonIds.Distinct().Count() != 1 )}." );
+
+            bool jobHasWarnings = skippedGroupNames.Any() || skippedPersonIds.Any() || skippedWorkflowNames.Any();
+            if ( jobHasWarnings )
+            {
+                if ( skippedGroupNames.Any() )
+                {
+                    jobSummary.Warnings.Add( "Skipped groups: " );
+                    jobSummary.Warnings.AddRange( skippedGroupNames.Take( 10 ) );
+                }
+
+                if ( skippedPersonIds.Any() )
+                {
+                    jobSummary.Warnings.Add( "Skipped PersonIds: " );
+                    jobSummary.Warnings.Add( skippedPersonIds.Take( 10 ).ToList().AsDelimited( ", " ) );
+                }
+
+                if ( skippedWorkflowNames.Any() )
+                {
+                    jobSummary.Warnings.Add( "Skipped workflows: " );
+                    jobSummary.Warnings.AddRange( skippedWorkflowNames.Take( 10 ) );
+                }
+
+                jobSummary.Warnings.Add( "Enable 'Warning' or 'Debug' logging level for 'Jobs' domain in Rock Logs and re-run this job to get a full list of issues." );
+
+                string errorMessage = "Calculate Group Requirements completed with warnings";
+
+                this.Result = jobSummary.ToString();
+                throw new RockJobWarningException( errorMessage, new Exception( jobSummary.ToString() ) );
+            }
+            else
+            {
+                this.UpdateLastStatusMessage( jobSummary.ToString() );
+            }
+        }
+
+        /// <inheritdoc cref="RockJob.Execute()"/>
+        public void Execute_New()
+        {
             // Lists for warnings of skipped groups, workflows, or people from the job.
             List<string> skippedGroupNames = new List<string>();
             List<string> skippedWorkflowNames = new List<string>();

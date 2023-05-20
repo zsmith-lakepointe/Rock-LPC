@@ -16,6 +16,7 @@
 //
 
 using Rock.Data;
+using Rock.Web.Cache;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -74,6 +75,21 @@ namespace Rock.Model
         /// <exception cref="System.Exception">No dataview assigned to Group Requirement Type: " + this.GroupRequirementType.Name</exception>
         public IEnumerable<PersonGroupRequirementStatus> PersonQueryableMeetsGroupRequirement( RockContext rockContext, IQueryable<Person> personQry, int groupId, int? groupRoleId )
         {
+            return PersonQueryableMeetsGroupRequirement( rockContext, personQry, groupId, groupRoleId, null );
+        }
+
+        /// <summary>
+        /// Returns a list of each person and their GroupRequirement status for this group requirement
+        /// </summary>
+        /// <param name="rockContext">The rock context.</param>
+        /// <param name="personQry">The person qry.</param>
+        /// <param name="groupId">The group identifier.</param>
+        /// <param name="groupRoleId">The group role identifier.</param>
+        /// <param name="cache">An optional cache that stores Data View results to improve the efficiency of repeated calls to this method in the same processing action.</param>
+        /// <returns></returns>
+        /// <exception cref="System.Exception">No dataview assigned to Group Requirement Type: " + this.GroupRequirementType.Name</exception>
+        public IEnumerable<PersonGroupRequirementStatus> PersonQueryableMeetsGroupRequirement( RockContext rockContext, IQueryable<Person> personQry, int groupId, int? groupRoleId, DataViewResultsCache cache )
+        {
             if ( ( this.GroupRoleId != null ) && ( groupRoleId != null ) && ( this.GroupRoleId != groupRoleId ) )
             {
                 // If this GroupRequirement is for a specific group role, and the groupRole we are comparing is not the same role.
@@ -116,10 +132,26 @@ namespace Rock.Model
             if ( this.AppliesToDataViewId.HasValue )
             {
                 // If the Group Requirement has a Data View it applies to, apply it here.
-                var appliesToDataViewPersonService = new PersonService( rockContext );
-                var appliesToDataViewParamExpression = appliesToDataViewPersonService.ParameterExpression;
-                var appliesToDataViewWhereExpression = this.AppliesToDataView.GetExpression( appliesToDataViewPersonService, appliesToDataViewParamExpression );
-                var appliesToDataViewPersonIds = appliesToDataViewPersonService.Get( appliesToDataViewParamExpression, appliesToDataViewWhereExpression ).Select( p => p.Id );
+                IQueryable<int> appliesToDataViewPersonIds = null;
+
+                // Attempt to get the Data View result from the supplied cache, otherwise execute the query and cache the result.
+                var personIdSet = cache?.GetDataViewResult( this.AppliesToDataViewId.Value ) as HashSet<int>;
+                if ( personIdSet != null )
+                {
+                    appliesToDataViewPersonIds = personIdSet.AsQueryable();
+                }
+                else
+                { 
+                    var appliesToDataViewPersonService = new PersonService( rockContext );
+                    var appliesToDataViewParamExpression = appliesToDataViewPersonService.ParameterExpression;
+                    var appliesToDataViewWhereExpression = this.AppliesToDataView.GetExpression( appliesToDataViewPersonService, appliesToDataViewParamExpression );
+                    appliesToDataViewPersonIds = appliesToDataViewPersonService.Get( appliesToDataViewParamExpression, appliesToDataViewWhereExpression ).Select( p => p.Id );
+
+                    if ( cache != null )
+                    {
+                        cache.SetDataViewResult( this.AppliesToDataViewId.Value, appliesToDataViewPersonIds.ToHashSet() );
+                    }
+                }
 
                 // If the dataview does not contain anyone in the person query, give the member a "not applicable" status.
                 var notApplicablePersonQry = personQry.Where( p => !appliesToDataViewPersonIds.Contains( p.Id ) );
@@ -150,22 +182,62 @@ namespace Rock.Model
                 List<int> warningDataViewPersonIdList = null;
                 if ( this.GroupRequirementType.WarningDataViewId.HasValue )
                 {
-                    var warningDataViewWhereExpression = this.GroupRequirementType.WarningDataView.GetExpression( personService, paramExpression );
-                    warningDataViewPersonIdList = personService.Get( paramExpression, warningDataViewWhereExpression ).Where( a => personQry.Any( p => p.Id == a.Id ) ).Select( a => a.Id ).ToList();
+                    // Attempt to get the Data View result from the supplied cache, otherwise execute the query and cache the result.
+                    warningDataViewPersonIdList = cache?.GetDataViewResult( this.GroupRequirementType.WarningDataViewId.Value ) as List<int>;
+                    if ( warningDataViewPersonIdList == null )
+                    {
+                        var warningDataViewWhereExpression = this.GroupRequirementType.WarningDataView.GetExpression( personService, paramExpression );
+                        warningDataViewPersonIdList = personService.Get( paramExpression, warningDataViewWhereExpression ).Where( a => personQry.Any( p => p.Id == a.Id ) ).Select( a => a.Id ).ToList();
+                        if ( cache != null )
+                        {
+                            cache.SetDataViewResult( this.GroupRequirementType.WarningDataViewId.Value, warningDataViewPersonIdList );
+                        }
+                    }
                 }
 
                 if ( this.GroupRequirementType.DataViewId.HasValue )
                 {
-                    var dataViewWhereExpression = this.GroupRequirementType.DataView.GetExpression( personService, paramExpression );
-                    var dataViewQry = personService.Get( paramExpression, dataViewWhereExpression );
-                    if ( dataViewQry != null )
-                    {
-                        var personWithRequirementsQuery = from p in personQry
-                                                          join d in dataViewQry on p.Id equals d.Id into oj
-                                                          from d in oj.DefaultIfEmpty()
-                                                          select new { PersonId = p.Id, Included = d != null };
+                    //List<int> groupRequirementTypePersonIdList;
+                    var groupRequirementTypeDataViewId = this.GroupRequirementType.DataViewId.Value;
+                    // Attempt to get the Data View result from the supplied cache, otherwise execute the query and cache the result.
+                    var groupRequirementTypePersonIdList = cache?.GetDataViewResult( groupRequirementTypeDataViewId ) as HashSet<int>;
 
-                        var personWithRequirementsList = personWithRequirementsQuery.Select( p => new { PersonId = p.PersonId, Included = p.Included } ).ToList();
+                    if ( groupRequirementTypePersonIdList == null )
+                    {
+                        var dataViewWhereExpression = this.GroupRequirementType.DataView.GetExpression( personService, paramExpression );
+                        var dataViewQry = personService.Get( paramExpression, dataViewWhereExpression );
+
+DebugHelper.SQLLoggingStart();
+                        groupRequirementTypePersonIdList = dataViewQry.Select( p => p.Id ).ToHashSet();
+DebugHelper.SQLLoggingStop();
+                        if ( cache != null )
+                        {
+                            cache.SetDataViewResult( groupRequirementTypeDataViewId, groupRequirementTypePersonIdList.ToHashSet() );
+                        }
+                    }
+                    //if ( dataViewQry != null )
+                    //{
+
+                    var candidatePersonIdList = personQry.Select( p => p.Id )
+                        .ToHashSet();
+
+                    var personWithRequirementsList = candidatePersonIdList.Intersect( groupRequirementTypePersonIdList )
+                        .Select( p => new { PersonId = p, Included = false } )
+                        .Union( candidatePersonIdList.Except( groupRequirementTypePersonIdList ).Select( p => new { PersonId = p, Included = true } ) )
+                        .ToList();
+
+                    //.Where( p => groupRequirementTypePersonIdList.Contains( p.Id ) )
+                    //    .Select( p => new { PersonId = p.Id, Included = true } )
+                    //    .Union( personQry.Where( p => !groupRequirementTypePersonIdList.Contains( p.Id ) )
+                    //    .Select( p => new { PersonId = p.Id, Included = false } ) )
+                    //    .ToList();
+
+                        //var personWithRequirementsQuery = from p in personQry
+                        //                                  join d in dataViewQry on p.Id equals d.Id into oj
+                        //                                  from d in oj.DefaultIfEmpty()
+                        //                                  select new { PersonId = p.Id, Included = d != null };
+
+                        //var personWithRequirementsList = personWithRequirementsQuery.Select( p => new { PersonId = p.PersonId, Included = p.Included } ).ToList();
 
                         var result = personWithRequirementsList.Select( a =>
                         {
@@ -224,7 +296,7 @@ namespace Rock.Model
                         }
 
                         return statusResults;
-                    }
+                    //}
                 }
                 else
                 {
@@ -536,5 +608,24 @@ namespace Rock.Model
         }
 
         #endregion
+    }
+
+    public class DataViewResultsCache
+    {
+        private string _cacheRegion = "DataViewCache";
+         
+        public object GetDataViewResult( int dataViewId )
+        {
+            var key = $"DataViewId_{dataViewId}";
+            var value = RockCache.Get( key, _cacheRegion );
+            return value;
+        }
+
+        public void SetDataViewResult( int dataViewId, object result )
+        {
+            var key = $"DataViewId_{dataViewId}";
+            RockCache.AddOrUpdate( key, _cacheRegion, result );
+        }
+
     }
 }
