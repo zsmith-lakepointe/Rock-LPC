@@ -37,6 +37,15 @@ namespace Rock.Tests.Integration
         [AssemblyInitialize]
         public static void AssemblyInitialize( TestContext context )
         {
+            Initialize( context );
+        }
+
+        /// <summary>
+        /// Initialize the Rock application environment for integration testing.
+        /// </summary>
+        /// <param name="context">The context.</param>
+        public static void Initialize( TestContext context )
+        {
             Rock.AssemblyInitializer.Initialize();
 
             LogHelper.SetTestContext( context );
@@ -53,7 +62,7 @@ namespace Rock.Tests.Integration
                 // Set properties of the database manager from the test context.
                 TestDatabaseHelper.ConnectionString = ConfigurationManager.ConnectionStrings["RockContext"].ConnectionString;
                 TestDatabaseHelper.DatabaseCreatorKey = context.Properties["DatabaseCreatorKey"].ToStringSafe();
-                TestDatabaseHelper.DatabaseRefreshStrategy = context.Properties["DatabaseRefreshStrategy"].ToStringSafe().ConvertToEnum<DatabaseRefreshStrategySpecifier>(DatabaseRefreshStrategySpecifier.Verified);
+                TestDatabaseHelper.DatabaseRefreshStrategy = context.Properties["DatabaseRefreshStrategy"].ToStringSafe().ConvertToEnum<DatabaseRefreshStrategySpecifier>( DatabaseRefreshStrategySpecifier.Never );
                 TestDatabaseHelper.SampleDataUrl = context.Properties["SampleDataUrl"].ToStringSafe();
 
                 TestDatabaseHelper.InitializeTestDatabase();
@@ -95,6 +104,7 @@ namespace Rock.Tests.Integration
 
             LogHelper.Log( $"Initialization completed." );
         }
+
     }
 
     [TestClass]
