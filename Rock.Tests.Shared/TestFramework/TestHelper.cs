@@ -22,12 +22,18 @@ namespace Rock.Tests.Shared
 {
     public static class TestHelper
     {
+        public const string DefaultTaskName = "Main Test Action";
+
         static TestHelper()
         {
+            // Add the console as the default trace output.
             Trace.Listeners.Add( new TextWriterTraceListener( Console.Out ) );
         }
 
-
+        /// <summary>
+        /// Write a message to the current trace output.
+        /// </summary>
+        /// <param name="message"></param>
         public static void Log( string message )
         {
             var timestamp = DateTime.Now.ToString( "HH:mm:ss.fff" );
@@ -42,7 +48,28 @@ namespace Rock.Tests.Shared
         /// Starts or restarts a named timer.
         /// </summary>
         /// <param name="name"></param>
-        public static void StartTimer( string name )
+        public static void ExecuteWithTimer( string message, Action testMethod )
+        {
+            StartTimer();
+            try
+            {
+                testMethod();
+            }
+            catch( Exception ex )
+            {
+                Log( $"** ERROR:\n{ex.Message}" );
+            }
+            finally
+            {
+                EndTimer();
+            }
+        }
+
+        /// <summary>
+        /// Starts or restarts a named timer.
+        /// </summary>
+        /// <param name="name"></param>
+        public static void StartTimer( string name = DefaultTaskName )
         {
             Stopwatch stopwatch;
             if ( _stopwatches.ContainsKey( name ) )
@@ -53,16 +80,16 @@ namespace Rock.Tests.Shared
             {
                 stopwatch = new Stopwatch();
                 _stopwatches[name] = stopwatch;
-                Debug.Print( $"** START: {name}" );
+                Log( $"** START: {name}" );
             }
             stopwatch.Start();
         }
 
         /// <summary>
-        /// Stops the named timer.
+        /// Pauses the named timer.
         /// </summary>
         /// <param name="name"></param>
-        public static void StopTimer( string name )
+        public static void PauseTimer( string name = DefaultTaskName )
         {
             if ( !_stopwatches.ContainsKey( name ) )
             {
@@ -77,7 +104,7 @@ namespace Rock.Tests.Shared
         /// Finalizes the named timer and prints the elapsed time to debug output.
         /// </summary>
         /// <param name="name"></param>
-        public static void EndTimer( string name )
+        public static void EndTimer( string name = DefaultTaskName )
         {
             if ( !_stopwatches.ContainsKey( name ) )
             {
@@ -88,7 +115,7 @@ namespace Rock.Tests.Shared
             stopwatch.Stop();
             _stopwatches.Remove( name );
 
-            Debug.Print( $"**   END: {name} ({stopwatch.ElapsedMilliseconds}ms)" );
+            Log( $"**   END: {name} ({stopwatch.ElapsedMilliseconds}ms)" );
         }
 
         #endregion

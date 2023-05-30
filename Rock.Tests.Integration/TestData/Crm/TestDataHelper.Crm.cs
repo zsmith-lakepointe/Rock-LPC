@@ -49,6 +49,8 @@ namespace Rock.Tests.Integration
                 return pages;
             }
 
+            #region Group Actions
+
             public class AddGroupArgs
             {
                 //public RockContext DataContext { get; set; }
@@ -63,22 +65,48 @@ namespace Rock.Tests.Integration
 
             }
 
+            public class AddGroupActionResult
+            {
+                public Group Group;
+                public int AffectedItemCount;
+            }
+
             /// <summary>
             /// Add a new Group.
             /// </summary>
             /// <param name="args"></param>
             /// <returns></returns>
-            public static Group AddGroup( RockContext rockContext, AddGroupArgs args )
+            public static AddGroupActionResult AddGroup( AddGroupArgs args )
             {
+                var result = new AddGroupActionResult();
                 Group group = null;
 
+                // Use a new context because the Group will be immediately persisted.
+                var rockContext = new RockContext();
                 rockContext.WrapTransaction( () =>
                 {
-                    var groupTypeService = new GroupTypeService( rockContext );
-                    var groupType = groupTypeService.Get( args.GroupTypeIdentifier );
-                    var campus = CampusCache.Get( args.CampusIdentifier, allowIntegerIdentifier: true );
                     var groupService = new GroupService( rockContext );
-                    var parentGroup = groupService.Get( args.ParentGroupIdentifier );
+                    var groupTypeService = new GroupTypeService( rockContext );
+                    var groupType = groupTypeService.Queryable().GetByIdentifierOrThrow( args.GroupTypeIdentifier );
+
+                    // Get optional parent Group.
+                    Guid? parentGroupGuid = null;
+                    if ( !string.IsNullOrWhiteSpace( args.ParentGroupIdentifier ) )
+                    {
+                        parentGroupGuid = groupService.Queryable()
+                            .GetByIdentifierOrThrow( args.ParentGroupIdentifier )
+                            .Guid;
+                    }
+
+                    // Get optional Campus.
+                    int? campusId = null;
+                    if ( !string.IsNullOrWhiteSpace( args.CampusIdentifier ) )
+                    {
+                        var campusService = new CampusService( rockContext );
+                        campusId = campusService.Queryable()
+                            .GetByIdentifier( args.CampusIdentifier )
+                            .Id;
+                    }
 
                     var groupGuid = args.GroupGuid.AsGuidOrNull();
 
@@ -98,10 +126,10 @@ namespace Rock.Tests.Integration
 
                     group = GroupService.SaveNewGroup( rockContext,
                         groupType.Id,
-                        parentGroup?.Guid,
+                        parentGroupGuid,
                         args.GroupName,
                         args.GroupMembers ?? new List<GroupMember>(),
-                        campus?.Id,
+                        campusId,
                         savePersonAttributes: true );
 
                     group.Guid = args.GroupGuid.AsGuidOrNull() ?? Guid.NewGuid();
@@ -110,62 +138,9 @@ namespace Rock.Tests.Integration
                     rockContext.SaveChanges();
                 } );
 
-                return group;
-            }
-
-            public class AddGroupMemberArgs
-            {
-                //public RockContext DataContext { get; set; }
-                public bool ReplaceIfExists { get; set; }
-                public string ForeignKey { get; set; }
-                public string GroupIdentifier { get; set; }
-                public string PersonIdentifier { get; set; }
-                public string GroupRoleIdentifier { get; set; }
-            }
-
-            public static GroupMember AddGroupMember( RockContext rockContext, AddGroupMemberArgs args )
-            {
-                GroupMember groupMember = null;
-
-                rockContext.WrapTransaction( () =>
-                {
-                    var groupService = new GroupService( rockContext );
-                    var groupRoleService = new GroupService( rockContext );
-
-                    var group = groupService.Get( args.GroupIdentifier );
-                    AssertRockEntityIsNotNull( group, args.GroupIdentifier );
-
-                    var groupId = args.GroupIdentifier.AsInteger();
-                    var groupGuid = args.GroupIdentifier.AsGuid();
-
-                    var roleId = args.GroupRoleIdentifier.AsIntegerOrNull() ?? 0;
-                    var roleGuid = args.GroupRoleIdentifier.AsGuidOrNull();
-
-                    var groupTypeRoleService = new GroupTypeRoleService( rockContext );
-                    var role = groupTypeRoleService.Queryable()
-                        .FirstOrDefault( r => ( r.GroupTypeId == group.GroupTypeId )
-                            && ( r.Id == roleId || r.Guid == roleGuid || r.Name == args.GroupRoleIdentifier ) );
-                    AssertRockEntityIsNotNull( role, args.GroupRoleIdentifier );
-
-                    var personService = new PersonService( rockContext );
-                    var person = personService.Get( args.PersonIdentifier );
-                    AssertRockEntityIsNotNull( person, args.PersonIdentifier );
-
-                    groupMember = new GroupMember
-                    {
-                        ForeignKey = args.ForeignKey,
-                        GroupId = group.Id,
-                        PersonId = person.Id,
-                        GroupRoleId = role.Id
-                    };
-
-                    var groupMemberService = new GroupMemberService( rockContext );
-                    groupMemberService.Add( groupMember );
-
-                    rockContext.SaveChanges();
-                } );
-
-                return groupMember;
+                result.Group = group;
+                result.AffectedItemCount = ( group == null ? 0 : 1 );
+                return result;
             }
 
             public static bool DeleteGroup( RockContext rockContext, string groupIdentifier )
@@ -182,6 +157,267 @@ namespace Rock.Tests.Integration
 
                 return true;
             }
+
+            #endregion
+
+            #region Group Member Actions
+
+            public class AddGroupMemberArgs
+            {
+                public bool ReplaceIfExists { get; set; }
+                public string ForeignKey { get; set; }
+                public string GroupIdentifier { get; set; }
+                public string PersonIdentifiers { get; set; }
+                public string GroupRoleIdentifier { get; set; }
+            }
+
+            public static List<GroupMember> AddGroupMembers( RockContext rockContext, AddGroupMemberArgs args )
+            {
+                var groupMembers = new List<GroupMember>();
+
+                rockContext.WrapTransaction( () =>
+                {
+                    var groupService = new GroupService( rockContext );
+                    var groupRoleService = new GroupService( rockContext );
+
+                    var group = groupService.Get( args.GroupIdentifier );
+                    AssertRockEntityIsNotNull( group, args.GroupIdentifier );
+
+                    var groupId = group.Id;
+                    var groupGuid = group.Guid;
+                    var groupTypeId = group.GroupTypeId;
+
+                    var roleId = args.GroupRoleIdentifier.AsIntegerOrNull() ?? 0;
+                    var roleGuid = args.GroupRoleIdentifier.AsGuidOrNull();
+
+                    var groupTypeRoleService = new GroupTypeRoleService( rockContext );
+                    var role = groupTypeRoleService.Queryable()
+                        .FirstOrDefault( r => ( r.GroupTypeId == groupTypeId )
+                            && ( r.Id == roleId || r.Guid == roleGuid || r.Name == args.GroupRoleIdentifier ) );
+                    AssertRockEntityIsNotNull( role, args.GroupRoleIdentifier );
+
+                    var personService = new PersonService( rockContext );
+                    var groupMemberService = new GroupMemberService( rockContext );
+
+                    var personIdentifierList = args.PersonIdentifiers.SplitDelimitedValues( "," );
+                    foreach ( var personIdentifier in personIdentifierList )
+                    {
+                        var person = personService.Get( personIdentifier );
+                        AssertRockEntityIsNotNull( person, personIdentifier );
+
+                        var groupMember = new GroupMember
+                        {
+                            ForeignKey = args.ForeignKey,
+                            GroupId = groupId,
+                            GroupTypeId = groupTypeId,
+                            PersonId = person.Id,
+                            GroupRoleId = role.Id
+                        };
+
+                        groupMemberService.Add( groupMember );
+                        groupMembers.Add( groupMember );
+                    }
+                    //rockContext.SaveChanges( disablePrePostProcessing:true );
+                } );
+
+                return groupMembers;
+            }
+
+            #endregion
+
+            #region Group Requirements
+
+            public class AddGroupRequirementArgs
+            {
+                public bool ReplaceIfExists { get; set; }
+                public string ForeignKey { get; set; }
+                public string GroupIdentifier { get; set; }
+                //public string PersonIdentifier { get; set; }
+
+                public string GroupRoleIdentifier { get; set; }
+                public string GroupRequirementTypeIdentifier { get; set; }
+
+                public bool MustMeetRequirementToAddMember { get; set; }
+
+                public bool AllowLeadersToOverride { get; set; }
+
+                public AppliesToAgeClassification? AppliesToAgeClassification { get; set; }
+                public string AppliesToDataViewIdentifier { get; set; }
+
+                public DateTime? DueDate { get; set; }
+            }
+
+            public static GroupRequirement AddGroupRequirement( RockContext rockContext, AddGroupRequirementArgs args )
+            {
+                GroupRequirement groupRequirement = null;
+
+                //rockContext.WrapTransaction( () =>
+                //{
+                    groupRequirement = AddGroupRequirementInternal( rockContext, args );
+                //} );
+
+                return groupRequirement;
+            }
+
+            private static GroupRequirement AddGroupRequirementInternal( RockContext rockContext, AddGroupRequirementArgs args )
+            {
+                GroupRequirement groupRequirement = null;
+
+                //rockContext.WrapTransaction( () =>
+                //{
+                    groupRequirement = new GroupRequirement();
+                    groupRequirement.Guid = Guid.NewGuid();
+
+                    // Requirement Type
+                    var requirementTypeService = new GroupRequirementTypeService( rockContext );
+                    var groupRequirementType = requirementTypeService.AsNoFilter() //.Queryable()
+                        .GetByIdentifierOrThrow( args.GroupRequirementTypeIdentifier );
+                    groupRequirement.GroupRequirementTypeId = groupRequirementType.Id;
+
+                    try
+                    {
+                    // Group
+                    DebugHelper.SQLLoggingStart();
+                        var groupService = new GroupService( rockContext );
+                        var group = groupService.AsNoFilter()
+                            .GetByIdentifierOrThrow( args.GroupIdentifier );
+                        groupRequirement.GroupId = group.Id;
+                    
+                }
+                    catch (Exception ex)
+                    {
+                        int i = 0;
+                    }
+                DebugHelper.SQLLoggingStop();
+
+                // Group Role
+                if ( !string.IsNullOrWhiteSpace( args.GroupRoleIdentifier ) )
+                    {
+                        var groupTypeRoleService = new GroupTypeRoleService( rockContext );
+                        var groupRole = groupTypeRoleService.Queryable().GetByIdentifierOrThrow( args.GroupRoleIdentifier );
+                        groupRequirement.GroupRoleId = groupRole.Id;
+                    }
+
+                    // Applies To
+                    if ( args.AppliesToAgeClassification != null )
+                    {
+                        groupRequirement.AppliesToAgeClassification = args.AppliesToAgeClassification.Value;
+                    }
+
+                    if ( !string.IsNullOrWhiteSpace( args.AppliesToDataViewIdentifier ) )
+                    {
+                        var dataService = new DataViewService( rockContext );
+                        var dataView = dataService.Queryable().GetByIdentifier( args.AppliesToDataViewIdentifier );
+                        groupRequirement.AppliesToDataViewId = dataView.Id;
+                    }
+
+                    // Additional Settings
+                    groupRequirement.MustMeetRequirementToAddMember = args.MustMeetRequirementToAddMember;
+                    groupRequirement.AllowLeadersToOverride = args.AllowLeadersToOverride;
+
+                    if ( groupRequirementType.DueDateType == DueDateType.ConfiguredDate )
+                    {
+                        groupRequirement.DueDateStaticDate = args.DueDate;
+                    }
+
+                    //if ( groupRequirement.GroupRequirementType.DueDateType == DueDateType.GroupAttribute )
+                    //{
+                    //    // Set this due date attribute if it exists.
+                    //    var groupDueDateAttributes = AttributeCache.AllForEntityType<Group>().Where( a => a.Id == ddlDueDateGroupAttribute.SelectedValue.AsIntegerOrNull() );
+                    //    if ( groupDueDateAttributes.Any() )
+                    //    {
+                    //        groupRequirement.DueDateAttributeId = groupDueDateAttributes.First().Id;
+                    //    }
+                    //}
+
+                    // Make sure we aren't adding a duplicate group requirement (same group requirement type and role)
+                    //var duplicateGroupRequirement = this.GroupRequirementsState.Any( a =>
+                    //    a.GroupRequirementTypeId == groupRequirement.GroupRequirementTypeId
+                    //    && a.GroupRoleId == groupRequirement.GroupRoleId
+                    //    && a.Guid != groupRequirement.Guid );
+
+                    //if ( duplicateGroupRequirement )
+                    //{
+                    //    nbDuplicateGroupRequirement.Text = string.Format(
+                    //        "This group already has a group requirement of {0} {1}",
+                    //        groupRequirement.GroupRequirementType.Name,
+                    //        groupRequirement.GroupRoleId.HasValue ? "for group role " + groupRequirement.GroupRole.Name : string.Empty );
+                    //    nbDuplicateGroupRequirement.Visible = true;
+                    //    this.GroupRequirementsState.Remove( groupRequirement );
+                    //    return;
+                    //}
+
+
+                    var groupRequirementService = new GroupRequirementService( rockContext );
+                    groupRequirementService.Add( groupRequirement );
+
+                    //rockContext.SaveChanges();
+                //} );
+
+                return groupRequirement;
+            }
+
+            #endregion
+
+            /*
+            var groupRequirement = this.GroupRequirementsState.FirstOrDefault( a => a.Guid == groupRequirementGuid );
+                        if ( groupRequirement == null )
+                        {
+                            groupRequirement = new GroupRequirement();
+                            groupRequirement.Guid = Guid.NewGuid();
+                            this.GroupRequirementsState.Add( groupRequirement );
+                        }
+
+                        groupRequirement.GroupRequirementTypeId = ddlGroupRequirementType.SelectedValue.AsInteger();
+                        groupRequirement.GroupRequirementType = new GroupRequirementTypeService( rockContext ).Get( groupRequirement.GroupRequirementTypeId );
+                        groupRequirement.GroupRoleId = grpGroupRequirementGroupRole.GroupRoleId;
+                        groupRequirement.MustMeetRequirementToAddMember = cbMembersMustMeetRequirementOnAdd.Checked;
+                        if ( groupRequirement.GroupRoleId.HasValue )
+                        {
+                            groupRequirement.GroupRole = new GroupTypeRoleService( rockContext ).Get( groupRequirement.GroupRoleId.Value );
+                        }
+                        else
+                        {
+                            groupRequirement.GroupRole = null;
+                        }
+
+                        groupRequirement.AppliesToAgeClassification = rblAppliesToAgeClassification.SelectedValue.ConvertToEnum<AppliesToAgeClassification>();
+                        groupRequirement.AppliesToDataViewId = dvpAppliesToDataView.SelectedValueAsId();
+                        groupRequirement.AllowLeadersToOverride = cbAllowLeadersToOverride.Checked;
+
+                        if ( groupRequirement.GroupRequirementType.DueDateType == DueDateType.ConfiguredDate )
+                        {
+                            groupRequirement.DueDateStaticDate = dpDueDate.SelectedDate;
+                        }
+
+                        if ( groupRequirement.GroupRequirementType.DueDateType == DueDateType.GroupAttribute )
+                        {
+                            // Set this due date attribute if it exists.
+                            var groupDueDateAttributes = AttributeCache.AllForEntityType<Group>().Where( a => a.Id == ddlDueDateGroupAttribute.SelectedValue.AsIntegerOrNull() );
+                            if ( groupDueDateAttributes.Any() )
+                            {
+                                groupRequirement.DueDateAttributeId = groupDueDateAttributes.First().Id;
+                            }
+                        }
+
+                        // Make sure we aren't adding a duplicate group requirement (same group requirement type and role)
+                        var duplicateGroupRequirement = this.GroupRequirementsState.Any( a =>
+                            a.GroupRequirementTypeId == groupRequirement.GroupRequirementTypeId
+                            && a.GroupRoleId == groupRequirement.GroupRoleId
+                            && a.Guid != groupRequirement.Guid );
+
+                        if ( duplicateGroupRequirement )
+                        {
+                            nbDuplicateGroupRequirement.Text = string.Format(
+                                "This group already has a group requirement of {0} {1}",
+                                groupRequirement.GroupRequirementType.Name,
+                                groupRequirement.GroupRoleId.HasValue ? "for group role " + groupRequirement.GroupRole.Name : string.Empty );
+                            nbDuplicateGroupRequirement.Visible = true;
+                            this.GroupRequirementsState.Remove( groupRequirement );
+                            return;
+                        }
+                        else
+             */
         }
     }
 }

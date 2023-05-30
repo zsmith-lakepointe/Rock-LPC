@@ -69,9 +69,12 @@ namespace Rock.Tests.Shared
 
         public static class DataViews
         {
+
             // A DataView that returns all of the locations outside the state of Arizona.
             public static string LocationsOutsideArizona = "14B1854D-4F45-4F4D-AFFF-C0A1E06353DF";
             public static string LocationsInsideArizona = "C39B353E-3E44-42C0-9D85-2107FB5E8C04";
+
+            public static string AdultMembersAndAttendees = "0da5f82f-cffe-45af-b725-49b3899a1f72";
         }
 
         public static class Groups
@@ -82,6 +85,8 @@ namespace Rock.Tests.Shared
             public static string SmallGroupDeckerGuid = "62dc3753-01d5-48b5-b22d-d2825d92900b";
             public static string SmallGroupAlishaMarbleGuid = "10b60f8d-0f23-4faa-b35f-9a5f19f5f995";
             public static string SmallGroupMarbleGuid = "90b2ceda-ae3a-4c10-a2e1-b987020379ad";
+
+            public static string GroupRequirementBackgroundCheckGuid = "1c21c346-a861-4a9a-bd6d-baa7d92419d5";
         }
 
         public static class TestPeople
