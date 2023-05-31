@@ -16,6 +16,7 @@
 //
 
 using Rock.Data;
+using Rock.Web.Cache;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -74,6 +75,21 @@ namespace Rock.Model
         /// <exception cref="System.Exception">No dataview assigned to Group Requirement Type: " + this.GroupRequirementType.Name</exception>
         public IEnumerable<PersonGroupRequirementStatus> PersonQueryableMeetsGroupRequirement( RockContext rockContext, IQueryable<Person> personQry, int groupId, int? groupRoleId )
         {
+            return PersonQueryableMeetsGroupRequirement( rockContext, personQry, groupId, groupRoleId, null );
+        }
+
+        /// <summary>
+        /// Returns a list of each person and their GroupRequirement status for this group requirement
+        /// </summary>
+        /// <param name="rockContext">The rock context.</param>
+        /// <param name="personQry">The person qry.</param>
+        /// <param name="groupId">The group identifier.</param>
+        /// <param name="groupRoleId">The group role identifier.</param>
+        /// <param name="dataViewCache">An optional cache that stores Data View results to improve the efficiency of repeated calls to this method in the same processing action.</param>
+        /// <returns></returns>
+        /// <exception cref="System.Exception">No dataview assigned to Group Requirement Type: " + this.GroupRequirementType.Name</exception>
+        internal IEnumerable<PersonGroupRequirementStatus> PersonQueryableMeetsGroupRequirement( RockContext rockContext, IQueryable<Person> personQry, int groupId, int? groupRoleId, DataViewResultsCache dataViewCache )
+        {
             if ( ( this.GroupRoleId != null ) && ( groupRoleId != null ) && ( this.GroupRoleId != groupRoleId ) )
             {
                 // If this GroupRequirement is for a specific group role, and the groupRole we are comparing is not the same role.
@@ -116,10 +132,21 @@ namespace Rock.Model
             if ( this.AppliesToDataViewId.HasValue )
             {
                 // If the Group Requirement has a Data View it applies to, apply it here.
-                var appliesToDataViewPersonService = new PersonService( rockContext );
-                var appliesToDataViewParamExpression = appliesToDataViewPersonService.ParameterExpression;
-                var appliesToDataViewWhereExpression = this.AppliesToDataView.GetExpression( appliesToDataViewPersonService, appliesToDataViewParamExpression );
-                var appliesToDataViewPersonIds = appliesToDataViewPersonService.Get( appliesToDataViewParamExpression, appliesToDataViewWhereExpression ).Select( p => p.Id );
+                IQueryable<int> appliesToDataViewPersonIds = null;
+
+                if ( dataViewCache != null )
+                {
+                    // Get the Data View result from the supplied cache.
+                    appliesToDataViewPersonIds = dataViewCache.GetDataViewResultQueryable( this.AppliesToDataViewId.Value, rockContext );
+                }
+                else
+                { 
+                    // Get the Data View result.
+                    var appliesToDataViewPersonService = new PersonService( rockContext );
+                    var appliesToDataViewParamExpression = appliesToDataViewPersonService.ParameterExpression;
+                    var appliesToDataViewWhereExpression = this.AppliesToDataView.GetExpression( appliesToDataViewPersonService, appliesToDataViewParamExpression );
+                    appliesToDataViewPersonIds = appliesToDataViewPersonService.Get( appliesToDataViewParamExpression, appliesToDataViewWhereExpression ).Select( p => p.Id );
+                }
 
                 // If the dataview does not contain anyone in the person query, give the member a "not applicable" status.
                 var notApplicablePersonQry = personQry.Where( p => !appliesToDataViewPersonIds.Contains( p.Id ) );
@@ -147,84 +174,105 @@ namespace Rock.Model
             {
                 var personService = new PersonService( rockContext );
                 var paramExpression = personService.ParameterExpression;
-                List<int> warningDataViewPersonIdList = null;
+
+                IQueryable<int> warningDataViewPersonIdList = null;
                 if ( this.GroupRequirementType.WarningDataViewId.HasValue )
                 {
-                    var warningDataViewWhereExpression = this.GroupRequirementType.WarningDataView.GetExpression( personService, paramExpression );
-                    warningDataViewPersonIdList = personService.Get( paramExpression, warningDataViewWhereExpression ).Where( a => personQry.Any( p => p.Id == a.Id ) ).Select( a => a.Id ).ToList();
+                    if ( dataViewCache != null )
+                    {
+                        // Get the Data View result from the supplied cache.
+                        warningDataViewPersonIdList = dataViewCache.GetDataViewResultQueryable( this.GroupRequirementType.WarningDataViewId.Value, rockContext );
+                    }
+                    else
+                    {
+                        // Get the Data View result.
+                        var warningDataViewWhereExpression = this.GroupRequirementType.WarningDataView.GetExpression( personService, paramExpression );
+                        warningDataViewPersonIdList = personService.Get( paramExpression, warningDataViewWhereExpression ).Where( a => personQry.Any( p => p.Id == a.Id ) ).Select( a => a.Id );
+                    }
                 }
 
                 if ( this.GroupRequirementType.DataViewId.HasValue )
                 {
-                    var dataViewWhereExpression = this.GroupRequirementType.DataView.GetExpression( personService, paramExpression );
-                    var dataViewQry = personService.Get( paramExpression, dataViewWhereExpression );
-                    if ( dataViewQry != null )
+                    var groupRequirementTypeDataViewId = this.GroupRequirementType.DataViewId.Value;
+
+                    IQueryable<int> groupRequirementTypePersonIdList;
+                    if ( dataViewCache != null )
                     {
-                        var personWithRequirementsQuery = from p in personQry
-                                                          join d in dataViewQry on p.Id equals d.Id into oj
-                                                          from d in oj.DefaultIfEmpty()
-                                                          select new { PersonId = p.Id, Included = d != null };
+                        // Get the Data View result from the supplied cache.
+                        groupRequirementTypePersonIdList = dataViewCache.GetDataViewResultQueryable( groupRequirementTypeDataViewId, rockContext );
+                    }
+                    else
+                    {
+                        // Get the Data View result.
+                        var dataViewWhereExpression = this.GroupRequirementType.DataView.GetExpression( personService, paramExpression );
+                        groupRequirementTypePersonIdList = personService.Get( paramExpression, dataViewWhereExpression ).Select( p => p.Id );
+                    }
 
-                        var personWithRequirementsList = personWithRequirementsQuery.Select( p => new { PersonId = p.PersonId, Included = p.Included } ).ToList();
+                    var candidatePersonIdList = personQry.Select( p => p.Id )
+                        .ToHashSet();
 
-                        var result = personWithRequirementsList.Select( a =>
-                        {
-                            GroupMemberRequirementService groupMemberRequirementService = new GroupMemberRequirementService( rockContext );
+                    var personWithRequirementsList = candidatePersonIdList.Intersect( groupRequirementTypePersonIdList )
+                        .Select( p => new { PersonId = p, Included = false } )
+                        .Union( candidatePersonIdList.Except( groupRequirementTypePersonIdList ).Select( p => new { PersonId = p, Included = true } ) )
+                        .ToList();
+
+                    var result = personWithRequirementsList.Select( a =>
+                    {
+                        GroupMemberRequirementService groupMemberRequirementService = new GroupMemberRequirementService( rockContext );
                             
-                            // Get the nullable group member requirement ID based on the PersonId, GroupRequirementId, GroupId, and GroupRoleId.
-                            int? groupMemberRequirementId = groupMemberRequirementService.GetIdByPersonIdRequirementIdGroupIdGroupRoleId( a.PersonId, this.Id, groupId, groupRoleId );
-                            var personGroupRequirementStatus = new PersonGroupRequirementStatus
-                            {
-                                PersonId = a.PersonId,
-                                GroupRequirement = this,
-                                GroupMemberRequirementId = groupMemberRequirementId,
-                            };
+                        // Get the nullable group member requirement ID based on the PersonId, GroupRequirementId, GroupId, and GroupRoleId.
+                        int? groupMemberRequirementId = groupMemberRequirementService.GetIdByPersonIdRequirementIdGroupIdGroupRoleId( a.PersonId, this.Id, groupId, groupRoleId );
+                        var personGroupRequirementStatus = new PersonGroupRequirementStatus
+                        {
+                            PersonId = a.PersonId,
+                            GroupRequirement = this,
+                            GroupMemberRequirementId = groupMemberRequirementId,
+                        };
 
-                            var hasWarning = warningDataViewPersonIdList?.Contains( a.PersonId ) == true;
+                        var hasWarning = warningDataViewPersonIdList?.Contains( a.PersonId ) == true;
 
-                            if ( a.Included )
+                        if ( a.Included )
+                        {
+                            if ( hasWarning )
                             {
-                                if ( hasWarning )
-                                {
-                                    personGroupRequirementStatus.MeetsGroupRequirement = MeetsGroupRequirement.MeetsWithWarning;
-                                }
-                                else
-                                {
-                                    personGroupRequirementStatus.MeetsGroupRequirement = MeetsGroupRequirement.Meets;
-                                    personGroupRequirementStatus.RequirementWarningDateTime = null;
-                                }
+                                personGroupRequirementStatus.MeetsGroupRequirement = MeetsGroupRequirement.MeetsWithWarning;
                             }
                             else
                             {
-                                var possibleDueDate = CalculateGroupMemberRequirementDueDate(
-                                    this.GroupRequirementType.DueDateType,
-                                    this.GroupRequirementType.DueDateOffsetInDays,
-                                    this.DueDateStaticDate,
-                                    this.DueDateAttributeId.HasValue ? new AttributeValueService( rockContext ).GetByAttributeIdAndEntityId( this.DueDateAttributeId.Value, this.GroupId )?.Value.AsDateTime() ?? null : null,
-                                    new GroupService( rockContext ).Get( groupId ).Members.Where( m => m.PersonId == a.PersonId && m.GroupRoleId == groupRoleId ).Select( m => m.DateTimeAdded ).DefaultIfEmpty( null ).FirstOrDefault() );
-
-                                bool isRequirementDue = possibleDueDate.HasValue ? possibleDueDate <= RockDateTime.Now : true;
-
-                                if ( !isRequirementDue )
-                                {
-                                    personGroupRequirementStatus.MeetsGroupRequirement = MeetsGroupRequirement.MeetsWithWarning;
-                                }
-                                else
-                                {
-                                    personGroupRequirementStatus.MeetsGroupRequirement = MeetsGroupRequirement.NotMet;
-                                }
+                                personGroupRequirementStatus.MeetsGroupRequirement = MeetsGroupRequirement.Meets;
+                                personGroupRequirementStatus.RequirementWarningDateTime = null;
                             }
-
-                            return personGroupRequirementStatus;
-                        } );
-
-                        if ( result != null )
+                        }
+                        else
                         {
-                            statusResults.AddRange( result );
+                            var possibleDueDate = CalculateGroupMemberRequirementDueDate(
+                                this.GroupRequirementType.DueDateType,
+                                this.GroupRequirementType.DueDateOffsetInDays,
+                                this.DueDateStaticDate,
+                                this.DueDateAttributeId.HasValue ? new AttributeValueService( rockContext ).GetByAttributeIdAndEntityId( this.DueDateAttributeId.Value, this.GroupId )?.Value.AsDateTime() ?? null : null,
+                                new GroupService( rockContext ).Get( groupId ).Members.Where( m => m.PersonId == a.PersonId && m.GroupRoleId == groupRoleId ).Select( m => m.DateTimeAdded ).DefaultIfEmpty( null ).FirstOrDefault() );
+
+                            bool isRequirementDue = possibleDueDate.HasValue ? possibleDueDate <= RockDateTime.Now : true;
+
+                            if ( !isRequirementDue )
+                            {
+                                personGroupRequirementStatus.MeetsGroupRequirement = MeetsGroupRequirement.MeetsWithWarning;
+                            }
+                            else
+                            {
+                                personGroupRequirementStatus.MeetsGroupRequirement = MeetsGroupRequirement.NotMet;
+                            }
                         }
 
-                        return statusResults;
+                        return personGroupRequirementStatus;
+                    } );
+
+                    if ( result != null )
+                    {
+                        statusResults.AddRange( result );
                     }
+
+                    return statusResults;
                 }
                 else
                 {
@@ -536,5 +584,54 @@ namespace Rock.Model
         }
 
         #endregion
+    }
+
+    /// <summary>
+    /// Caches the results of a Data View as an Entity Set.
+    /// </summary>
+    internal class DataViewResultsCache
+    {
+        private Dictionary<int, int> _dataViewToEntitySetMap = new Dictionary<int, int>();
+
+        /// <summary>
+        /// Gets a Queryable that returns the result set for a Data View.
+        /// </summary>
+        /// <param name="dataViewId"></param>
+        /// <param name="rockContext"></param>
+        /// <returns></returns>
+        public IQueryable<int> GetDataViewResultQueryable( int dataViewId, RockContext rockContext )
+        {
+            int entitySetId;
+            if ( _dataViewToEntitySetMap.ContainsKey( dataViewId ) )
+            {
+                entitySetId = _dataViewToEntitySetMap[dataViewId];
+            }
+            else
+            { 
+                var entitySetService = new EntitySetService( rockContext );
+
+                var args = new EntitySetService.CreateEntitySetFromDataViewActionArgs
+                {
+                    DatabaseTimeoutInSeconds = 3600,
+                    DataViewId = dataViewId,
+                    EntitySetName = $"DataViewId_{dataViewId}",
+                    EntitySetNote = "DataViewResultsCache",
+                    ExpirationPeriod = new TimeSpan( 1, 0, 0 )
+                };
+
+                entitySetId = EntitySetService.CreateEntitySetFromDataView( args, rockContext ) ?? 0;
+                rockContext.SaveChanges();
+
+                _dataViewToEntitySetMap.AddOrReplace( dataViewId, entitySetId );
+            }
+
+            // Get the set of key values from the entity set.
+            var entitySetItemService = new EntitySetItemService( rockContext );
+            var idQuery = entitySetItemService.Queryable()
+                .Where( es => es.EntitySetId == entitySetId )
+                .Select( es => es.EntityId );
+
+            return idQuery;
+        }
     }
 }

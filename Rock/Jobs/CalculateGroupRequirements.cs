@@ -68,10 +68,15 @@ namespace Rock.Jobs
                 .AsNoTracking()
                 .ToList();
 
+            // Create a cache to store Data View results for the duration of this task.
+            // This will improve performance where multiple requirements reference the same Data Views.
+            var dataViewCache = new DataViewResultsCache();
+
             foreach ( var groupRequirement in groupRequirements )
             {
                 // Create a new data context for each requirement to ensure performance is scalable.
                 rockContext = new RockContext();
+                rockContext.Database.CommandTimeout = 600;
 
                 var groupMemberRequirementService = new GroupMemberRequirementService( rockContext );
                 var groupMemberService = new GroupMemberService( rockContext );
@@ -134,7 +139,12 @@ namespace Rock.Jobs
 
                         var groupMembersThatDoNotMeetRequirementsPersonQry = groupMemberQry.Where( a => !qryGroupMemberRequirementsAlreadyOK.Any( r => r.GroupMemberId == a.Id ) ).Select( a => a.Person );
 
-                        var personGroupRequirementStatuses = groupRequirement.PersonQueryableMeetsGroupRequirement( rockContext, groupMembersThatDoNotMeetRequirementsPersonQry, groupIdName.Id, groupRequirement.GroupRoleId ).ToList();
+                        var personGroupRequirementStatuses = groupRequirement.PersonQueryableMeetsGroupRequirement( rockContext,
+                            groupMembersThatDoNotMeetRequirementsPersonQry,
+                            groupIdName.Id,
+                            groupRequirement.GroupRoleId,
+                            dataViewCache )
+                            .ToList();
 
                         foreach ( var personGroupRequirementStatus in personGroupRequirementStatuses )
                         {
