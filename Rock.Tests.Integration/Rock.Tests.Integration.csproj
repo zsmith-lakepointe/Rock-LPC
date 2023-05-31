@@ -290,6 +290,7 @@
     <Compile Include="TestData\Crm\TestDataHelper.Crm.cs" />
     <Compile Include="TestData\Core\TestDataHelper.Web.cs" />
     <Compile Include="TestData\Core\SampleDataHelper.cs" />
+    <Compile Include="TestData\Reporting\TestDataHelper.Reporting.cs" />
     <Compile Include="TestFramework\DatabaseIntegrationTestClassBase.cs" />
     <Compile Include="Modules\Core\Model\AttendanceOccurrenceTests.cs" />
     <Compile Include="Modules\Core\Model\BenevolenceRequestTests.cs" />
@@ -318,7 +319,6 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Modules\Core\Model\PersonTests.cs" />
     <Compile Include="Modules\Reporting\DataFilter\TextPropertyFilterSettings.cs" />
-    <Compile Include="Modules\Reporting\ReportingModuleTestHelper.cs" />
     <Compile Include="Modules\Reporting\DataFilter\DataFilterTestBase.cs" />
     <Compile Include="Modules\Reporting\DataFilter\Group\LocationDataViewDataFilterTests.cs" />
     <Compile Include="Modules\Reporting\DataFilter\Person\StepDataViewDataFilterTests.cs" />

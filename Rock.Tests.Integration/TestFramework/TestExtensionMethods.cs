@@ -24,6 +24,38 @@ namespace Rock.Tests.Integration
 {
     public static class TestExtensionMethods
     {
+        /*
+         * A set of extension methods intended to simplify the process of locating records for testing purposes.
+         */
+
+        /// <summary>
+        /// Get an Entity from a repository by matching the specified identifier, either an ID, a Guid value or a Name.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="service"></param>
+        /// <param name="identifier"></param>
+        /// <returns></returns>
+        public static T GetByIdentifier<T>( this Service<T> service, object identifier )
+            where T : Rock.Data.Entity<T>, new()
+        {
+            var entity = service.Queryable().GetByIdentifier(identifier);
+            return entity;
+        }
+
+        /// <summary>
+        /// Get an Entity from a repository by matching the specified identifier, either an ID, a Guid value or a Name.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="service"></param>
+        /// <param name="identifier"></param>
+        /// <returns></returns>
+        public static T GetByIdentifierOrThrow<T>( this Service<T> service, object identifier )
+            where T : Rock.Data.Entity<T>, new()
+        {
+            var entity = service.Queryable().GetByIdentifierOrThrow( identifier );
+            return entity;
+        }
+
         /// <summary>
         /// Get an Entity from a collection by matching the specified identifier, either an ID, a Guid value or a Name.
         /// </summary>

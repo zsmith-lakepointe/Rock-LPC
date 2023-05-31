@@ -48,9 +48,9 @@ namespace Rock.Tests.Shared
         /// Starts or restarts a named timer.
         /// </summary>
         /// <param name="name"></param>
-        public static void ExecuteWithTimer( string message, Action testMethod )
+        public static Stopwatch ExecuteWithTimer( string message, Action testMethod )
         {
-            StartTimer();
+            var stopwatch = StartTimer( message );
             try
             {
                 testMethod();
@@ -61,15 +61,17 @@ namespace Rock.Tests.Shared
             }
             finally
             {
-                EndTimer();
+                EndTimer( message );
             }
+
+            return stopwatch;
         }
 
         /// <summary>
         /// Starts or restarts a named timer.
         /// </summary>
         /// <param name="name"></param>
-        public static void StartTimer( string name = DefaultTaskName )
+        public static Stopwatch StartTimer( string name = DefaultTaskName )
         {
             Stopwatch stopwatch;
             if ( _stopwatches.ContainsKey( name ) )
@@ -83,6 +85,8 @@ namespace Rock.Tests.Shared
                 Log( $"** START: {name}" );
             }
             stopwatch.Start();
+
+            return stopwatch;
         }
 
         /// <summary>
@@ -104,11 +108,11 @@ namespace Rock.Tests.Shared
         /// Finalizes the named timer and prints the elapsed time to debug output.
         /// </summary>
         /// <param name="name"></param>
-        public static void EndTimer( string name = DefaultTaskName )
+        public static Stopwatch EndTimer( string name = DefaultTaskName )
         {
             if ( !_stopwatches.ContainsKey( name ) )
             {
-                return;
+                return null;
             }
 
             var stopwatch = _stopwatches[name];
@@ -116,6 +120,8 @@ namespace Rock.Tests.Shared
             _stopwatches.Remove( name );
 
             Log( $"**   END: {name} ({stopwatch.ElapsedMilliseconds}ms)" );
+
+            return stopwatch;
         }
 
         #endregion
