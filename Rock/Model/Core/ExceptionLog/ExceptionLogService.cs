@@ -15,12 +15,16 @@
 // </copyright>
 //
 using System;
+using System.Collections.Generic;
 using System.Collections.Specialized;
+using System.Data.SqlClient;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
+using System.Web;
 using Rock.Data;
 
 namespace Rock.Model
@@ -36,6 +40,19 @@ namespace Rock.Model
         /// When true, indicates that exceptions should always be logged to file in addition to the database.
         /// </summary>
         public static bool AlwaysLogToFile = false;
+
+        /// <summary>
+        /// The list of all the exceptions to not be logged to the Exception Logs
+        /// Rationale: The Exceptions logs are referenced by the admins. The System Level Exceptions might be irrelevant to them and logging them there would add to the noise.
+        /// These Exceptions are still logged to the Rock Logger.
+        /// </summary>
+        // Access is Set to private as at the time of writing, this property was not required to be accessed outside the class, this may be changed if required.
+        private static readonly HashSet<Type> ExceptionsToBeExcluded = new HashSet<Type>
+        {
+            typeof(ThreadAbortException),
+            typeof(HttpException),
+            typeof(SqlException)
+        };
 
         #endregion Fields
 
@@ -136,6 +153,12 @@ namespace Rock.Model
         /// <param name="personAlias">The person alias.</param>
         public static void LogApiException( Exception ex, HttpRequestMessage request, PersonAlias personAlias = null )
         {
+            if ( ExceptionsToBeExcluded.Contains( ex.GetType() ) )
+            {
+                // some exceptions are not logged as they are not relevant to the admins.
+                return;
+            }
+
             // Populate the initial ExceptionLog with data from HttpContext. Must capture initial
             // HttpContext details before spinning off new thread, because the current context will
             // not be the same within the context of the new thread.
