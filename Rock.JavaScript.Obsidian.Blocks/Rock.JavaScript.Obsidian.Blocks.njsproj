@@ -123,6 +123,7 @@
     <Folder Include="src\Communication\SnippetTypeDetail\" />
     <Folder Include="src\Communication\SystemPhoneNumberDetail\" />
     <Folder Include="src\Core\" />
+    <Folder Include="src\Core\AssetStorageProviderDetail\" />
     <Folder Include="src\Core\CampusDetail\" />
     <Folder Include="src\Crm\" />
     <Folder Include="src\Crm\AssessmentTypeDetail\" />
@@ -192,6 +193,10 @@
     <TypeScriptCompile Include="src\Cms\PersonalLinkSectionDetail\editPanel.partial.ts" />
     <TypeScriptCompile Include="src\Cms\PersonalLinkSectionDetail\types.partial.ts" />
     <TypeScriptCompile Include="src\Cms\PersonalLinkSectionDetail\viewPanel.partial.ts" />
+    <TypeScriptCompile Include="src\Core\assetStorageProviderDetail.ts" />
+    <TypeScriptCompile Include="src\Core\AssetStorageProviderDetail\editPanel.partial.ts" />
+    <TypeScriptCompile Include="src\Core\AssetStorageProviderDetail\types.partial.ts" />
+    <TypeScriptCompile Include="src\Core\AssetStorageProviderDetail\viewPanel.partial.ts" />
     <TypeScriptCompile Include="src\Communication\SnippetDetail\types.partial.ts" />
     <TypeScriptCompile Include="src\Communication\SnippetTypeDetail\types.partial.ts" />
     <TypeScriptCompile Include="src\Communication\SystemPhoneNumberDetail\types.partial.ts" />

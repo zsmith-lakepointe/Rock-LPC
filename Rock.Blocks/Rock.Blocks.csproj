@@ -73,6 +73,7 @@
     <Compile Include="Cms\PageShortLinkDetail.cs" />
     <Compile Include="Cms\PersistedDatasetDetail.cs" />
     <Compile Include="Cms\PersonalLinkSectionDetail.cs" />
+    <Compile Include="Core\AssetStorageProviderDetail.cs" />
     <Compile Include="Communication\SnippetDetail.cs" />
     <Compile Include="Communication\SnippetTypeDetail.cs" />
     <Compile Include="Communication\SystemPhoneNumberDetail.cs" />
