@@ -37,6 +37,9 @@
     <Content Include="src\Core\scheduleDetail.obs" />
     <Content Include="src\Core\ScheduleDetail\editPanel.partial.obs" />
     <Content Include="src\Core\ScheduleDetail\viewPanel.partial.obs" />
+    <Content Include="src\Engagement\streakTypeDetail.obs" />
+    <Content Include="src\Engagement\StreakTypeDetail\editPanel.partial.obs" />
+    <Content Include="src\Engagement\StreakTypeDetail\viewPanel.partial.obs" />
     <Content Include="src\Finance\financialBatchDetail.vue" />
     <Content Include="src\Finance\FinancialBatchDetail\editPanel.partial.vue" />
     <Content Include="src\Finance\FinancialBatchDetail\viewPanel.partial.vue" />
@@ -138,6 +141,7 @@
     <Folder Include="src\Crm\" />
     <Folder Include="src\Crm\AssessmentTypeDetail\" />
     <Folder Include="src\Crm\PersonDetail\" />
+    <Folder Include="src\Engagement\StreakTypeDetail\" />
     <Folder Include="src\Finance\FinancialBatchDetail\" />
     <Folder Include="src\Prayer\" />
     <Folder Include="src\Prayer\PrayerRequestDetail\" />
