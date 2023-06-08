@@ -59,6 +59,7 @@
     <Compile Include="..\Rock.Version\AssemblySharedInfo.cs">
       <Link>Properties\AssemblySharedInfo.cs</Link>
     </Compile>
+    <Compile Include="Prayer\PrayerRequestDetail.cs" />
     <Compile Include="Core\ScheduleDetail.cs" />
     <Compile Include="Engagement\SignUp\SignUpDetail.cs" />
     <Compile Include="Example\ObsidianGalleryList.cs" />

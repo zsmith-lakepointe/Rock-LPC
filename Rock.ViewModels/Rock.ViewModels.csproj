@@ -79,6 +79,8 @@
     <Compile Include="Blocks\Group\Scheduling\GroupScheduler\GroupSchedulerSchedulesBag.cs" />
     <Compile Include="Blocks\Group\Scheduling\GroupScheduler\GroupSchedulerSendNowResponseBag.cs" />
     <Compile Include="Blocks\Group\Scheduling\GroupScheduler\GroupSchedulerUpdatePreferenceBag.cs" />
+    <Compile Include="Blocks\Prayer\PrayerRequestDetail\PrayerRequestBag.cs" />
+    <Compile Include="Blocks\Prayer\PrayerRequestDetail\PrayerRequestDetailOptionsBag.cs" />
     <Compile Include="Blocks\Security\AccountEntry\AccountEntryAccountInfoBag.cs" />
     <Compile Include="Blocks\Security\AccountEntry\AccountEntryCompletedStepBag.cs" />
     <Compile Include="Blocks\Security\AccountEntry\AccountEntryConfirmationSentStepBag.cs" />
