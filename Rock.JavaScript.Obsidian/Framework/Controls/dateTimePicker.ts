@@ -18,8 +18,8 @@ import { defineComponent, PropType } from "vue";
 import { toNumber } from "@Obsidian/Utility/numberUtils";
 import RockFormField from "./rockFormField";
 import TextBox from "./textBox";
-import BasicTimePicker from "./basicTimePicker.obs";
-import { TimePickerValue } from "@Obsidian/ViewModels/Controls/timePickerValue";
+import BasicTimePicker from "./basicTimePicker";
+import { TimePickerValue } from "./timePicker";
 import { padLeft } from "@Obsidian/Utility/stringUtils";
 import { RockDateTime } from "@Obsidian/Utility/rockDateTime";
 
@@ -58,6 +58,10 @@ export default defineComponent({
             default: false
         },
         isCurrentDateOffset: {
+            type: Boolean as PropType<boolean>,
+            default: false
+        },
+        disabled: {
             type: Boolean as PropType<boolean>,
             default: false
         }
@@ -124,6 +128,10 @@ export default defineComponent({
             }
 
             return this.asRockDateTimeOrNull ?? "";
+        },
+
+        isDisabled(): boolean {
+            return this.isCurrent || this.disabled;
         }
     },
 
@@ -225,12 +233,12 @@ export default defineComponent({
         <div class="form-control-group">
             <div class="form-row">
                 <div class="input-group input-width-md js-date-picker date">
-                    <input ref="input" type="text" :id="uniqueId" class="form-control" v-model.lazy="internalDateValue" :disabled="isCurrent" />
+                    <input ref="input" type="text" :id="uniqueId" class="form-control" v-model.lazy="internalDateValue" :disabled="isDisabled" />
                     <span class="input-group-addon">
                         <i class="fa fa-calendar"></i>
                     </span>
                 </div>
-                <BasicTimePicker v-model="internalTimeValue" :disabled="isCurrent" />
+                <BasicTimePicker v-model="internalTimeValue" :disabled="isDisabled" />
                 <div v-if="displayCurrentOption" class="input-group">
                     <div class="checkbox">
                         <label title="">

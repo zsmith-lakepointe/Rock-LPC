@@ -65,6 +65,7 @@
     <Compile Include="RockObsidianEntityListBlockType.cs" />
     <Compile Include="RockObsidianListBlockType.cs" />
     <Compile Include="Group\Scheduling\GroupScheduler.cs" />
+    <Compile Include="Finance\FinancialPledgeDetail.cs" />
     <Compile Include="Security\AccountEntry.cs" />
     <Compile Include="Cms\ContentCollectionDetail.cs" />
     <Compile Include="Cms\ContentCollectionView.cs" />

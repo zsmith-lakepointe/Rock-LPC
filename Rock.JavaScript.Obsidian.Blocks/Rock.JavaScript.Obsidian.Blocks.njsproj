@@ -34,6 +34,9 @@
     <Content Include="build\build-fast.js" />
     <Content Include="package.json" />
     <Content Include="rollup.config.js" />
+    <Content Include="src\Finance\financialBatchDetail.vue" />
+    <Content Include="src\Finance\FinancialBatchDetail\editPanel.partial.vue" />
+    <Content Include="src\Finance\FinancialBatchDetail\viewPanel.partial.vue" />
     <Content Include="src\Communication\snippetDetail.obs" />
     <Content Include="src\Communication\SnippetDetail\editPanel.partial.obs" />
     <Content Include="src\Communication\SnippetDetail\viewPanel.partial.obs" />
@@ -128,6 +131,7 @@
     <Folder Include="src\Crm\" />
     <Folder Include="src\Crm\AssessmentTypeDetail\" />
     <Folder Include="src\Crm\PersonDetail\" />
+    <Folder Include="src\Finance\FinancialBatchDetail\" />
     <Folder Include="src\Engagement\" />
     <Folder Include="src\Engagement\SignUp\" />
     <Folder Include="src\Engagement\SignUp\SignUpFinder\" />
@@ -213,6 +217,7 @@
     <TypeScriptCompile Include="src\Crm\AssessmentTypeDetail\viewPanel.partial.ts" />
     <TypeScriptCompile Include="src\Crm\attributeValues.ts" />
     <TypeScriptCompile Include="src\Crm\PersonDetail\badges.ts" />
+    <TypeScriptCompile Include="src\Finance\FinancialBatchDetail\types.partial.ts" />
     <TypeScriptCompile Include="src\Engagement\SignUp\SignUpFinder\signUpFilterType.ts" />
     <TypeScriptCompile Include="src\Engagement\Steps\stepFlow.ts" />
     <TypeScriptCompile Include="src\Engagement\Steps\StepFlow\flowNodeDiagram.partial.ts" />
