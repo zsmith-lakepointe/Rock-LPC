@@ -34,6 +34,9 @@
     <Content Include="build\build-fast.js" />
     <Content Include="package.json" />
     <Content Include="rollup.config.js" />
+    <Content Include="src\Core\scheduleDetail.obs" />
+    <Content Include="src\Core\ScheduleDetail\editPanel.partial.obs" />
+    <Content Include="src\Core\ScheduleDetail\viewPanel.partial.obs" />
     <Content Include="src\Finance\financialBatchDetail.vue" />
     <Content Include="src\Finance\FinancialBatchDetail\editPanel.partial.vue" />
     <Content Include="src\Finance\FinancialBatchDetail\viewPanel.partial.vue" />
@@ -128,6 +131,7 @@
     <Folder Include="src\Core\" />
     <Folder Include="src\Core\AssetStorageProviderDetail\" />
     <Folder Include="src\Core\CampusDetail\" />
+    <Folder Include="src\Core\ScheduleDetail\" />
     <Folder Include="src\Crm\" />
     <Folder Include="src\Crm\AssessmentTypeDetail\" />
     <Folder Include="src\Crm\PersonDetail\" />
@@ -209,6 +213,7 @@
     <TypeScriptCompile Include="src\Core\CampusDetail\editPanel.partial.ts" />
     <TypeScriptCompile Include="src\Core\CampusDetail\types.partial.ts" />
     <TypeScriptCompile Include="src\Core\CampusDetail\viewPanel.partial.ts" />
+    <TypeScriptCompile Include="src\Core\ScheduleDetail\types.partial.ts" />
     <TypeScriptCompile Include="src\Crm\attributeValues.ts" />
     <TypeScriptCompile Include="src\Crm\PersonDetail\badges.ts" />
     <TypeScriptCompile Include="src\Crm\assessmentTypeDetail.ts" />
