@@ -70,6 +70,7 @@
     <Compile Include="Cms\ContentCollectionView.cs" />
     <Compile Include="Cms\MediaAccountDetail.cs" />
     <Compile Include="Cms\MediaFolderDetail.cs" />
+    <Compile Include="Cms\PageShortLinkDetail.cs" />
     <Compile Include="Cms\PersistedDatasetDetail.cs" />
     <Compile Include="Cms\PersonalLinkSectionDetail.cs" />
     <Compile Include="Communication\SnippetDetail.cs" />
