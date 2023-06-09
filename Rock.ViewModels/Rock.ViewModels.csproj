@@ -51,6 +51,8 @@
     <Compile Include="Blocks\Engagement\SignUp\SignUpDetail\SignUpDetailInitializationBox.cs" />
     <Compile Include="Blocks\Engagement\SignUp\SignUpRegister\SignUpRegisterRequestBag.cs" />
     <Compile Include="Blocks\Engagement\SignUp\SignUpRegister\SignUpRegisterResponseBag.cs" />
+    <Compile Include="Blocks\Engagement\StreakDetail\StreakBag.cs" />
+    <Compile Include="Blocks\Engagement\StreakDetail\StreakDetailOptionsBag.cs" />
     <Compile Include="Blocks\Engagement\StreakTypeDetail\StreakTypeBag.cs" />
     <Compile Include="Blocks\Engagement\StreakTypeDetail\StreakTypeDetailOptionsBag.cs" />
     <Compile Include="Blocks\Group\GroupAttendanceDetail\GroupAttendanceDetailAddPersonResponseBag.cs" />
@@ -138,6 +140,8 @@
     <Compile Include="Blocks\Cms\PersonalLinkSectionDetail\PersonalLinkSectionDetailOptionsBag.cs" />
     <Compile Include="Blocks\Core\AssetStorageProviderDetail\AssetStorageProviderBag.cs" />
     <Compile Include="Blocks\Core\AssetStorageProviderDetail\AssetStorageProviderDetailOptionsBag.cs" />
+    <Compile Include="Blocks\Core\FollowingEventTypeDetail\FollowingEventTypeBag.cs" />
+    <Compile Include="Blocks\Core\FollowingEventTypeDetail\FollowingEventTypeDetailOptionsBag.cs" />
     <Compile Include="Blocks\Communication\SnippetDetail\SnippetBag.cs" />
     <Compile Include="Blocks\Communication\SnippetDetail\SnippetDetailOptionsBag.cs" />
     <Compile Include="Blocks\Communication\SnippetTypeDetail\SnippetTypeBag.cs" />

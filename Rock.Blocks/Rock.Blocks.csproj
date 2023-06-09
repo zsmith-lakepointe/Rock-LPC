@@ -61,7 +61,9 @@
     </Compile>
     <Compile Include="Engagement\StreakTypeDetail.cs" />
     <Compile Include="Prayer\PrayerRequestDetail.cs" />
+    <Compile Include="Core\FollowingEventTypeDetail.cs" />
     <Compile Include="Core\ScheduleDetail.cs" />
+    <Compile Include="Engagement\StreakDetail.cs" />
     <Compile Include="Engagement\SignUp\SignUpDetail.cs" />
     <Compile Include="Example\ObsidianGalleryList.cs" />
     <Compile Include="Group\GroupAttendanceDetail.cs" />
@@ -85,6 +87,7 @@
     <Compile Include="Core\CampusDetail.cs" />
     <Compile Include="Crm\AssessmentTypeDetail.cs" />
     <Compile Include="Crm\PersonDetail\Badges.cs" />
+    <Compile Include="Finance\FinancialBatchDetail.cs" />
     <Compile Include="Engagement\SignUp\SignUpAttendanceDetail.cs" />
     <Compile Include="Engagement\SignUp\SignUpFinder.cs" />
     <Compile Include="Engagement\SignUp\SignUpRegister.cs" />
