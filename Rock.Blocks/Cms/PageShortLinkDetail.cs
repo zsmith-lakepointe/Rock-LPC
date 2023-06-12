@@ -53,6 +53,7 @@ namespace Rock.Blocks.CMS
     #endregion
 
     [Rock.SystemGuid.EntityTypeGuid( "AD614123-C7CA-40EE-B5D5-64D0D1C91378")]
+    [Rock.SystemGuid.BlockTypeGuid( "72EDDF3D-625E-40A9-A68B-76236E77A3F3" )]
     public class PageShortLinkDetail : RockObsidianDetailBlockType
     {
         private int _minTokenLength = 7;

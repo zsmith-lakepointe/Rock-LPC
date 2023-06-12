@@ -87,7 +87,6 @@
     <Compile Include="Core\CampusDetail.cs" />
     <Compile Include="Crm\AssessmentTypeDetail.cs" />
     <Compile Include="Crm\PersonDetail\Badges.cs" />
-    <Compile Include="Finance\FinancialBatchDetail.cs" />
     <Compile Include="Engagement\SignUp\SignUpAttendanceDetail.cs" />
     <Compile Include="Engagement\SignUp\SignUpFinder.cs" />
     <Compile Include="Engagement\SignUp\SignUpRegister.cs" />
