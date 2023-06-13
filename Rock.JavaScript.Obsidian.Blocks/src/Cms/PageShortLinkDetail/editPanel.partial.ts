@@ -126,6 +126,7 @@ export default defineComponent({
     <div class="row">
             <div class="col-md-6">
                 <DropDownList v-model="site"
+                    :showBlankItem="false"
                     label="Site"
                     rules="required"
                     help="The site to use for the short link."

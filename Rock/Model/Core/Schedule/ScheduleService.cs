@@ -45,9 +45,9 @@ namespace Rock.Model
                 calendar = calendarList[0] as Calendar;
             }
 
-            var calendarEvent = calendar.Events[0];
+            var calendarEvent = calendar?.Events?[0];
 
-            if ( calendarEvent.DtStart != null )
+            if ( calendarEvent?.DtStart != null )
             {
                 var nextOccurrences = calendar.GetOccurrences( RockDateTime.Now, RockDateTime.Now.AddYears( 1 ) ).Take( 26 ).ToList();
                 var sbOccurrenceItems = new System.Text.StringBuilder();

@@ -68,7 +68,7 @@ namespace Rock.Migrations
             0
             ,1
             ,'Rock Update Helper - Replace WebForms Blocks with Obsidian Blocks'
-            ,'This job will replace WebForms blocks with their Obsidian blocks on all sites, pages, and layouts.'
+            ,'This job will replace WebForms blocks with their Obsidian blocks on all sites, pages, and layouts. The following blocks would be replaced: Schedule Detail, ShortLink Detail, Asset Storage Provider, Event Detail, Prayer Request Detail, Streak Detail, Streak Type Detail'
             ,'{FullyQualifiedJobClassName}'
             ,'0 0 21 1/1 * ? *'
             ,1

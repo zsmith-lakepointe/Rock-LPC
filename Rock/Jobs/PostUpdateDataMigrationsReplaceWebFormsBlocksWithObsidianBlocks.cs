@@ -151,7 +151,7 @@ namespace Rock.Jobs
                 throw new RockJobWarningException( String.Join( ",\n", ErrorMessage ) );
             }
 
-            // DeleteJob();
+            DeleteJob();
         }
 
         /// <summary>
@@ -270,7 +270,6 @@ namespace Rock.Jobs
 
             var oldBlocks = blockService.Queryable()
                 .Where( b => b.BlockType.Guid == oldBlockTypeGuid )
-                // .OrderBy( b => b.Order ) <= Is there a reason why we were ordering
                 .ToList();
             var replacedBlocksMap = new Dictionary<Model.Block, Model.Block>();
 
