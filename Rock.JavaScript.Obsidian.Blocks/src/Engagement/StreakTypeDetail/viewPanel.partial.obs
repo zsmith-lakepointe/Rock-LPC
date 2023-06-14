@@ -33,6 +33,7 @@
     import { ValueDetailListItem } from "@Obsidian/Types/Controls/valueDetailListItem";
     import { StreakTypeBag } from "@Obsidian/ViewModels/Blocks/Engagement/StreakTypeDetail/streakTypeBag";
     import { StreakTypeDetailOptionsBag } from "@Obsidian/ViewModels/Blocks/Engagement/StreakTypeDetail/streakTypeDetailOptionsBag";
+    import NotificationBox from "@Obsidian/Controls/notificationBox.obs";
     import { StreakOccurrenceFrequencyDescription } from "@Obsidian/Enums/Engagement/streakOccurrenceFrequency";
 
     const props = defineProps({
