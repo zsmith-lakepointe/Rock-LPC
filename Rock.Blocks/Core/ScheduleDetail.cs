@@ -15,11 +15,6 @@
 // </copyright>
 //
 
-using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data.Entity;
-using System.Linq;
 using Rock.Attribute;
 using Rock.Constants;
 using Rock.Data;
@@ -27,6 +22,11 @@ using Rock.Model;
 using Rock.Security;
 using Rock.ViewModels.Blocks;
 using Rock.ViewModels.Blocks.Core.ScheduleDetail;
+using Rock.Web.Cache;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Data.Entity;
+using System.Linq;
 
 namespace Rock.Blocks.Core
 {
@@ -53,11 +53,13 @@ namespace Rock.Blocks.Core
         private static class PageParameterKey
         {
             public const string ScheduleId = "ScheduleId";
+            public const string ParentCategoryId = "ParentCategoryId";
         }
 
         private static class NavigationUrlKey
         {
             public const string ParentPage = "ParentPage";
+            public const string CancelLink = "CancelLink";
         }
 
         #endregion Keys
@@ -69,13 +71,27 @@ namespace Rock.Blocks.Core
         /// <inheritdoc/>
         public override object GetObsidianBlockInitialization()
         {
+            if ( PageParameter( PageParameterKey.ScheduleId ).IsNullOrWhiteSpace() )
+            {
+                return new DetailBlockBox<ScheduleBag, ScheduleDetailOptionsBag>();
+            }
             using ( var rockContext = new RockContext() )
             {
                 var box = new DetailBlockBox<ScheduleBag, ScheduleDetailOptionsBag>();
                 var entity = GetInitialEntity( rockContext );
 
-                SetBoxInitialEntityState( box, rockContext, entity );
+                if ( entity == null )
+                {
+                    return null;
+                }
 
+                SetBoxInitialEntityState( box, rockContext, entity );
+                var categoryId = PageParameter( PageParameterKey.ParentCategoryId ).AsIntegerOrNull();
+                if ( categoryId.HasValue )
+                {
+                    box.Entity.Category = CategoryCache.Get( categoryId.Value )
+                        .ToListItemBag();
+                }
                 box.NavigationUrls = GetBoxNavigationUrls();
                 box.Options = GetBoxOptions( box.IsEditable, rockContext, entity );
                 box.QualifiedAttributeProperties = GetAttributeQualifiedColumns<Schedule>();
@@ -348,8 +364,25 @@ namespace Rock.Blocks.Core
         {
             return new Dictionary<string, string>
             {
-                [NavigationUrlKey.ParentPage] = this.GetParentPageUrl()
+                [NavigationUrlKey.ParentPage] = this.GetParentPageUrl(),
+                [NavigationUrlKey.CancelLink] = GetCancelLink()
             };
+        }
+
+        private string GetCancelLink()
+        {
+            var parentCategoryId = PageParameter( PageParameterKey.ParentCategoryId ).AsIntegerOrNull();
+            if ( parentCategoryId.HasValue )
+            {
+                // Cancelling on Add, and we know the parentCategoryId, so we are probably in treeview mode, so navigate to the current page
+                var qryParams = new Dictionary<string, string>();
+                qryParams["CategoryId"] = parentCategoryId.ToString();
+                return this.GetCurrentPageUrl( qryParams );
+            }
+            else
+            {
+                return this.GetParentPageUrl();
+            }
         }
 
         /// <inheritdoc/>
@@ -539,7 +572,16 @@ namespace Rock.Blocks.Core
                 entityService.Delete( entity );
                 rockContext.SaveChanges();
 
-                return ActionOk( this.GetParentPageUrl() );
+                // reload page, selecting the deleted data view's parent
+                var qryParams = new Dictionary<string, string>();
+                if ( entity.CategoryId != null )
+                {
+                    qryParams["CategoryId"] = entity.CategoryId.ToString();
+                }
+
+                qryParams["ExpandedIds"] = PageParameter( "ExpandedIds" );
+
+                return ActionOk( (new Rock.Web.PageReference( this.PageCache.Guid.ToString(), qryParams )).BuildUrl() );
             }
         }
 

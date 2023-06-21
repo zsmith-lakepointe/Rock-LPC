@@ -4,7 +4,7 @@
 
     <NotificationBox v-if="errorMessage" alertType="danger">{{ errorMessage }}</NotificationBox>
 
-    <DetailBlock v-if="!blockError"
+    <DetailBlock v-if="!blockError && config.entity"
                  v-model:mode="panelMode"
                  :name="panelName"
                  :labels="blockLabels"
@@ -130,6 +130,13 @@
             });
         }
 
+        if(scheduleViewBag.value?.autoInactivateWhenComplete) {
+            labels.push({
+                title: "Will Close When Complete",
+                type: "danger"
+            });
+        }
+
         return labels;
     });
 
@@ -161,8 +168,8 @@
      */
     async function onCancelEdit(): Promise<boolean | string> {
         if (!scheduleEditBag.value?.idKey) {
-            if (config.navigationUrls?.[NavigationUrlKey.ParentPage]) {
-                return config.navigationUrls[NavigationUrlKey.ParentPage];
+            if (config.navigationUrls?.[NavigationUrlKey.CancelLink]) {
+                return config.navigationUrls[NavigationUrlKey.CancelLink];
             }
 
             return false;
@@ -275,10 +282,7 @@
     if (config.errorMessage) {
         blockError.value = config.errorMessage;
     }
-    else if (!config.entity) {
-        blockError.value = "The specified schedule could not be viewed.";
-    }
-    else if (!config.entity.idKey) {
+    else if (config.entity && !config.entity.idKey) {
         scheduleEditBag.value = config.entity;
         panelMode.value = DetailPanelMode.Add;
     }
