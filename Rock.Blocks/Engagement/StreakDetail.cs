@@ -25,7 +25,6 @@ using Rock.ViewModels.Blocks;
 using Rock.ViewModels.Blocks.Engagement.StreakDetail;
 using Rock.ViewModels.Utility;
 using Rock.Web.Cache;
-using Rock.Web.UI.Controls;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -80,7 +79,7 @@ namespace Rock.Blocks.Engagement
                 var box = new DetailBlockBox<StreakBag, StreakDetailOptionsBag>();
 
                 SetBoxInitialEntityState( box, rockContext );
-                if(box.Entity == null)
+                if ( box.Entity == null )
                 {
                     return box;
                 }
@@ -520,10 +519,14 @@ namespace Rock.Blocks.Engagement
                     return ActionBadRequest( errorMessage );
                 }
 
+                var streakTypeId = entity.StreakType?.Id ?? entity.StreakTypeId;
+
                 entityService.Delete( entity );
                 rockContext.SaveChanges();
 
-                return ActionOk( this.GetParentPageUrl() );
+                return ActionOk( this.GetParentPageUrl( new Dictionary<string, string> {
+                    { PageParameterKey.StreakTypeId, streakTypeId.ToString() }
+                } ) );
             }
         }
 
@@ -721,27 +724,27 @@ namespace Rock.Blocks.Engagement
         /// <param name="key"></param>
         /// <returns></returns>
         [BlockAction]
-        public BlockActionResult Rebuild(string key)
+        public BlockActionResult Rebuild( string key )
         {
             if ( key.IsNullOrWhiteSpace() )
             {
                 return ActionNotFound();
             }
-            using (RockContext rockContext = new RockContext())
+            using ( RockContext rockContext = new RockContext() )
             {
                 var streakService = new StreakService( rockContext );
                 var streak = streakService.Get( key, !PageCache.Layout.Site.DisablePredictableIds );
 
                 if ( !streak.IsAuthorized( Authorization.ADMINISTRATE, RequestContext.CurrentPerson ) )
                 {
-                    return ActionUnauthorized( "You are not authorized to rebuild this item.");
+                    return ActionUnauthorized( "You are not authorized to rebuild this item." );
                 }
 
                 var errorMessage = string.Empty;
                 StreakTypeService.RebuildStreakFromAttendance( streak.StreakTypeId, streak.PersonAlias.PersonId, out errorMessage );
                 if ( !errorMessage.IsNullOrWhiteSpace() )
                 {
-                    return ActionBadRequest(  errorMessage );
+                    return ActionBadRequest( errorMessage );
                 }
 
                 return ActionOk( "The streak rebuild was successful!" );
