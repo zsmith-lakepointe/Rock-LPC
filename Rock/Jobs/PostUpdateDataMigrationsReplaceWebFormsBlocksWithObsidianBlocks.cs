@@ -211,11 +211,12 @@ namespace Rock.Jobs
 
             try
             {
+                // Creating and saving the blocks outside the rockContext.wrapTransaction as we need to ensure the rockContext writes the blocks to the database before the SQL to update the Attributes and Auth are run
+                var copiedBlockMappings = AddCopiesOfBlocksInSameLocationsButWithNewBlockType( oldBlockTypeGuid, newBlockTypeId.Value, rockContext );
+                rockContext.SaveChanges();
+
                 rockContext.WrapTransaction( () =>
                 {
-                    var copiedBlockMappings = AddCopiesOfBlocksInSameLocationsButWithNewBlockType( oldBlockTypeGuid, newBlockTypeId.Value, rockContext );
-                    rockContext.SaveChanges();
-
                     CopyAttributeQualifiersAndValuesFromOldBlocksToNewBlocks( rockContext, migrationHelper, copiedBlockMappings );
 
                     CopyAuthFromOldBlocksToNewBlocks( migrationHelper, copiedBlockMappings );

@@ -20,6 +20,7 @@ using Rock.Data;
 using Rock.Model;
 using Rock.Security;
 using Rock.Tasks;
+using Rock.Utility;
 using Rock.ViewModels.Blocks;
 using Rock.ViewModels.Blocks.Engagement.StreakTypeDetail;
 using Rock.ViewModels.Utility;
@@ -454,8 +455,8 @@ namespace Rock.Blocks.Engagement
         {
             var queryParams = new Dictionary<string, string>
             {
-                [PageParameterKey.StreakTypeId] = idKey
-            };
+                [PageParameterKey.StreakTypeId] = IdHasher.Instance.GetId( idKey ).ToStringSafe()
+        };
             return new Dictionary<string, string>
             {
                 [NavigationUrlKey.ParentPage] = this.GetParentPageUrl(),
