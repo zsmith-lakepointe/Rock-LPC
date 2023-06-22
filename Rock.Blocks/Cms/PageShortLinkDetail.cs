@@ -67,7 +67,7 @@ namespace Rock.Blocks.CMS
 
         private static class PageParameterKey
         {
-            public const string PageShortLinkId = "PageShortLinkId";
+            public const string ShortLinkId = "ShortLinkId";
         }
 
         private static class NavigationUrlKey
@@ -323,7 +323,7 @@ namespace Rock.Blocks.CMS
         /// <returns>The <see cref="PageShortLink"/> to be viewed or edited on the page.</returns>
         private PageShortLink GetInitialEntity( RockContext rockContext )
         {
-            return GetInitialEntity<PageShortLink, PageShortLinkService>( rockContext, PageParameterKey.PageShortLinkId );
+            return GetInitialEntity<PageShortLink, PageShortLinkService>( rockContext, PageParameterKey.ShortLinkId );
         }
 
         /// <summary>
@@ -481,7 +481,7 @@ namespace Rock.Blocks.CMS
                 {
                     return ActionContent( System.Net.HttpStatusCode.Created, this.GetCurrentPageUrl( new Dictionary<string, string>
                     {
-                        [PageParameterKey.PageShortLinkId] = entity.IdKey
+                        [PageParameterKey.ShortLinkId] = entity.IdKey
                     } ) );
                 }
 
