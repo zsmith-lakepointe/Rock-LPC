@@ -214,6 +214,7 @@ namespace Rock.Jobs
                 rockContext.WrapTransaction( () =>
                 {
                     var copiedBlockMappings = AddCopiesOfBlocksInSameLocationsButWithNewBlockType( oldBlockTypeGuid, newBlockTypeId.Value, rockContext );
+                    rockContext.SaveChanges();
 
                     CopyAttributeQualifiersAndValuesFromOldBlocksToNewBlocks( rockContext, migrationHelper, copiedBlockMappings );
 

@@ -45,7 +45,7 @@ namespace Rock.Migrations
                 // Event Detail
                 { "762BC126-1A2E-4483-A63B-3AB4939D19F1", "78f27537-c05f-44e0-af84-2329c8b5d71d" },
                 // Prayer Request Detail
-                { "F791046A-333F-4B2A-9815-73B60326162D", "EBB91B46-292E-4784-9E37-38781C714008" },
+                { "F791046A-333F-4B2A-9815-73B60326162D", "E120F06F-6DB7-464A-A797-C3C90B92EF40" },
                 // Streak Detail
                 { "EA9857FF-6703-4E4E-A6FF-65C23EBD2216", "1C98107F-DFBF-44BD-A860-0C9DF2E6C495" },
                 // Streak Type Detail
