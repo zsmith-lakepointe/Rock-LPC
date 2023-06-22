@@ -63,6 +63,7 @@ namespace Rock.Blocks.Engagement
         private static class NavigationUrlKey
         {
             public const string ParentPage = "ParentPage";
+            public const string CancelLink = "CancelLink";
         }
 
         #endregion Keys
@@ -84,7 +85,7 @@ namespace Rock.Blocks.Engagement
                     return box;
                 }
 
-                box.NavigationUrls = GetBoxNavigationUrls();
+                box.NavigationUrls = GetBoxNavigationUrls( StreakTypeCache.GetId( box.Entity.StreakType.Value.AsGuid() ).ToString() );
                 box.Options = GetBoxOptions( box.IsEditable, box.Entity, rockContext );
                 box.QualifiedAttributeProperties = GetAttributeQualifiedColumns<Streak>();
 
@@ -303,11 +304,15 @@ namespace Rock.Blocks.Engagement
         /// Gets the box navigation URLs required for the page to operate.
         /// </summary>
         /// <returns>A dictionary of key names and URL values.</returns>
-        private Dictionary<string, string> GetBoxNavigationUrls()
+        private Dictionary<string, string> GetBoxNavigationUrls( string streakTypeId )
         {
             return new Dictionary<string, string>
             {
-                [NavigationUrlKey.ParentPage] = this.GetParentPageUrl()
+                [NavigationUrlKey.ParentPage] = this.GetParentPageUrl(),
+                [NavigationUrlKey.CancelLink] = this.GetParentPageUrl( new Dictionary<string, string>
+                {
+                    { PageParameterKey.StreakTypeId, streakTypeId }
+                } )
             };
         }
 

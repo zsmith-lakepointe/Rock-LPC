@@ -203,8 +203,8 @@
      */
     async function onCancelEdit(): Promise<boolean | string> {
         if (!streakEditBag.value?.idKey) {
-            if (config.navigationUrls?.[NavigationUrlKey.ParentPage]) {
-                return config.navigationUrls[NavigationUrlKey.ParentPage];
+            if (config.navigationUrls?.[NavigationUrlKey.CancelLink]) {
+                return config.navigationUrls[NavigationUrlKey.CancelLink];
             }
 
             return false;
