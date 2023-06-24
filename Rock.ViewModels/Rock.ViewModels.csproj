@@ -110,6 +110,7 @@
     <Compile Include="Blocks\Core\NotificationMessageList\MarkMessagesAsReadResponseBag.cs" />
     <Compile Include="Blocks\Core\NotificationMessageList\NotificationMessageBag.cs" />
     <Compile Include="Blocks\Core\NotificationMessageList\NotificationMessageListInitializationBox.cs" />
+    <Compile Include="Blocks\Connection\ConnectionRequestBoard\ConnectionRequestBoardInitializationBox.cs" />
     <Compile Include="Blocks\Engagement\SignUp\SignUpDetail\SignUpDetailInitializationBox.cs" />
     <Compile Include="Blocks\Engagement\SignUp\SignUpRegister\SignUpRegisterRequestBag.cs" />
     <Compile Include="Blocks\Engagement\SignUp\SignUpRegister\SignUpRegisterResponseBag.cs" />

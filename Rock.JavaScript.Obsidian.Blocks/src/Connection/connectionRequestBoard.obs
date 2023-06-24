@@ -1,0 +1,95 @@
+<!-- Copyright by the Spark Development Network; Licensed under the Rock Community License -->
+<template>
+    <NotificationBox v-if="blockErrorMessage" :alertType="AlertType.Warning">
+        {{ blockErrorMessage }}
+    </NotificationBox>
+
+    <Panel v-if="!blockErrorMessage"
+           type="block"
+           title="TBD (dynamic)"
+           class="styled-scroll"
+           :hasFullscreen="true">
+
+        <template #preBody>
+            <div class="panel-collapsible">
+                <!-- Toolbar: Desktop -->
+                <div class="panel-toolbar d-none d-md-flex">
+                    <div class="toolbar-group">
+                        <div class="d-inline-block btn-group-mega">
+                            <button type="button" class="btn btn-xs btn-tool dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                <i class="fa fa-plug"></i>
+                                Opportunities
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-mega">
+                                <!-- Favorties -->
+                                <li class="dropdown-header">
+                                    <i class="far fa-star"></i>
+                                    Favorites
+                                </li>
+                                <li>
+                                    <a @click="console.log('click!');">
+                                        <i class="fa fa-leaf"></i>
+                                        Opportunity Name
+                                        <span class="pull-right text-muted small">
+                                            Type Name
+                                        </span>
+                                    </a>
+                                </li>
+                                <!-- [non-favorite] Connection Opportunites, grouped by Connection Type -->
+                                <li class="dropdown-header">
+                                    <i class="fa fa-leaf"></i>
+                                    Type Name
+                                </li>
+                                <li>
+                                    <a @click="console.log('click!');">
+                                        <i class="fa fa-child"></i>
+                                        Opportunity Name
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                    <a class="btn btn-xs btn-tool">
+                        <i class="fa fa-plus"></i>
+                        Add Request
+                    </a>
+                    <div class="toolbar-group">
+
+                    </div>
+                    <div class="toolbar-group">
+
+                    </div>
+                </div>
+
+                <!-- Toolbar: Mobile -->
+                <div class="panel-toolbar panel-toolbar-mobile d-flex d-md-none">
+                    mobile
+                </div>
+            </div>
+        </template>
+
+    </Panel>
+</template>
+
+<script setup lang="ts">
+    import { computed } from "vue";
+    import NotificationBox from "@Obsidian/Controls/notificationBox.obs";
+    import Panel from "@Obsidian/Controls/panel.obs";
+    import { AlertType } from "@Obsidian/Enums/Controls/alertType";
+    import { useConfigurationValues } from "@Obsidian/Utility/block";
+    import { ConnectionRequestBoardInitializationBox } from "@Obsidian/ViewModels/Blocks/Connection/ConnectionRequestBoard/connectionRequestBoardInitializationBox";
+
+    // #region Values
+
+    const config = useConfigurationValues<ConnectionRequestBoardInitializationBox>();
+
+    // #endregion
+
+    // #region Computed Values
+
+    const blockErrorMessage = computed(() => {
+        return config.errorMessage;
+    });
+
+                                    // #endregion
+</script>
