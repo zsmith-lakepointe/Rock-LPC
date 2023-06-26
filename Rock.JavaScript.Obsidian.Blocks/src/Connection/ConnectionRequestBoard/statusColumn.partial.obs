@@ -1,0 +1,42 @@
+<!-- Copyright by the Spark Development Network; Licensed under the Rock Community License -->
+<template>
+    <div class="board-column">
+        <div class="board-heading">
+            <div class="board-heading-details">
+                <span class="board-column-title">[{{ title }}]</span>
+                <span class="board-count">[3]</span>
+            </div>
+            <div class="board-heading-pill" style="background: #ddd;"></div>
+        </div>
+        <div class="board-cards">
+
+            <RequestCard v-for="n in 8" :name="`Person #${n}`"></RequestCard>
+
+            <div v-if="showSentry" class="board-card-base board-column-sentry small">
+                <p class="mb-2"><strong>More requests exist</strong></p>
+                <p>Please adjust sorting, use filters, or even use the grid mode to interact with them.</p>
+            </div>
+
+        </div>
+    </div>
+</template>
+
+<script setup lang="ts">
+    import { computed, PropType } from "vue";
+    import RequestCard from "./requestCard.partial.obs";
+
+    const props = defineProps({
+        title: {
+            type: String as PropType<string>,
+            isRequired: true
+        }
+    });
+
+    // #region Computed Values
+
+    const showSentry = computed(() => {
+        return true;
+    });
+
+    // #endregion
+</script>

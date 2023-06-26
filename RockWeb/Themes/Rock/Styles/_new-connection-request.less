@@ -30,6 +30,11 @@
   }
 }
 
+.connection-board-view > .panel-body,
+.connection-grid-view > .panel-body {
+  padding: 0;
+}
+
 .drag-scroll-zone-container {
   position: relative;
   height: 100%;
@@ -37,7 +42,7 @@
   min-height: ~"var(--block-min-height, calc(100vh - 370px))";
   overflow: auto;
 
-  > .panel-body {
+  > .board-view-panel-body {
     position: absolute;
     top: 0;
     right: 0;

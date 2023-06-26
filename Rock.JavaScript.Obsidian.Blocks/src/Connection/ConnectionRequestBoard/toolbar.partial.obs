@@ -1,0 +1,149 @@
+<!-- Copyright by the Spark Development Network; Licensed under the Rock Community License -->
+<template>
+    <div class="panel-collapsible">
+        <!-- Toolbar: Desktop -->
+        <div class="panel-toolbar d-none d-md-flex">
+
+            <!-- 1st Toolbar Group -->
+            <div class="toolbar-group">
+
+                <!-- Opportunities -->
+                <div class="d-inline-block btn-group-mega">
+                    <button type="button" class="btn btn-xs btn-tool dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        <i class="fa fa-plug"></i>
+                        Opportunities
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-mega">
+                        <!-- Favorties -->
+                        <li class="dropdown-header">
+                            <i class="far fa-star"></i>
+                            Favorites
+                        </li>
+                        <li>
+                            <a>
+                                <i class="fa fa-leaf"></i>
+                                [Opportunity Name]
+                                <span class="pull-right text-muted small">
+                                    [Type Name]
+                                </span>
+                            </a>
+                        </li>
+                        <!-- [non-favorite] Opportunites, grouped by Connection Type -->
+                        <li class="dropdown-header">
+                            <i class="fa fa-leaf"></i>
+                            [Type Name]
+                        </li>
+                        <li>
+                            <a>
+                                <i class="fa fa-child"></i>
+                                [Opportunity Name]
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Add Request -->
+                <a class="btn btn-xs btn-tool">
+                    <i class="fa fa-plus"></i>
+                    Add Request
+                </a>
+
+            </div>
+
+            <!-- 2nd Toolbar Group -->
+            <div class="toolbar-group">
+
+                <!-- Connectors -->
+                <div class="btn-group">
+                    <button type="button" class="btn btn-xs btn-tool dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        <i class="fa fa-user"></i>
+                        [All Connectors]
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li>
+                            <a>All Connectors</a>
+                        </li>
+                        <li>
+                            <a>My Connections</a>
+                        </li>
+                        <li class="divider"></li>
+                        <!-- Specific connectors for this Opportunity -->
+                        <li>
+                            <a>[Person 1 Name]</a>
+                        </li>
+                        <li>
+                            <a>[Person 2 Name]</a>
+                        </li>
+                    </ul>
+                </div>
+
+            </div>
+
+            <!-- 3rd Toolbar Group -->
+            <div class="toolbar-group">
+
+                <!-- Sort -->
+                <div class="btn-group">
+                    <button type="button" class="btn btn-xs btn-tool dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        <i class="fa fa-sort"></i>
+                        [Sort Text]
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-right">
+                        <!-- No Sort -->
+                        <li>&nbsp;</li>
+                        <li>
+                            <a>
+                                [Sort Text]
+                                &nbsp;
+                                <small class="text-muted">[Sort Subtitle]</small>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Filters -->
+                <a class="btn btn-xs btn-tool">
+                    <i class="fa fa-filter"></i>
+                    Filters
+                </a>
+
+                <!-- Campus -->
+                <div class="btn-group">
+                    <button type="button" class="btn btn-xs btn-tool dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        <i class="fa fa-building"></i>
+                        [Campus Name]
+                    </button>
+                    <ul class="dropdown-menu">
+                        <!-- All Campuses -->
+                        <li>&nbsp;</li>
+                        <li>
+                            <a>
+                                [Campus 1]
+                            </a>
+                        </li>
+                        <li>
+                            <a>
+                                [Campus 2]
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- List/Board Toggle -->
+                <a class="btn btn-xs btn-tool">
+                    <i class="fa fa-list"></i> List
+                </a>
+
+            </div>
+        </div>
+
+        <!-- Toolbar: Mobile -->
+        <div class="panel-toolbar panel-toolbar-mobile d-flex d-md-none">
+            mobile
+        </div>
+    </div>
+</template>
+
+<script setup lang="ts">
+    import { PropType } from "vue";
+</script>

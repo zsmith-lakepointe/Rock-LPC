@@ -1,0 +1,16 @@
+<!-- Copyright by the Spark Development Network; Licensed under the Rock Community License -->
+<template>
+    <div class="drag-scroll-zone-container">
+        <div v-drag-scroll.left="{ id: newGuid() }" class="board-view-panel-body overflow-scroll">
+            <div class="board-column-container">
+                <StatusColumn v-for="n in 20" :title="`Status #${n}`" />
+            </div>
+        </div>
+    </div>
+</template>
+
+<script setup lang="ts">
+    import StatusColumn from "./statusColumn.partial.obs";
+    import { DragScroll as vDragScroll } from "@Obsidian/Directives/dragScroll";
+    import { newGuid } from "@Obsidian/Utility/guid";
+</script>

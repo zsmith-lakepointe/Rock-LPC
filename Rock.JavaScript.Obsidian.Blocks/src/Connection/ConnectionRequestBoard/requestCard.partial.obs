@@ -1,0 +1,129 @@
+<!-- Copyright by the Spark Development Network; Licensed under the Rock Community License -->
+<template>
+    <div v-no-drag-scroll class="board-card">
+        <div class="board-card-content">
+
+            <div ref="headerElement" class="board-card-header">
+                <!-- StatusIconsHtml (will be dynamic) -->
+                <div class="board-card-pills">
+                    <span class="board-card-pill badge-warning" data-toggle="tooltip" data-original-title="Unassigned">
+                        <span class="sr-only">Unassigned</span>
+                    </span>
+                    <span class="board-card-pill badge-danger" data-toggle="tooltip" data-original-title="Idle (no activity in 14 days)">
+                        <span class="sr-only">Idle (no activity in 14 days)</span>
+                    </span>
+                </div>
+
+                <!-- CampusHtml (will be dynamic) -->
+                <span class="badge badge-info font-weight-normal" title="[Campus Name]">[CODE]</span>
+            </div>
+
+            <div class="board-card-main">
+                <div class="flex-grow-1 mb-2">
+                    <div class="board-card-photo" style="background-image: url('/GetImage.ashx?id=102')" title="[Person Full Name]"></div>
+                    <div class="board-card-name">
+                        [{{ name }}]
+                    </div>
+                    <div class="board-card-attributes">
+                        <strong>[Attr 1]:</strong> [Value]
+                        <br>
+                        <strong>[Attr 2]:</strong> [Value]
+                    </div>
+                    <span class="board-card-assigned">
+                        [Connector Person Full Name]
+                    </span>
+                </div>
+
+                <div><!-- This div is necessary to properly-position the following menu. -->
+                    <div class="btn-group dropdown-right">
+                        <button type="button" class="btn btn-sm text-muted bg-white dropdown-toggle pr-0" data-toggle="dropdown">
+                            <i class="fa fa-ellipsis-h"></i>
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li>
+                                <a>View Details</a>
+                            </li>
+                            <li v-if="canConnect">
+                                <a>Connect</a>
+                            </li>
+                            <li v-if="showSecurityButton">
+                                <a>Security</a>
+                            </li>
+                            <template v-if="canEdit">
+                                <li role="separator" class="divider"></li>
+                                <li>
+                                    <a class="dropdown-item-danger">Delete</a>
+                                </li>
+                            </template>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="board-card-meta">
+                <span title="[Activity Count] - [Days Since (long)...]">
+                    <i class="fa fa-list"></i>
+                    [5] - [No Activity]
+                </span>
+                <span title="[DaysSinceOpeningLongText]">
+                    <i class="fa fa-calendar"></i>
+                    [123]d
+                </span>
+            </div>
+
+        </div>
+    </div>
+</template>
+
+<script setup lang="ts">
+    import { computed, onMounted, PropType, ref } from "vue";
+    import { NoDragScroll as vNoDragScroll } from "@Obsidian/Directives/dragScroll";
+    import { tooltip } from "@Obsidian/Utility/tooltip";
+
+    const props = defineProps({
+        name: {
+            type: String as PropType<string>,
+            isRequired: true
+        }
+    });
+
+    // #region Values
+
+    const headerElement = ref<HTMLElement | null>(null);
+
+    // #endregion
+
+    // #region Computed Values
+
+    const canConnect = computed(() => {
+        return true;
+    });
+
+    const canEdit = computed(() => {
+        return true;
+    });
+
+    const showSecurityButton = computed(() => {
+        return true;
+    });
+
+    // #endregion
+
+    // #region Functions
+
+    /**
+     * Configures any dynamically-injected tooltips.
+     */
+    function configureTooltips(): void {
+        if (!headerElement.value) {
+            return;
+        }
+
+        headerElement.value.querySelectorAll('span[data-toggle="tooltip"]')
+            .forEach((t: Element) => tooltip(t));
+    }
+
+    // #endregion
+
+    onMounted(() => configureTooltips());
+</script>
