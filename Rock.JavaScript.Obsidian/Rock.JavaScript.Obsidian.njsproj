@@ -201,6 +201,7 @@
     <Folder Include="Framework\ViewModels\Blocks\Communication\SnippetTypeDetail\" />
     <Folder Include="Framework\ViewModels\Blocks\Communication\SystemPhoneNumberDetail\" />
     <Folder Include="Framework\ViewModels\Blocks\Connection\" />
+    <Folder Include="Framework\ViewModels\Blocks\Connection\ConnectionRequestBoard\" />
     <Folder Include="Framework\ViewModels\Blocks\Core\" />
     <Folder Include="Framework\ViewModels\Blocks\Core\AssetStorageProviderDetail\" />
     <Folder Include="Framework\ViewModels\Blocks\Core\CampusDetail\" />
