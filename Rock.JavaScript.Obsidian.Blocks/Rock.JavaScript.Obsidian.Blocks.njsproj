@@ -63,6 +63,9 @@
     <Content Include="src\Crm\BadgeDetail\viewPanel.partial.vue" />
     <Content Include="src\Bus\QueueDetail\editPanel.partial.vue" />
     <Content Include="src\Bus\QueueDetail\viewPanel.partial.vue" />
+    <Content Include="src\Engagement\achievementTypeDetail.obs" />
+    <Content Include="src\Engagement\AchievementTypeDetail\editPanel.partial.obs" />
+    <Content Include="src\Engagement\AchievementTypeDetail\viewPanel.partial.obs" />
     <Content Include="src\Engagement\streakDetail.obs" />
     <Content Include="src\Engagement\StreakDetail\editPanel.partial.obs" />
     <Content Include="src\Engagement\StreakDetail\viewPanel.partial.obs" />
@@ -357,6 +360,7 @@
     <TypeScriptCompile Include="src\Crm\AssessmentTypeDetail\viewPanel.partial.ts" />
     <TypeScriptCompile Include="src\Crm\attributeValues.ts" />
     <TypeScriptCompile Include="src\Crm\PersonDetail\badges.ts" />
+    <TypeScriptCompile Include="src\Engagement\AchievementTypeDetail\types.partial.ts" />
     <TypeScriptCompile Include="src\Engagement\StreakDetail\types.partial.ts" />
     <TypeScriptCompile Include="src\Prayer\PrayerRequestDetail\types.d.ts" />
     <TypeScriptCompile Include="src\Bus\QueueDetail\types.partial.ts" />

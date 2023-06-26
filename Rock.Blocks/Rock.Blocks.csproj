@@ -61,6 +61,7 @@
     </Compile>
     <Compile Include="Cms\BlockTypeDetail.cs" />
     <Compile Include="Core\SuggestionDetail.cs" />
+    <Compile Include="Engagement\AchievementTypeDetail.cs" />
     <Compile Include="Engagement\StreakTypeDetail.cs" />
     <Compile Include="Prayer\PrayerRequestDetail.cs" />
     <Compile Include="Core\FollowingEventTypeDetail.cs" />
