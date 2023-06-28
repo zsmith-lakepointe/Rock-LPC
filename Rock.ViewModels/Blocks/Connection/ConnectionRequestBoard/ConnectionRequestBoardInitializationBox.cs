@@ -15,6 +15,8 @@
 // </copyright>
 //
 
+using System.Collections.Generic;
+
 namespace Rock.ViewModels.Blocks.Connection.ConnectionRequestBoard
 {
     /// <summary>
@@ -22,5 +24,9 @@ namespace Rock.ViewModels.Blocks.Connection.ConnectionRequestBoard
     /// </summary>
     public class ConnectionRequestBoardInitializationBox : BlockBox
     {
+        /// <summary>
+        /// The connection types that are available to be selected within the opportunities sidebar.
+        /// </summary>
+        public List<ConnectionRequestBoardConnectionTypeBag> ConnectionTypes { get; set; }
     }
 }

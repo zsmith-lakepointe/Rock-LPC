@@ -21,22 +21,26 @@
 // </copyright>
 //
 
-import { ConnectionRequestBoardConnectionTypeBag } from "@Obsidian/ViewModels/Blocks/Connection/ConnectionRequestBoard/connectionRequestBoardConnectionTypeBag";
+import { Guid } from "@Obsidian/Types";
+import { ConnectionRequestBoardConnectionOpportunityBag } from "@Obsidian/ViewModels/Blocks/Connection/ConnectionRequestBoard/connectionRequestBoardConnectionOpportunityBag";
 
-/** The box that contains all the initialization information for the Connection Request Board block. */
-export type ConnectionRequestBoardInitializationBox = {
-    /** The connection types that are available to be selected within the opportunities sidebar. */
-    connectionTypes?: ConnectionRequestBoardConnectionTypeBag[] | null;
+/** A bag that contains connection type information for the connection request board. */
+export type ConnectionRequestBoardConnectionTypeBag = {
+    /** Gets or sets the connection opportunities. */
+    connectionOpportunities?: ConnectionRequestBoardConnectionOpportunityBag[] | null;
 
-    /**
-     * Gets or sets the error message. A non-empty value indicates that
-     * an error is preventing the block from being displayed.
-     */
-    errorMessage?: string | null;
+    /** Gets or sets the days until request idle. */
+    daysUntilRequestIdle: number;
 
-    /** Gets or sets the navigation urls. */
-    navigationUrls?: Record<string, string> | null;
+    /** Gets or sets the unique identifier. */
+    guid?: Guid | null;
 
-    /** Gets or sets the security grant token. */
-    securityGrantToken?: string | null;
+    /** Gets or sets the icon CSS class. */
+    iconCssClass?: string | null;
+
+    /** Gets or sets the name. */
+    name?: string | null;
+
+    /** Gets or sets the order. */
+    order: number;
 };

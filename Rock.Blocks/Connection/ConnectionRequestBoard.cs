@@ -18,9 +18,14 @@
 using Rock.Attribute;
 using Rock.Data;
 using Rock.Model;
+using Rock.Security;
 using Rock.ViewModels.Blocks.Connection.ConnectionRequestBoard;
+using Rock.Web.Cache;
 using Rock.Web.UI.Controls;
+using System.Collections.Generic;
 using System.ComponentModel;
+using System.Data.Entity;
+using System.Linq;
 
 namespace Rock.Blocks.Connection
 {
@@ -193,11 +198,11 @@ namespace Rock.Blocks.Connection
         private static class FilterKey
         {
             public const string DateRange = "DateRange";
-            public const string Requester = "Requester";
-            public const string Statuses = "Statuses";
-            public const string States = "States";
             public const string LastActivities = "LastActivities";
             public const string PastDueOnly = "PastDueOnly";
+            public const string Requester = "Requester";
+            public const string States = "States";
+            public const string Statuses = "Statuses";
         }
 
         /// <summary>
@@ -213,13 +218,13 @@ namespace Rock.Blocks.Connection
         /// </summary>
         private static class PageParameterKey
         {
-            public const string WorkflowId = "WorkflowId";
-            public const string ConnectionRequestId = "ConnectionRequestId";
-            public const string ConnectionRequestGuid = "ConnectionRequestGuid";
-            public const string ConnectionOpportunityId = "ConnectionOpportunityId";
             public const string CampusId = "CampusId";
+            public const string ConnectionOpportunityId = "ConnectionOpportunityId";
+            public const string ConnectionRequestGuid = "ConnectionRequestGuid";
+            public const string ConnectionRequestId = "ConnectionRequestId";
             public const string ConnectionTypeId = "ConnectionTypeId";
             public const string EntitySetId = "EntitySetId";
+            public const string WorkflowId = "WorkflowId";
         }
 
         /// <summary>
@@ -227,11 +232,11 @@ namespace Rock.Blocks.Connection
         /// </summary>
         private static class PersonPreferenceKey
         {
-            public const string SortBy = "SortBy";
             public const string CampusFilter = "CampusFilter";
-            public const string ViewMode = "ViewMode";
-            public const string ConnectorPersonAliasId = "ConnectorPersonAliasId";
             public const string ConnectionOpportunityId = "ConnectionOpportunityId";
+            public const string ConnectorPersonAliasId = "ConnectorPersonAliasId";
+            public const string SortBy = "SortBy";
+            public const string ViewMode = "ViewMode";
         }
 
         #endregion Keys
@@ -291,6 +296,21 @@ namespace Rock.Blocks.Connection
 
         public override string ObsidianFileUrl => $"{base.ObsidianFileUrl}.obs";
 
+        /// <summary>
+        /// Gets the current person.
+        /// </summary>
+        public Person CurrentPerson => this.RequestContext.CurrentPerson;
+
+        /// <summary>
+        /// Gets the current person identifier, or zero if the person is not defined.
+        /// </summary>
+        public int CurrentPersonId => this.CurrentPerson?.Id ?? 0;
+
+        /// <summary>
+        /// Gets the current person's primary alias identifier, or zero if the person or primary alias identifier is not defined.
+        /// </summary>
+        public int CurrentPersonAliasId => this.CurrentPerson?.PrimaryAliasId ?? 0;
+
         #endregion Properties
 
         #region Methods
@@ -315,8 +335,207 @@ namespace Rock.Blocks.Connection
         /// <param name="rockContext">The rock context.</param>
         private void SetBoxInitialState( ConnectionRequestBoardInitializationBox box, RockContext rockContext )
         {
+            var boardData = GetConnectionRequestBoardData( rockContext );
+
+            box.ConnectionTypes = boardData.AllowedConnectionTypes;
+        }
+
+        /// <summary>
+        /// Gets the connection request board data needed for the board to operate.
+        /// </summary>
+        /// <param name="rockContext">The rock context.</param>
+        /// <returns>The connection request board data needed for the board to operate.</returns>
+        private ConnectionRequestBoardData GetConnectionRequestBoardData( RockContext rockContext )
+        {
+            var boardData = new ConnectionRequestBoardData();
+
             var block = new BlockService( rockContext ).Get( this.BlockId );
             block.LoadAttributes( rockContext );
+
+            GetAllowedConnectionTypes( rockContext, boardData );
+            GetConnectionOpportunityId( rockContext, boardData );
+
+            return boardData;
+        }
+
+        /// <summary>
+        /// Gets the allowed connection types for the current user and loads them onto the supplied <see cref="ConnectionRequestBoardData"/> instance.
+        /// </summary>
+        /// <param name="rockContext">The rock context.</param>
+        /// <param name="boardData">The board data onto which to load the allowed connection types.</param>
+        private void GetAllowedConnectionTypes( RockContext rockContext, ConnectionRequestBoardData boardData )
+        {
+            var allowedConnectionTypes = new List<ConnectionRequestBoardConnectionTypeBag>();
+
+            var opportunitiesQuery = new ConnectionOpportunityService( rockContext )
+                .Queryable()
+                .AsNoTracking()
+                .Include( o => o.ConnectionType )
+                .Include( o => o.ConnectionOpportunityCampuses )
+                .Where( o => o.IsActive && o.ConnectionType.IsActive );
+
+            var typeFilter = GetAttributeValue( AttributeKey.ConnectionTypes ).SplitDelimitedValues().AsGuidList();
+            if ( typeFilter.Any() )
+            {
+                opportunitiesQuery = opportunitiesQuery.Where( o => typeFilter.Contains( o.ConnectionType.Guid ) );
+            }
+
+            var selfAssignedOpportunityIds = new List<int>();
+            var wasSelfAssignedOpportunityIdsQueried = false;
+
+            // Get this person's favorite opportunity IDs so we can mark them as such below.
+            var entityTypeId = EntityTypeCache.Get<ConnectionOpportunity>().Id;
+            var favoriteOpportunityIds = new FollowingService( rockContext )
+                .Queryable()
+                .AsNoTracking()
+                .Where( f =>
+                    f.EntityTypeId == entityTypeId
+                    && string.IsNullOrEmpty( f.PurposeKey )
+                    && f.PersonAliasId == CurrentPersonAliasId
+                )
+                .Select( f => f.EntityId )
+                .ToList();
+
+            foreach ( var opportunity in opportunitiesQuery.ToList() )
+            {
+                if ( opportunity.ConnectionType.EnableRequestSecurity && !wasSelfAssignedOpportunityIdsQueried )
+                {
+                    selfAssignedOpportunityIds = new ConnectionRequestService( rockContext )
+                        .Queryable()
+                        .Where( r => r.ConnectorPersonAlias.PersonId == CurrentPersonId )
+                        .Select( r => r.ConnectionOpportunityId )
+                        .Distinct()
+                        .ToList();
+
+                    wasSelfAssignedOpportunityIdsQueried = true;
+                }
+
+                var canView = opportunity.IsAuthorized( Authorization.VIEW, CurrentPerson )
+                    || (
+                        opportunity.ConnectionType.EnableRequestSecurity
+                        && selfAssignedOpportunityIds.Contains( opportunity.Id )
+                    );
+
+                if ( !canView )
+                {
+                    continue;
+                }
+
+                // Add the opportunity's type if it hasn't already been added.
+                var connectionType = allowedConnectionTypes.FirstOrDefault( t => t.Guid == opportunity.ConnectionType.Guid );
+                if ( connectionType == null )
+                {
+                    connectionType = new ConnectionRequestBoardConnectionTypeBag
+                    {
+                        Guid = opportunity.ConnectionType.Guid,
+                        Name = opportunity.ConnectionType.Name,
+                        IconCssClass = opportunity.ConnectionType.IconCssClass,
+                        Order = opportunity.ConnectionType.Order,
+                        DaysUntilRequestIdle = opportunity.ConnectionType.DaysUntilRequestIdle,
+                        ConnectionOpportunities = new List<ConnectionRequestBoardConnectionOpportunityBag>()
+                    };
+
+                    allowedConnectionTypes.Add( connectionType );
+                }
+
+                // Add the opportunity.
+                connectionType.ConnectionOpportunities.Add( new ConnectionRequestBoardConnectionOpportunityBag
+                {
+                    Guid = opportunity.Guid,
+                    Name = opportunity.Name,
+                    PublicName = opportunity.PublicName,
+                    IconCssClass = opportunity.IconCssClass,
+                    Description = opportunity.Description,
+                    ConnectionTypeName = connectionType.Name,
+                    ConnectionOpportunityCampusGuids = opportunity.ConnectionOpportunityCampuses.Select( c => c.Guid ).ToList(),
+                    PhotoUrl = ConnectionOpportunity.GetPhotoUrl( opportunity.PhotoId ),
+                    Order = opportunity.Order,
+                    IsFavorite = favoriteOpportunityIds.Contains( opportunity.Id )
+                } );
+            }
+
+            // Sort each type's opportunities.
+            foreach ( var connectionType in allowedConnectionTypes )
+            {
+                connectionType.ConnectionOpportunities = connectionType.ConnectionOpportunities
+                    .OrderBy( co => co.Order )
+                    .ThenBy( co => co.Name )
+                    .ToList();
+            }
+
+            // Sort and add the allowed types.
+            boardData.AllowedConnectionTypes = allowedConnectionTypes
+                .Where( ct => ct.ConnectionOpportunities.Any() )
+                .OrderBy( ct => ct.Order )
+                .ThenBy( ct => ct.Name )
+                .ToList();
+        }
+
+        /// <summary>
+        /// Gets the connection opportunity identifier and loads it onto the supplied <see cref="ConnectionRequestBoardData"/> instance.
+        /// </summary>
+        /// <param name="rockContext">The rock context.</param>
+        /// <param name="boardData">The board data onto which to load the connection opportunity identifier.</param>
+        private void GetConnectionOpportunityId( RockContext rockContext, ConnectionRequestBoardData boardData )
+        {
+            var connectionOpportunityId = GetEntityIdFromPageParameter<ConnectionOpportunity>( PageParameterKey.ConnectionOpportunityId, rockContext );
+
+            // ...
+            // ... TODO (Jason): more logic to possibly override the ID.
+            // ...
+
+            boardData.ConnectionOpportunityId = connectionOpportunityId;
+        }
+
+        /// <summary>
+        /// Gets the <see cref="IEntity"/> integer ID value if it can be parsed from page parameters, or <see langword="null"/> if not.
+        /// <para>
+        /// The page parameter's value may be an integer ID (if predictable IDs are allowed by site settings), a Guid, or an IdKey.
+        /// </para>
+        /// </summary>
+        /// <typeparam name="T">The <see cref="IEntity"/> type whose ID should be parsed.</typeparam>
+        /// <param name="pageParameterKey">The key of the page parameter from which to parse the ID.</param>
+        /// <param name="rockContext">The rock context.</param>
+        /// <returns>The <see cref="IEntity"/> integer ID value if it can be parsed from page parameters, or <see langword="null"/> if not.</returns>
+        private int? GetEntityIdFromPageParameter<T>( string pageParameterKey, RockContext rockContext ) where T : IEntity
+        {
+            var entityKey = PageParameter( pageParameterKey );
+            if ( entityKey.IsNullOrWhiteSpace() )
+            {
+                return null;
+            }
+
+            var entityTypeId = EntityTypeCache.GetId( typeof( T ) );
+            if ( !entityTypeId.HasValue )
+            {
+                return null;
+            }
+
+            return Reflection.GetEntityIdForEntityType( entityTypeId.Value, entityKey, !PageCache.Layout.Site.DisablePredictableIds, rockContext );
+        }
+
+        #endregion
+
+        #region Supporting Classes
+
+        /// <summary>
+        /// A runtime object representing the connection types, opportunities, requests and supporting data needed for the board to operate.
+        /// <para>
+        /// This object is intended to be assembled using a combination of page parameter values, person preferences and existing
+        /// database records; to be passed between private helper methods as needed.
+        /// </para>
+        /// </summary>
+        private class ConnectionRequestBoardData
+        {
+            /// <summary>
+            /// The allowed connection types for the current user.
+            /// </summary>
+            public List<ConnectionRequestBoardConnectionTypeBag> AllowedConnectionTypes { get; set; }
+
+            /// <summary>
+            /// The selected connection opportunity identifier.
+            /// </summary>
+            public int? ConnectionOpportunityId { get; set; }
         }
 
         #endregion
