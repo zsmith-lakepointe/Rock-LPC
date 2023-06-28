@@ -95,15 +95,15 @@
 
     // #region Computed Values
 
-    const canConnect = computed(() => {
+    const canConnect = computed((): boolean => {
         return true;
     });
 
-    const canEdit = computed(() => {
+    const canEdit = computed((): boolean => {
         return true;
     });
 
-    const showSecurityButton = computed(() => {
+    const showSecurityButton = computed((): boolean => {
         return true;
     });
 

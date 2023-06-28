@@ -1,57 +1,75 @@
 <!-- Copyright by the Spark Development Network; Licensed under the Rock Community License -->
 <template>
     <div class="panel-collapsible">
-        <!-- Toolbar: Desktop -->
-        <div class="panel-toolbar d-none d-md-flex">
+        <div class="panel-toolbar">
 
-            <!-- 1st Toolbar Group -->
-            <div class="toolbar-group">
+            <!-- Opportunities -->
+            <div class="d-inline-block btn-group-mega">
+                <button type="button" class="btn btn-xs btn-tool dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    <i class="fa fa-plug"></i>
+                    Opportunities
+                </button>
+                <ul class="dropdown-menu dropdown-menu-mega">
 
-                <!-- Opportunities -->
-                <div class="d-inline-block btn-group-mega">
-                    <button type="button" class="btn btn-xs btn-tool dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                        <i class="fa fa-plug"></i>
-                        Opportunities
-                    </button>
-                    <ul class="dropdown-menu dropdown-menu-mega">
-                        <!-- Favorties -->
+                    <!-- Favorite Opportunities -->
+                    <template v-if="favoriteOpportunites.length">
                         <li class="dropdown-header">
                             <i class="far fa-star"></i>
                             Favorites
                         </li>
                         <li>
-                            <a>
-                                <i class="fa fa-leaf"></i>
-                                [Opportunity Name]
+                            <a v-for="opportunity in favoriteOpportunites" :key="opportunity.guid ?? ''" href="#" @click.prevent="$emit('selectOpportunity', opportunity.guid)">
+                                <i v-if="opportunity.iconCssClass" :class="opportunity.iconCssClass"></i>
+                                {{ opportunity.name }}
                                 <span class="pull-right text-muted small">
-                                    [Type Name]
+                                    {{ opportunity.connectionTypeName }}
                                 </span>
                             </a>
                         </li>
-                        <!-- [non-favorite] Opportunites, grouped by Connection Type -->
-                        <li class="dropdown-header">
-                            <i class="fa fa-leaf"></i>
-                            [Type Name]
-                        </li>
+                    </template>
+
+                    <!-- All Opportunites, grouped by Connection Type -->
+                    <template v-if="connectionTypes?.length">
+                        <template v-for="connectionType in connectionTypes" :key="connectionType.guid ?? ''">
+                            <li class="dropdown-header">
+                                <i v-if="connectionType.iconCssClass" :class="connectionType.iconCssClass"></i>
+                                {{ connectionType.name }}
+                            </li>
+                            <li v-for="opportunity in connectionType.connectionOpportunities" :key="`${connectionType.guid}-${opportunity.guid}`">
+                                <a href="#" @click.prevent="$emit('selectOpportunity', opportunity.guid)">
+                                    <i v-if="opportunity.iconCssClass" :class="opportunity.iconCssClass"></i>
+                                    {{ opportunity.name }}
+                                </a>
+                            </li>
+                        </template>
+                    </template>
+                    <li v-else class="disabled">
+                        <a @click.prevent="$emit('selectOpportunity', null)">No Opportunities</a>
+                    </li>
+
+                </ul>
+            </div>
+
+            <div class="toolbar-group">
+
+                <!-- Sort -->
+                <div class="btn-group">
+                    <button type="button" class="btn btn-xs btn-tool dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        <i class="fa fa-sort"></i>
+                        [Sort Text]
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-right">
+                        <!-- No Sort -->
+                        <li>&nbsp;</li>
                         <li>
                             <a>
-                                <i class="fa fa-child"></i>
-                                [Opportunity Name]
+                                [Sort Text]
+                                &nbsp;
+                                <small class="text-muted">[Sort Subtitle]</small>
                             </a>
                         </li>
                     </ul>
                 </div>
-
-                <!-- Add Request -->
-                <a class="btn btn-xs btn-tool">
-                    <i class="fa fa-plus"></i>
-                    Add Request
-                </a>
-
-            </div>
-
-            <!-- 2nd Toolbar Group -->
-            <div class="toolbar-group">
 
                 <!-- Connectors -->
                 <div class="btn-group">
@@ -77,36 +95,6 @@
                     </ul>
                 </div>
 
-            </div>
-
-            <!-- 3rd Toolbar Group -->
-            <div class="toolbar-group">
-
-                <!-- Sort -->
-                <div class="btn-group">
-                    <button type="button" class="btn btn-xs btn-tool dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                        <i class="fa fa-sort"></i>
-                        [Sort Text]
-                    </button>
-                    <ul class="dropdown-menu dropdown-menu-right">
-                        <!-- No Sort -->
-                        <li>&nbsp;</li>
-                        <li>
-                            <a>
-                                [Sort Text]
-                                &nbsp;
-                                <small class="text-muted">[Sort Subtitle]</small>
-                            </a>
-                        </li>
-                    </ul>
-                </div>
-
-                <!-- Filters -->
-                <a class="btn btn-xs btn-tool">
-                    <i class="fa fa-filter"></i>
-                    Filters
-                </a>
-
                 <!-- Campus -->
                 <div class="btn-group">
                     <button type="button" class="btn btn-xs btn-tool dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -129,21 +117,46 @@
                     </ul>
                 </div>
 
-                <!-- List/Board Toggle -->
+                <!-- Filters -->
                 <a class="btn btn-xs btn-tool">
-                    <i class="fa fa-list"></i> List
+                    <i class="fa fa-filter"></i>
+                    Filters
                 </a>
 
             </div>
-        </div>
-
-        <!-- Toolbar: Mobile -->
-        <div class="panel-toolbar panel-toolbar-mobile d-flex d-md-none">
-            mobile
         </div>
     </div>
 </template>
 
 <script setup lang="ts">
-    import { PropType } from "vue";
+    import { computed, PropType } from "vue";
+    import { ConnectionRequestBoardConnectionOpportunityBag } from "@Obsidian/ViewModels/Blocks/Connection/ConnectionRequestBoard/connectionRequestBoardConnectionOpportunityBag";
+    import { ConnectionRequestBoardConnectionTypeBag } from "@Obsidian/ViewModels/Blocks/Connection/ConnectionRequestBoard/connectionRequestBoardConnectionTypeBag";
+
+    const props = defineProps({
+        connectionTypes: {
+            type: Array as PropType<ConnectionRequestBoardConnectionTypeBag[] | null | undefined>,
+            required: true
+        }
+    });
+
+    defineEmits<{
+        (e: "selectOpportunity", opportunityGuid: string | null | undefined): void
+    }>();
+
+    // #region Computed Values
+
+    const favoriteOpportunites = computed((): ConnectionRequestBoardConnectionOpportunityBag[] => {
+        const opportunities: ConnectionRequestBoardConnectionOpportunityBag[] = [];
+
+        (props.connectionTypes ?? []).forEach((connectionType: ConnectionRequestBoardConnectionTypeBag) => {
+            (connectionType.connectionOpportunities ?? [])
+                .filter((opportunity: ConnectionRequestBoardConnectionOpportunityBag) => opportunity.isFavorite)
+                .forEach((opportunity: ConnectionRequestBoardConnectionOpportunityBag) => opportunities.push(opportunity));
+        });
+
+        return opportunities;
+    });
+
+    // #endregion
 </script>

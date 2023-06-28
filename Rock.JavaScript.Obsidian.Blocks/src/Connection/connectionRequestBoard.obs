@@ -8,10 +8,25 @@
            type="block"
            title="[Opportunity Name]"
            :class="panelCssClass"
-           :hasFullscreen="true">
+           :hasFullscreen="true"
+           :headerSecondaryActions="secondaryActions">
+
+        <template #headerActions>
+            <span class="action">
+                <i class="fa fa-star-o"></i>
+            </span>
+
+            <span class="action">
+                <i class="fa fa-list"></i>
+            </span>
+
+            <span class="action">
+                <i class="fa fa-plus-square"></i>
+            </span>
+        </template>
 
         <template #preBody>
-            <Toolbar />
+            <Toolbar :connectionTypes="connectionTypes" />
         </template>
 
         <!-- Body -->
@@ -21,37 +36,53 @@
 </template>
 
 <script setup lang="ts">
-    import { computed } from "vue";
+    import { computed, ref } from "vue";
     import BoardView from "./ConnectionRequestBoard/boardView.partial.obs";
     import GridView from "./ConnectionRequestBoard/gridView.partial.obs";
     import Toolbar from "./ConnectionRequestBoard/toolbar.partial.obs";
     import NotificationBox from "@Obsidian/Controls/notificationBox.obs";
     import Panel from "@Obsidian/Controls/panel.obs";
     import { AlertType } from "@Obsidian/Enums/Controls/alertType";
-    import { useConfigurationValues } from "@Obsidian/Utility/block";
+    import { PanelAction } from "@Obsidian/Types/Controls/panelAction";
+    import { onConfigurationValuesChanged, useConfigurationValues, useReloadBlock } from "@Obsidian/Utility/block";
+    import { ConnectionRequestBoardConnectionTypeBag } from "@Obsidian/ViewModels/Blocks/Connection/ConnectionRequestBoard/connectionRequestBoardConnectionTypeBag";
     import { ConnectionRequestBoardInitializationBox } from "@Obsidian/ViewModels/Blocks/Connection/ConnectionRequestBoard/connectionRequestBoardInitializationBox";
+
+    const config = useConfigurationValues<ConnectionRequestBoardInitializationBox>();
+    const reloadBlock = useReloadBlock();
+
+    const secondaryActions: PanelAction[] = [
+        {
+            title: "Campaign Requests",
+            iconCssClass: "fas fa-user-plus",
+            type: "default",
+            handler: () => alert("Campaign Requests selected.")
+        }
+    ];
 
     // #region Values
 
-    const config = useConfigurationValues<ConnectionRequestBoardInitializationBox>();
+    const connectionTypes = ref<ConnectionRequestBoardConnectionTypeBag[] | null | undefined>(config.connectionTypes);
 
     // #endregion
 
     // #region Computed Values
 
-    const blockErrorMessage = computed(() => {
+    const blockErrorMessage = computed((): string | undefined | null => {
         return config.errorMessage;
     });
 
-    const panelCssClass = computed(() => {
+    const panelCssClass = computed((): string => {
         let cssClass = "styled-scroll";
 
         // if (isBoardView) {
-            cssClass = `${cssClass} connection-board-view`;
+        cssClass = `${cssClass} connection-board-view`;
         // }
 
         return cssClass;
     });
 
     // #endregion
+
+    onConfigurationValuesChanged(reloadBlock);
 </script>

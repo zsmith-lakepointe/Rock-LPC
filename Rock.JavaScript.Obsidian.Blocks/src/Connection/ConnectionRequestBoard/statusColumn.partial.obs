@@ -34,7 +34,7 @@
 
     // #region Computed Values
 
-    const showSentry = computed(() => {
+    const showSentry = computed((): boolean => {
         return true;
     });
 
