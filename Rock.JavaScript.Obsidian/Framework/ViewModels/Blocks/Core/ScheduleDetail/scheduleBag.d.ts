@@ -43,9 +43,6 @@ export type ScheduleBag = {
     /** Gets or sets the Rock.Model.Category that this Schedule belongs to. */
     category?: ListItemBag | null;
 
-    /** Gets or sets the CategoryId of the Rock.Model.Category that this Schedule belongs to. */
-    categoryId?: number | null;
-
     /**
      * Gets or sets the number of minutes following schedule start that Check-in should be active. 0 represents that Check-in will only be available
      * until the Schedule's start time.

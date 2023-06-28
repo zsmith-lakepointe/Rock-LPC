@@ -26,7 +26,7 @@
                 <Numberbox v-model="enableCheckIn"
                             append="mins before start"
                             label="Enable Check-in">
-                            <template #append>
+                            <template #inputGroupAppend>
                                 <span class="input-group-addon">mins before start</span>
                             </template>
                 </Numberbox>
@@ -41,7 +41,7 @@
             <div class="col-md-6">
                 <Numberbox v-model="closeCheckIn"
                             label="Close Check-in">
-                            <template #append>
+                            <template #inputGroupAppend>
                                 <span class="input-group-addon">mins after start</span>
                             </template>
                 </Numberbox>
@@ -121,8 +121,8 @@
     const isActive = propertyRef(props.modelValue.isActive ?? false, "IsActive");
     const name = propertyRef(props.modelValue.name ?? "", "Name");
     const abbreviatedName = propertyRef(props.modelValue.abbreviatedName ?? "", "AbbreviatedName");
-    const enableCheckIn = propertyRef(props.modelValue.checkInStartOffsetMinutes ?? 0, "CheckInStartOffsetMinute");
-    const closeCheckIn = propertyRef(props.modelValue.checkInEndOffsetMinutes ?? 0, "CheckInEndOffsetMinute");
+    const enableCheckIn = propertyRef(props.modelValue.checkInStartOffsetMinutes, "CheckInStartOffsetMinute");
+    const closeCheckIn = propertyRef(props.modelValue.checkInEndOffsetMinutes, "CheckInEndOffsetMinute");
     const category = propertyRef(props.modelValue.category, "CategoryId");
     const autoInactivateWhenComplete = propertyRef(props.modelValue.autoInactivateWhenComplete, "AutoInactiveWhenComplete");
     const isPublic = propertyRef(props.modelValue.isPublic ?? false, "IsPublic");
@@ -156,8 +156,8 @@
         updateRefValue(isActive, props.modelValue.isActive ?? false);
         updateRefValue(name, props.modelValue.name ?? "");
         updateRefValue(abbreviatedName, props.modelValue.abbreviatedName ?? "");
-        updateRefValue(enableCheckIn, props.modelValue.checkInStartOffsetMinutes ?? 0);
-        updateRefValue(closeCheckIn, props.modelValue.checkInEndOffsetMinutes ?? 0);
+        updateRefValue(enableCheckIn, props.modelValue.checkInStartOffsetMinutes);
+        updateRefValue(closeCheckIn, props.modelValue.checkInEndOffsetMinutes);
         updateRefValue(category, props.modelValue.category);
         updateRefValue(autoInactivateWhenComplete, props.modelValue.autoInactivateWhenComplete);
         updateRefValue(isPublic, props.modelValue.isPublic ?? false);

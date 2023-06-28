@@ -71,7 +71,6 @@
         "abbreviatedName",
         "autoInactivateWhenComplete",
         "category",
-        "categoryId",
         "checkInEndOffsetMinutes",
         "checkInStartOffsetMinutes",
         "description",

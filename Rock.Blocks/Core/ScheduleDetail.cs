@@ -225,7 +225,6 @@ namespace Rock.Blocks.Core
                 AbbreviatedName = entity.AbbreviatedName,
                 AutoInactivateWhenComplete = entity.AutoInactivateWhenComplete,
                 Category = entity.Category.ToListItemBag(),
-                CategoryId = entity.CategoryId,
                 CheckInEndOffsetMinutes = entity.CheckInEndOffsetMinutes,
                 CheckInStartOffsetMinutes = entity.CheckInStartOffsetMinutes,
                 Description = entity.Description,
@@ -300,9 +299,6 @@ namespace Rock.Blocks.Core
 
             box.IfValidProperty( nameof( box.Entity.Category ),
                 () => entity.CategoryId = box.Entity.Category.GetEntityId<Category>( rockContext ) );
-
-            box.IfValidProperty( nameof( box.Entity.CategoryId ),
-                () => entity.CategoryId = box.Entity.CategoryId );
 
             box.IfValidProperty( nameof( box.Entity.CheckInEndOffsetMinutes ),
                 () => entity.CheckInEndOffsetMinutes = box.Entity.CheckInEndOffsetMinutes );
