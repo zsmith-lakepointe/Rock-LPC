@@ -28,5 +28,31 @@ namespace Rock.ViewModels.Blocks.Connection.ConnectionRequestBoard
         /// The connection types that are available to be selected within the opportunities sidebar.
         /// </summary>
         public List<ConnectionRequestBoardConnectionTypeBag> ConnectionTypes { get; set; }
+
+        /// <summary>
+        /// Gets or sets the selected connection opportunity identifier.
+        /// </summary>
+        public int ConnectionOpportunityId { get; set; }
+
+        /// <summary>
+        /// Gets or sets the selected connection request identifier.
+        /// </summary>
+        public int? ConnectionRequestId { get; set; }
+
+        /// <summary>
+        /// Gets or sets the filters to be used to initialize the connection request board.
+        /// </summary>
+        public ConnectionRequestBoardFiltersBag Filters { get; set; }
+
+        /// <summary>
+        /// Gets or sets the maximum number of cards that should be displayed per column in board view mode.
+        /// </summary>
+        public int MaxCardsPerColumn { get; set; }
+
+        /// <summary>
+        /// Gets or sets the status icons template that should be used at the top of each connection request card (in board view mode),
+        /// the first column of each row (in grid view mode) + the top of the connection request modal.
+        /// </summary>
+        public string StatusIconsTemplate { get; set; }
     }
 }

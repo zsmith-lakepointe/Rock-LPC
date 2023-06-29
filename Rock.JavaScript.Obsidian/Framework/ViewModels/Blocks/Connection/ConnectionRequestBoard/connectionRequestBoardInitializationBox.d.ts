@@ -22,9 +22,16 @@
 //
 
 import { ConnectionRequestBoardConnectionTypeBag } from "@Obsidian/ViewModels/Blocks/Connection/ConnectionRequestBoard/connectionRequestBoardConnectionTypeBag";
+import { ConnectionRequestBoardFiltersBag } from "@Obsidian/ViewModels/Blocks/Connection/ConnectionRequestBoard/connectionRequestBoardFiltersBag";
 
 /** The box that contains all the initialization information for the Connection Request Board block. */
 export type ConnectionRequestBoardInitializationBox = {
+    /** Gets or sets the selected connection opportunity identifier. */
+    connectionOpportunityId: number;
+
+    /** Gets or sets the selected connection request identifier. */
+    connectionRequestId?: number | null;
+
     /** The connection types that are available to be selected within the opportunities sidebar. */
     connectionTypes?: ConnectionRequestBoardConnectionTypeBag[] | null;
 
@@ -34,9 +41,21 @@ export type ConnectionRequestBoardInitializationBox = {
      */
     errorMessage?: string | null;
 
+    /** Gets or sets the filters to be used to initialize the connection request board. */
+    filters?: ConnectionRequestBoardFiltersBag | null;
+
+    /** Gets or sets the maximum number of cards that should be displayed per column in board view mode. */
+    maxCardsPerColumn: number;
+
     /** Gets or sets the navigation urls. */
     navigationUrls?: Record<string, string> | null;
 
     /** Gets or sets the security grant token. */
     securityGrantToken?: string | null;
+
+    /**
+     * Gets or sets the status icons template that should be used at the top of each connection request card (in board view mode),
+     * the first column of each row (in grid view mode) + the top of the connection request modal.
+     */
+    statusIconsTemplate?: string | null;
 };

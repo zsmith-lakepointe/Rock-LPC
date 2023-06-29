@@ -20,7 +20,7 @@
                         <li>
                             <a v-for="opportunity in favoriteOpportunites" :key="opportunity.guid ?? ''" href="#" @click.prevent="$emit('selectOpportunity', opportunity.guid)">
                                 <i v-if="opportunity.iconCssClass" :class="opportunity.iconCssClass"></i>
-                                {{ opportunity.name }}
+                                {{ opportunity.publicName }}
                                 <span class="pull-right text-muted small">
                                     {{ opportunity.connectionTypeName }}
                                 </span>
@@ -38,7 +38,7 @@
                             <li v-for="opportunity in connectionType.connectionOpportunities" :key="`${connectionType.guid}-${opportunity.guid}`">
                                 <a href="#" @click.prevent="$emit('selectOpportunity', opportunity.guid)">
                                     <i v-if="opportunity.iconCssClass" :class="opportunity.iconCssClass"></i>
-                                    {{ opportunity.name }}
+                                    {{ opportunity.publicName }}
                                 </a>
                             </li>
                         </template>

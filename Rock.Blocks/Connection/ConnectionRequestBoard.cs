@@ -266,7 +266,8 @@ namespace Rock.Blocks.Connection
 </div>";
 
         /// <summary>
-        /// The default connection request status icons template.
+        /// The default connection request status icons template. Used at the top of each connection request card (in board view mode),
+        /// the first column of each row (in grid view mode) + the top of the connection request modal.
         /// </summary>
         private const string ConnectionRequestStatusIconsTemplateDefaultValue = @"
 <div class='board-card-pills'>
@@ -353,7 +354,7 @@ namespace Rock.Blocks.Connection
             block.LoadAttributes( rockContext );
 
             GetAllowedConnectionTypes( rockContext, boardData );
-            GetConnectionOpportunityId( rockContext, boardData );
+            GetOpportunityFromURLOrPersonPreferences( rockContext, boardData );
 
             return boardData;
         }
@@ -366,6 +367,7 @@ namespace Rock.Blocks.Connection
         private void GetAllowedConnectionTypes( RockContext rockContext, ConnectionRequestBoardData boardData )
         {
             var allowedConnectionTypes = new List<ConnectionRequestBoardConnectionTypeBag>();
+            var availableOpportunityIds = new List<int>();
 
             var opportunitiesQuery = new ConnectionOpportunityService( rockContext )
                 .Queryable()
@@ -431,7 +433,6 @@ namespace Rock.Blocks.Connection
                         Name = opportunity.ConnectionType.Name,
                         IconCssClass = opportunity.ConnectionType.IconCssClass,
                         Order = opportunity.ConnectionType.Order,
-                        DaysUntilRequestIdle = opportunity.ConnectionType.DaysUntilRequestIdle,
                         ConnectionOpportunities = new List<ConnectionRequestBoardConnectionOpportunityBag>()
                     };
 
@@ -442,16 +443,15 @@ namespace Rock.Blocks.Connection
                 connectionType.ConnectionOpportunities.Add( new ConnectionRequestBoardConnectionOpportunityBag
                 {
                     Guid = opportunity.Guid,
-                    Name = opportunity.Name,
                     PublicName = opportunity.PublicName,
                     IconCssClass = opportunity.IconCssClass,
-                    Description = opportunity.Description,
                     ConnectionTypeName = connectionType.Name,
-                    ConnectionOpportunityCampusGuids = opportunity.ConnectionOpportunityCampuses.Select( c => c.Guid ).ToList(),
                     PhotoUrl = ConnectionOpportunity.GetPhotoUrl( opportunity.PhotoId ),
                     Order = opportunity.Order,
                     IsFavorite = favoriteOpportunityIds.Contains( opportunity.Id )
                 } );
+
+                availableOpportunityIds.Add( opportunity.Id );
             }
 
             // Sort each type's opportunities.
@@ -459,7 +459,7 @@ namespace Rock.Blocks.Connection
             {
                 connectionType.ConnectionOpportunities = connectionType.ConnectionOpportunities
                     .OrderBy( co => co.Order )
-                    .ThenBy( co => co.Name )
+                    .ThenBy( co => co.PublicName )
                     .ToList();
             }
 
@@ -472,19 +472,32 @@ namespace Rock.Blocks.Connection
         }
 
         /// <summary>
-        /// Gets the connection opportunity identifier and loads it onto the supplied <see cref="ConnectionRequestBoardData"/> instance.
+        /// Gets the selected connection opportunity and loads it onto the supplied <see cref="ConnectionRequestBoardData"/> instance.
         /// </summary>
         /// <param name="rockContext">The rock context.</param>
-        /// <param name="boardData">The board data onto which to load the connection opportunity identifier.</param>
-        private void GetConnectionOpportunityId( RockContext rockContext, ConnectionRequestBoardData boardData )
+        /// <param name="boardData">The board data onto which to load the selected connection opportunity.</param>
+        private void GetOpportunityFromURLOrPersonPreferences( RockContext rockContext, ConnectionRequestBoardData boardData )
         {
+            var connectionRequestId = GetEntityIdFromPageParameter<ConnectionRequest>( PageParameterKey.ConnectionRequestId, rockContext );
             var connectionOpportunityId = GetEntityIdFromPageParameter<ConnectionOpportunity>( PageParameterKey.ConnectionOpportunityId, rockContext );
+            var campusId = GetEntityIdFromPageParameter<Campus>( PageParameterKey.CampusId, rockContext );
 
-            // ...
-            // ... TODO (Jason): more logic to possibly override the ID.
-            // ...
+            if ( connectionRequestId.HasValue && !connectionOpportunityId.HasValue )
+            {
+                var result = new ConnectionRequestService( rockContext )
+                    .Queryable()
+                    .Where( cr => cr.Id == connectionOpportunityId.Value )
+                    .Select( cr => new
+                    {
+                        cr.ConnectionOpportunityId
+                    } )
+                    .FirstOrDefault();
 
-            boardData.ConnectionOpportunityId = connectionOpportunityId;
+                if ( result != null && boardData.AvailableOpportunityIds.Contains( result.ConnectionOpportunityId ) )
+                {
+                    connectionOpportunityId = result.ConnectionOpportunityId;
+                }
+            }
         }
 
         /// <summary>
@@ -533,9 +546,14 @@ namespace Rock.Blocks.Connection
             public List<ConnectionRequestBoardConnectionTypeBag> AllowedConnectionTypes { get; set; }
 
             /// <summary>
-            /// The selected connection opportunity identifier.
+            /// The available connection opportunity identifiers within the allowed connection types.
             /// </summary>
-            public int? ConnectionOpportunityId { get; set; }
+            public List<int> AvailableOpportunityIds { get; set; }
+
+            /// <summary>
+            /// The selected connection opportunity.
+            /// </summary>
+            public ConnectionRequestBoardConnectionOpportunityBag Opportunity { get; set; }
         }
 
         #endregion

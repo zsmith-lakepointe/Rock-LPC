@@ -112,6 +112,7 @@
     <Compile Include="Blocks\Core\NotificationMessageList\NotificationMessageListInitializationBox.cs" />
     <Compile Include="Blocks\Connection\ConnectionRequestBoard\ConnectionRequestBoardConnectionOpportunityBag.cs" />
     <Compile Include="Blocks\Connection\ConnectionRequestBoard\ConnectionRequestBoardConnectionTypeBag.cs" />
+    <Compile Include="Blocks\Connection\ConnectionRequestBoard\ConnectionRequestBoardFiltersBag.cs" />
     <Compile Include="Blocks\Connection\ConnectionRequestBoard\ConnectionRequestBoardInitializationBox.cs" />
     <Compile Include="Blocks\Engagement\SignUp\SignUpDetail\SignUpDetailInitializationBox.cs" />
     <Compile Include="Blocks\Engagement\SignUp\SignUpRegister\SignUpRegisterRequestBag.cs" />

@@ -46,11 +46,6 @@ namespace Rock.ViewModels.Blocks.Connection.ConnectionRequestBoard
         public int Order { get; set; }
 
         /// <summary>
-        /// Gets or sets the days until request idle.
-        /// </summary>
-        public int DaysUntilRequestIdle { get; set; }
-
-        /// <summary>
         /// Gets or sets the connection opportunities.
         /// </summary>
         public List<ConnectionRequestBoardConnectionOpportunityBag> ConnectionOpportunities { get; set; }

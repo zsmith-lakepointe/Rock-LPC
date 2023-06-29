@@ -748,6 +748,7 @@
     <TypeScriptCompile Include="Framework\ViewModels\Blocks\Communication\SystemPhoneNumberDetail\systemPhoneNumberDetailOptionsBag.d.ts" />
     <TypeScriptCompile Include="Framework\ViewModels\Blocks\Connection\ConnectionRequestBoard\connectionRequestBoardConnectionOpportunityBag.d.ts" />
     <TypeScriptCompile Include="Framework\ViewModels\Blocks\Connection\ConnectionRequestBoard\connectionRequestBoardConnectionTypeBag.d.ts" />
+    <TypeScriptCompile Include="Framework\ViewModels\Blocks\Connection\ConnectionRequestBoard\connectionRequestBoardFiltersBag.d.ts" />
     <TypeScriptCompile Include="Framework\ViewModels\Blocks\Connection\ConnectionRequestBoard\connectionRequestBoardInitializationBox.d.ts" />
     <TypeScriptCompile Include="Framework\ViewModels\Blocks\Core\CampusDetail\campusBag.d.ts" />
     <TypeScriptCompile Include="Framework\ViewModels\Blocks\Core\CampusDetail\campusDetailOptionsBag.d.ts" />

@@ -29,9 +29,6 @@ export type ConnectionRequestBoardConnectionTypeBag = {
     /** Gets or sets the connection opportunities. */
     connectionOpportunities?: ConnectionRequestBoardConnectionOpportunityBag[] | null;
 
-    /** Gets or sets the days until request idle. */
-    daysUntilRequestIdle: number;
-
     /** Gets or sets the unique identifier. */
     guid?: Guid | null;
 

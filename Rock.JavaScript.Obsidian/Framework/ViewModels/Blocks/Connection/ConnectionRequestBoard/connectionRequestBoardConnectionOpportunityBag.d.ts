@@ -25,14 +25,8 @@ import { Guid } from "@Obsidian/Types";
 
 /** A bag that contains connection opportunity information for the connection request board. */
 export type ConnectionRequestBoardConnectionOpportunityBag = {
-    /** Gets or sets the connection opportunity campus unique identifiers. */
-    connectionOpportunityCampusGuids?: Guid[] | null;
-
     /** Gets or sets the name of the connection type. */
     connectionTypeName?: string | null;
-
-    /** Gets or sets the description. */
-    description?: string | null;
 
     /** Gets or sets the unique identifier. */
     guid?: Guid | null;
@@ -42,9 +36,6 @@ export type ConnectionRequestBoardConnectionOpportunityBag = {
 
     /** Gets or sets whether this connection opportunity has been "favorited". */
     isFavorite: boolean;
-
-    /** Gets or sets the name. */
-    name?: string | null;
 
     /** Gets or sets the Order. */
     order: number;

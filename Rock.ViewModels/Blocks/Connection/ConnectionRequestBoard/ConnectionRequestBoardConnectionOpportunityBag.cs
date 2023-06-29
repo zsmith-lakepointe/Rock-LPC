@@ -16,7 +16,6 @@
 //
 
 using System;
-using System.Collections.Generic;
 
 namespace Rock.ViewModels.Blocks.Connection.ConnectionRequestBoard
 {
@@ -31,11 +30,6 @@ namespace Rock.ViewModels.Blocks.Connection.ConnectionRequestBoard
         public Guid Guid { get; set; }
 
         /// <summary>
-        /// Gets or sets the name.
-        /// </summary>
-        public string Name { get; set; }
-
-        /// <summary>
         /// Gets or sets the public name.
         /// </summary>
         public string PublicName { get; set; }
@@ -46,19 +40,9 @@ namespace Rock.ViewModels.Blocks.Connection.ConnectionRequestBoard
         public string IconCssClass { get; set; }
 
         /// <summary>
-        /// Gets or sets the description.
-        /// </summary>
-        public string Description { get; set; }
-
-        /// <summary>
         /// Gets or sets the name of the connection type.
         /// </summary>
         public string ConnectionTypeName { get; set; }
-
-        /// <summary>
-        /// Gets or sets the connection opportunity campus unique identifiers.
-        /// </summary>
-        public List<Guid> ConnectionOpportunityCampusGuids { get; set; }
 
         /// <summary>
         /// Gets the photo URL.

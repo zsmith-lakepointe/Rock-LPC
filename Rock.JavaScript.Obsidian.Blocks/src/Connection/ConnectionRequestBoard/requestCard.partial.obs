@@ -34,10 +34,11 @@
                     </span>
                 </div>
 
-                <div><!-- This div is necessary to properly-position the following menu. -->
+                <!-- This div is needed to properly-position the following drop-down menu. -->
+                <div>
                     <div class="btn-group dropdown-right">
                         <button type="button" class="btn btn-sm text-muted bg-white dropdown-toggle pr-0" data-toggle="dropdown">
-                            <i class="fa fa-ellipsis-h"></i>
+                            <i class="fa fa-ellipsis-v"></i>
                         </button>
                         <ul class="dropdown-menu">
                             <li>
