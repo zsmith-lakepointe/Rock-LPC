@@ -50,6 +50,8 @@ namespace Rock.Migrations
                 { "EA9857FF-6703-4E4E-A6FF-65C23EBD2216", "1C98107F-DFBF-44BD-A860-0C9DF2E6C495" },
                 // Streak Type Detail
                 { "D9D4AF22-7743-478A-9D21-AEA4F1A0C5F6", "A83A1F49-10A6-4362-ACC3-8027224A2120" },
+                // Financial Batch Detail
+                { "CE34CE43-2CCF-4568-9AEB-3BE203DB3470", "6BE58680-8795-46A0-8BFA-434A01FEB4C8" },
             };
             var shouldKeepOldBlocks = true;
 

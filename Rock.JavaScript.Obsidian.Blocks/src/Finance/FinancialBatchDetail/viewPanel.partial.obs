@@ -79,18 +79,24 @@
             ${RockDateTime.parseISO(props.modelValue.batchEndDateTime)?.toASPString("g") ?? ""}`);
         }
 
-        if(props.modelValue?.controlAmount) {
-            let control = toNumber(props.modelValue?.controlAmount);
-            let transactionAmount = toNumber(props.options.transactionAmount);
-            let variance = transactionAmount - control;
-            valueBuilder.addHtmlValue("Transaction Amount / Control / Variance", `${toCurrencyOrNull(transactionAmount)} / ${toCurrencyOrNull(control)} / <span class='label label-danger'> ${toCurrencyOrNull(variance)} </span>`);
+        let controlAmount = toNumber(props.modelValue?.controlAmount);
+        let transactionAmount = toNumber(props.options.transactionAmount);
+        let transactionVariance = transactionAmount - controlAmount;
+        if(transactionVariance == 0) {
+            valueBuilder.addHtmlValue("Transaction Amount / Control / Variance", `${toCurrencyOrNull(transactionAmount)} / ${toCurrencyOrNull(controlAmount)} / ${toCurrencyOrNull(transactionVariance)}`);
+        }
+        else {
+            valueBuilder.addHtmlValue("Transaction Amount / Control / Variance", `${toCurrencyOrNull(transactionAmount)} / ${toCurrencyOrNull(controlAmount)} / <span class='label label-danger'> ${toCurrencyOrNull(transactionVariance)} </span>`);
         }
 
-        if(props.modelValue?.controlItemCount) {
-            let transactionItemCount = props.options.transactionItemCount ?? 0;
-            let control = props.modelValue.controlItemCount;
-            let variance = transactionItemCount - control;
-            valueBuilder.addHtmlValue("Transaction Item Count / Control / Variance", `${transactionItemCount} / ${control} / <span class='label label-danger'> ${variance} </span>`);
+        let transactionItemCount = toNumber(props.options.transactionItemCount);
+        let controlItemCount = toNumber(props.modelValue.controlItemCount);
+        let itemVariance = transactionItemCount - controlItemCount;
+        if(itemVariance == 0) {
+            valueBuilder.addHtmlValue("Transaction Item Count / Control / Variance", `${transactionItemCount} / ${controlItemCount} / ${itemVariance}`);
+        }
+        else {
+            valueBuilder.addHtmlValue("Transaction Item Count / Control / Variance", `${transactionItemCount} / ${controlItemCount} / <span class='label label-danger'> ${itemVariance} </span>`);
         }
 
         if(props.modelValue?.accountingSystemCode) {

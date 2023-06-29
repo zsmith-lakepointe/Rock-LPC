@@ -78,7 +78,7 @@ namespace Rock.ViewModels.Blocks.Finance.FinancialBatchDetail
         /// <summary>
         /// Gets or sets the status of the batch.
         /// </summary>
-        public BatchStatus Status { get; set; }
+        public BatchStatus? Status { get; set; }
 
         /// <summary>
         /// Gets or sets the value of the flag which shows if the batch is automated or not.

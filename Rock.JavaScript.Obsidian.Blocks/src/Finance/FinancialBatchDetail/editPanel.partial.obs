@@ -10,7 +10,6 @@
                 <DropDownList v-model="status"
                     label="Status"
                     :items="batchStatusOptions"
-                    :value="modelValue.status"
                     :disabled="options.isStatusChangeDisabled"
                     blankValue="1"
                     rules="required" />
@@ -29,6 +28,10 @@
                 <NumberBox v-model="controlItemCount"
                         label="Control Item Count"
                         :disabled="isStatusClosed" />
+                <CampusPicker label="Campus" v-model="campus"
+                        showBlankItem
+                        :disabled="isStatusClosed"
+                        includeInactive />
                 <TextBox v-model="accountingSystemCode"
                         label="Accounting Code"
                         help="Optional id or code from an external accounting system."
@@ -50,6 +53,7 @@
     import TextBox from "@Obsidian/Controls/textBox";
     import NumberBox from "@Obsidian/Controls/numberBox";
     import CurrencyBox from "@Obsidian/Controls/currencyBox";
+    import CampusPicker from "@Obsidian/Controls/campusPicker.obs";
     import DropDownList from "@Obsidian/Controls/dropDownList";
     import DateTimePicker from "@Obsidian/Controls/dateTimePicker";
     import { toNumber } from "@Obsidian/Utility/numberUtils";
@@ -84,6 +88,7 @@
     const status = propertyRef(props.modelValue.status?.toString() ?? "1", "Status");
     const batchStartDateTime = propertyRef(props.modelValue.batchStartDateTime ?? "", "BatchStartDateTime");
     const batchEndDateTime = propertyRef(props.modelValue.batchEndDateTime ?? "", "BatchEndDateTime");
+    const campus = propertyRef(props.modelValue.campus ?? {}, "CampusId");
     const controlAmount = propertyRef(props.modelValue.controlAmount ?? "", "ControlAmount");
     const controlItemCount = propertyRef(props.modelValue.controlItemCount ?? null, "ControlItemCount");
     const accountingSystemCode = propertyRef(props.modelValue.accountingSystemCode ?? "", "AccountingCode");
@@ -97,7 +102,7 @@
 
     // The properties that are being edited. This should only contain
     // objects returned by propertyRef().
-    const propRefs = [name, status, batchStartDateTime, batchEndDateTime, controlAmount, note, controlItemCount];
+    const propRefs = [name, status, batchStartDateTime, batchEndDateTime, controlAmount, note, controlItemCount, accountingSystemCode, campus];
 
     // #endregion
 
@@ -120,6 +125,7 @@
         updateRefValue(attributeValues, props.modelValue.attributeValues ?? {});
         updateRefValue(name, props.modelValue.name ?? "");
         updateRefValue(status, props.modelValue.status?.toString() ?? "1");
+        updateRefValue(campus, props.modelValue.campus ?? {});
         updateRefValue(batchEndDateTime, props.modelValue.batchEndDateTime ?? "");
         updateRefValue(batchStartDateTime, props.modelValue.batchStartDateTime ?? "");
         updateRefValue(controlAmount, props.modelValue.controlAmount ?? "");
@@ -138,6 +144,7 @@
             status: toNumber(status.value),
             batchStartDateTime: batchStartDateTime.value,
             batchEndDateTime: batchEndDateTime.value,
+            campus: campus.value,
             controlAmount: controlAmount.value,
             accountingSystemCode: accountingSystemCode.value,
             controlItemCount: toNumber(controlItemCount.value),

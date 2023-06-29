@@ -41,7 +41,20 @@ namespace Rock.Blocks.Finance
     [IconCssClass( "fa fa-question" )]
 
     #region Block Attributes
+    [LinkedPage( "Transaction Matching Page",
+        Description = "Page used to match transactions for a batch.",
+        Order = 1 )]
 
+    [LinkedPage( "Audit Page",
+        Description = "Page used to display the history of changes to a batch.",
+        Order = 2 )]
+
+    [DefinedTypeField( "Batch Names",
+        Description = "The Defined Type that contains a predefined list of batch names to choose from instead of entering it in manually when adding a new batch. Leave this blank to hide this option and let them edit the batch name manually.",
+        IsRequired = false,
+        DefaultValue = "",
+        Category = "",
+        Order = 3 )]
     #endregion
 
     [Rock.SystemGuid.EntityTypeGuid( "b5976e12-a3e4-4faf-95b5-3d54f25405da" )]
@@ -54,7 +67,7 @@ namespace Rock.Blocks.Finance
 
         private static class PageParameterKey
         {
-            public const string FinancialBatchId = "FinancialBatchId";
+            public const string BatchId = "BatchId";
         }
 
         private static class NavigationUrlKey
@@ -225,6 +238,7 @@ namespace Rock.Blocks.Finance
                 if ( box.IsEditable )
                 {
                     box.Entity = GetEntityBagForEdit( entity );
+                    box.Entity.Status = null; // set the status to null for new batch so that the default status is displayed by the remote device
                     box.SecurityGrantToken = GetSecurityGrantToken( entity );
                 }
                 else
@@ -350,7 +364,7 @@ namespace Rock.Blocks.Finance
                 () => entity.Note = box.Entity.Note );
 
             box.IfValidProperty( nameof( box.Entity.Status ),
-                () => entity.Status = box.Entity.Status );
+                () => entity.Status = box.Entity.Status ?? BatchStatus.Open );
 
             box.IfValidProperty( nameof( box.Entity.Id ),
                 () => entity.Id = box.Entity.Id );
@@ -377,7 +391,7 @@ namespace Rock.Blocks.Finance
         /// <returns>The <see cref="FinancialBatch"/> to be viewed or edited on the page.</returns>
         private FinancialBatch GetInitialEntity( RockContext rockContext )
         {
-            return GetInitialEntity<FinancialBatch, FinancialBatchService>( rockContext, PageParameterKey.FinancialBatchId );
+            return GetInitialEntity<FinancialBatch, FinancialBatchService>( rockContext, PageParameterKey.BatchId );
         }
 
         /// <summary>
@@ -541,7 +555,7 @@ namespace Rock.Blocks.Finance
                 {
                     return ActionContent( System.Net.HttpStatusCode.Created, this.GetCurrentPageUrl( new Dictionary<string, string>
                     {
-                        [PageParameterKey.FinancialBatchId] = entity.IdKey
+                        [PageParameterKey.BatchId] = entity.IdKey
                     } ) );
                 }
 

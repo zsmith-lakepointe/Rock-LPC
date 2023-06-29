@@ -49,7 +49,6 @@
     import { FinancialBatchBag } from "@Obsidian/ViewModels/Blocks/Finance/FinancialBatchDetail/financialBatchBag";
     import { FinancialBatchDetailOptionsBag } from "@Obsidian/ViewModels/Blocks/Finance/FinancialBatchDetail/financialBatchDetailOptionsBag";
 
-    const BATCH_STATUS_CLOSED = 2;
     const config = useConfigurationValues<DetailBlockBox<FinancialBatchBag, FinancialBatchDetailOptionsBag>>();
     const invokeBlockAction = useInvokeBlockAction();
     const securityGrant = getSecurityGrant(config.securityGrantToken);
@@ -141,7 +140,7 @@
     });
 
     const isEditable = computed((): boolean => {
-        const isReopenDisabled = financialBatchViewBag.value?.status == BATCH_STATUS_CLOSED && !config.options?.isReopenAuthorized;
+        const isReopenDisabled = financialBatchViewBag.value?.status == 2 && !config.options?.isReopenAuthorized;
         return config.isEditable === true && !(isReopenDisabled);
     });
 
