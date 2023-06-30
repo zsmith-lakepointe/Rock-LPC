@@ -471,7 +471,7 @@ namespace Rock.Blocks.Engagement
         {
             var config = GetAchievementConfiguration();
             var achievementTypeCache = GetAchievementTypeCache();
-            var isNew = _achievementType?.Id == 0;
+            var isNew = GetAchievementType()?.Id == 0;
 
             List<AchievementTypeCache> eligiblePrerequisites;
 

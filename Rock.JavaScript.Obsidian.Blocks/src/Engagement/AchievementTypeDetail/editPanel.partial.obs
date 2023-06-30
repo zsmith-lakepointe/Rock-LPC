@@ -97,7 +97,7 @@
                                        showBlankItem
                                        formGroupClasses="mt-0"
                                        :displayStyle="PickerDisplayStyle.Condensed" />
-                    <StepTypePicker v-if="achievementStepProgram"
+                    <StepTypePicker v-if="isStepTypeAndStepStatusVisibile"
                                     v-model="achievementStepType"
                                     label="Step Type"
                                     :stepProgramGuid="stepProgramGuid"
@@ -106,7 +106,8 @@
                                     :displayStyle="PickerDisplayStyle.Condensed" />
                 </div>
                 <div class="col-md-6 col-sm-12">
-                    <StepStatusPicker label="Step Status"
+                    <StepStatusPicker v-if="isStepTypeAndStepStatusVisibile"
+                                      label="Step Status"
                                       v-model="achievementStepStatus"
                                       :stepProgramGuid="stepProgramGuid"
                                       help="When this achievement is earned, a step can be added for the person if you choose that step program, step type, and then a status."
@@ -276,6 +277,10 @@
     const entityTypeName = computed((): string => {
         return achievementEntityType.value.text ?? "";
     });
+
+    const isStepTypeAndStepStatusVisibile = computed((): boolean => {
+        return achievementStepProgram.value?.value ? true : false;
+    });
     // #endregion
 
     // #region Functions
@@ -287,12 +292,14 @@
     // #endregion
 
     watch(() => achievementEntityType.value, async () => {
-        if (!achievementEntityType.value.value) {
+
+        const entityTypeGuid = achievementEntityType.value.value;
+        if (!entityTypeGuid) {
             return;
         }
 
         const result = await invokeBlockAction<AchievementTypeBag>("GetEntityAttributes", {
-            entityTypeGuid: achievementEntityType.value.value,
+            entityTypeGuid: entityTypeGuid,
             IdKey: props.modelValue.idKey
         });
 
