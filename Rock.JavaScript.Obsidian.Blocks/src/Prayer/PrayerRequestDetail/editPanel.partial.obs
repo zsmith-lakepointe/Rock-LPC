@@ -105,7 +105,7 @@
 
     const attributes = ref(props.modelValue.attributes ?? {});
     const attributeValues = ref(props.modelValue.attributeValues ?? {});
-    const isActive = propertyRef(props.modelValue.isActive ?? false, "IsActive");
+    const isActive = propertyRef(props.modelValue.isActive ?? true, "IsActive");
     const requestedByPersonAlias = propertyRef(props.modelValue.requestedByPersonAlias ?? undefined, "RequestedByPersonAliasId");
     const isApproved = propertyRef(props.modelValue.isApproved ?? false, "IsApproved");
     const firstName = propertyRef(props.modelValue.firstName ?? "", "FirstName");
