@@ -589,6 +589,10 @@ namespace Rock.Blocks.Connection
         private void GetFilterOptions( RockContext rockContext, ConnectionRequestBoardData boardData )
         {
             boardData.FilterOptions.Connectors = GetConnectors( rockContext, boardData, false );
+            GetCampuses( rockContext, boardData );
+            GetConnectionStatuses( rockContext, boardData );
+            GetConnectionStates( boardData );
+            GetConnectionActivityTypes( rockContext, boardData );
         }
 
         /// <summary>
@@ -607,8 +611,7 @@ namespace Rock.Blocks.Connection
 
             if ( boardData.ConnectionOpportunity != null )
             {
-                connectors.AddRange(
-                    new ConnectionOpportunityConnectorGroupService( rockContext )
+                var connectorPeople = new ConnectionOpportunityConnectorGroupService( rockContext )
                         .Queryable()
                         .AsNoTracking()
                         .Where( g =>
@@ -624,12 +627,22 @@ namespace Rock.Blocks.Connection
                         .Select( m => m.Person )
                         .Distinct()
                         .Where( p => p.Aliases.Any( a => a.AliasPersonId == p.Id ) )
-                        .Select( p => new ListItemBag
+                        .OrderBy( p => p.LastName )
+                        .ThenBy( p => p.NickName )
+                        .Select( p => new
                         {
-                            Value = p.Aliases.First( a => a.AliasPersonId == p.Id ).Id.ToString(),
-                            Text = $"{p.NickName} {p.LastName}"
+                            p.Aliases.FirstOrDefault( a => a.AliasPersonId == p.Id ).Id,
+                            p.NickName,
+                            p.LastName
                         } )
-                        .ToList()
+                        .ToList();
+
+                connectors.AddRange( connectorPeople
+                    .Select( c => new ListItemBag
+                    {
+                        Value = c.Id.ToString(),
+                        Text = $"{c.NickName} {c.LastName}"
+                    } )
                 );
             }
 
@@ -658,6 +671,90 @@ namespace Rock.Blocks.Connection
             }
 
             return null;
+        }
+
+        /// <summary>
+        /// Gets the available campuses and loads them onto the supplied <see cref="ConnectionRequestBoardData"/> instance.
+        /// </summary>
+        /// <param name="rockContext">The rock context.</param>
+        /// <param name="boardData">The board data onto which to load the campuses.</param>
+        private void GetCampuses( RockContext rockContext, ConnectionRequestBoardData boardData )
+        {
+            boardData.FilterOptions.Campuses = CampusCache.All( rockContext )
+                .Where( c => c.IsActive != false )
+                .OrderBy( c => c.Order )
+                .ThenBy( c => c.Name )
+                .Select( c => new ListItemBag
+                {
+                    Value = c.Id.ToString(),
+                    Text = c.ShortCode.IsNullOrWhiteSpace()
+                        ? c.Name
+                        : c.ShortCode
+                } )
+                .ToList();
+        }
+
+        /// <summary>
+        /// Gets the available connection statuses for the selected connection opportunity and loads them onto the supplied
+        /// <see cref="ConnectionRequestBoardData"/> instance.
+        /// </summary>
+        /// <param name="rockContext">The rock context.</param>
+        /// <param name="boardData">The board data onto which to load the connection statuses.</param>
+        private void GetConnectionStatuses( RockContext rockContext, ConnectionRequestBoardData boardData )
+        {
+            boardData.FilterOptions.ConnectionStatuses = boardData.ConnectionOpportunity == null
+                ? null
+                : new ConnectionOpportunityService( rockContext )
+                    .Queryable()
+                    .AsNoTracking()
+                    .Where( co => co.Id == boardData.ConnectionOpportunity.Id )
+                    .SelectMany( co => co.ConnectionType.ConnectionStatuses )
+                    .Where( cs => cs.IsActive )
+                    .OrderBy( cs => cs.Order )
+                    .ThenByDescending( a => a.IsDefault )
+                    .ThenBy( cs => cs.Name )
+                    .Select( cs => new ListItemBag
+                    {
+                        Value = cs.Id.ToString(),
+                        Text = cs.Name
+                    } )
+                    .ToList();
+        }
+
+        /// <summary>
+        /// Gets the available connection states and loads them onto the supplied <see cref="ConnectionRequestBoardData"/> instance.
+        /// </summary>
+        /// <param name="boardData">The board data onto which to load the connection states.</param>
+        private void GetConnectionStates( ConnectionRequestBoardData boardData )
+        {
+            boardData.FilterOptions.ConnectionStates = SettingsExtensions.GetListItemBagList<ConnectionState>();
+        }
+
+        /// <summary>
+        /// Gets the available connection activity types for the selected connection opportunity and loads them onto the supplied
+        /// <see cref="ConnectionRequestBoardData"/> instance.
+        /// </summary>
+        /// <param name="rockContext">The rock context.</param>
+        /// <param name="boardData">The board data onto which to load the connection activity types.</param>
+        private void GetConnectionActivityTypes( RockContext rockContext, ConnectionRequestBoardData boardData )
+        {
+            boardData.FilterOptions.ConnectionActivityTypes = boardData.ConnectionOpportunity == null
+                ? null
+                : new ConnectionActivityTypeService( rockContext )
+                    .Queryable()
+                    .AsNoTracking()
+                    .Where( t =>
+                        t.ConnectionTypeId == boardData.ConnectionOpportunity.ConnectionTypeId
+                        && t.IsActive
+                    )
+                    .OrderBy( t => t.Name )
+                    .ThenBy( t => t.Id )
+                    .Select( t => new ListItemBag
+                    {
+                        Value = t.Id.ToString(),
+                        Text = t.Name
+                    } )
+                    .ToList();
         }
 
         private void GetFiltersFromURLOrPersonPreferences( RockContext rockContext, ConnectionRequestBoardData boardData )

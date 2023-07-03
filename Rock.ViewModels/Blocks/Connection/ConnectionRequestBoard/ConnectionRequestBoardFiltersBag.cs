@@ -54,7 +54,7 @@ namespace Rock.ViewModels.Blocks.Connection.ConnectionRequestBoard
         /// <summary>
         /// Gets or sets the connection statuses to be used to filter connection requests.
         /// </summary>
-        public List<string> Statuses { get; set; }
+        public List<string> ConnectionStatuses { get; set; }
 
         /// <summary>
         /// Gets or sets the connection states to be used to filter connection requests.
@@ -62,9 +62,9 @@ namespace Rock.ViewModels.Blocks.Connection.ConnectionRequestBoard
         public List<string> ConnectionStates { get; set; }
 
         /// <summary>
-        /// Gets or sets the "last activity" types to be used to filter connection requests.
+        /// Gets or sets the connection activity types to be used to filter connection requests.
         /// </summary>
-        public List<string> LastActivityTypes { get; set; }
+        public List<string> ConnectionActivityTypes { get; set; }
 
         /// <summary>
         /// Gets or sets the model property to be used for sorting connection requests.

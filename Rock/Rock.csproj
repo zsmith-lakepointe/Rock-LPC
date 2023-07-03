@@ -1076,7 +1076,6 @@
     <Compile Include="Model\Communication\SystemPhoneNumber\SystemPhoneNumber.cs" />
     <Compile Include="Model\Communication\SystemPhoneNumber\SystemPhoneNumber.Logic.cs" />
     <Compile Include="Model\Communication\SystemPhoneNumber\SystemPhoneNumberService.cs" />
-    <Compile Include="Model\Connection\ConnectionRequest\ConnectionState.cs" />
     <Compile Include="Model\Core\AssetStorageProvider\AssetStorageProvider.Logic.cs" />
     <Compile Include="Model\Core\AttributeQualifier\AttributeQualifier.SaveHook.cs" />
     <Compile Include="Model\Core\AttributeReferencedEntity\AttributeReferencedEntity.cs" />

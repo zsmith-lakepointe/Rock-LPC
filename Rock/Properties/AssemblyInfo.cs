@@ -135,3 +135,6 @@ using System.Runtime.InteropServices;
 [assembly: TypeForwardedTo( typeof( Rock.Model.ScheduledAttendanceItemMatchesPreference ) )]
 [assembly: TypeForwardedTo( typeof( Rock.Model.ScheduledAttendanceItemStatus ) )]
 [assembly: TypeForwardedTo( typeof( Rock.Model.SchedulerResourceGroupMemberFilterType ) )]
+
+// The following type forwardings were setup in Rock 1.16.0
+[assembly: TypeForwardedTo( typeof( Rock.Model.ConnectionState ) )]
