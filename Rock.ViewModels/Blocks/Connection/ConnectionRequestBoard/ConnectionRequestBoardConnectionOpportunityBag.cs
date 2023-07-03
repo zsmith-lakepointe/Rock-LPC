@@ -15,8 +15,6 @@
 // </copyright>
 //
 
-using System;
-
 namespace Rock.ViewModels.Blocks.Connection.ConnectionRequestBoard
 {
     /// <summary>
@@ -25,9 +23,9 @@ namespace Rock.ViewModels.Blocks.Connection.ConnectionRequestBoard
     public class ConnectionRequestBoardConnectionOpportunityBag
     {
         /// <summary>
-        /// Gets or sets the unique identifier.
+        /// Gets or sets the identifier.
         /// </summary>
-        public Guid Guid { get; set; }
+        public int Id { get; set; }
 
         /// <summary>
         /// Gets or sets the public name.

@@ -19,7 +19,9 @@ using Rock.Attribute;
 using Rock.Data;
 using Rock.Model;
 using Rock.Security;
+using Rock.Utility;
 using Rock.ViewModels.Blocks.Connection.ConnectionRequestBoard;
+using Rock.ViewModels.Utility;
 using Rock.Web.Cache;
 using Rock.Web.UI.Controls;
 using System.Collections.Generic;
@@ -193,27 +195,6 @@ namespace Rock.Blocks.Connection
         }
 
         /// <summary>
-        /// Keys for filters.
-        /// </summary>
-        private static class FilterKey
-        {
-            public const string DateRange = "DateRange";
-            public const string LastActivities = "LastActivities";
-            public const string PastDueOnly = "PastDueOnly";
-            public const string Requester = "Requester";
-            public const string States = "States";
-            public const string Statuses = "Statuses";
-        }
-
-        /// <summary>
-        /// Keys for navigation URLs.
-        /// </summary>
-        private static class NavigationUrlKey
-        {
-
-        }
-
-        /// <summary>
         /// Keys for page parameters.
         /// </summary>
         private static class PageParameterKey
@@ -232,11 +213,17 @@ namespace Rock.Blocks.Connection
         /// </summary>
         private static class PersonPreferenceKey
         {
-            public const string CampusFilter = "CampusFilter";
-            public const string ConnectionOpportunityId = "ConnectionOpportunityId";
-            public const string ConnectorPersonAliasId = "ConnectorPersonAliasId";
-            public const string SortBy = "SortBy";
-            public const string ViewMode = "ViewMode";
+            public const string CampusFilter = "campus-filter";
+            public const string ConnectionOpportunityId = "connection-opportunity-id";
+            public const string ConnectorPersonAliasId = "connector-person-alias-id";
+            public const string DateRange = "date-range";
+            public const string LastActivities = "last-activities";
+            public const string PastDueOnly = "past-due-only";
+            public const string Requester = "requester";
+            public const string SortBy = "sort-by";
+            public const string States = "states";
+            public const string Statuses = "statuses";
+            public const string ViewMode = "view-mode";
         }
 
         #endregion Keys
@@ -266,7 +253,7 @@ namespace Rock.Blocks.Connection
 </div>";
 
         /// <summary>
-        /// The default connection request status icons template. Used at the top of each connection request card (in board view mode),
+        /// The default connection request status icons template. Used at the top of each connection request card (in card view mode),
         /// the first column of each row (in grid view mode) + the top of the connection request modal.
         /// </summary>
         private const string ConnectionRequestStatusIconsTemplateDefaultValue = @"
@@ -293,9 +280,28 @@ namespace Rock.Blocks.Connection
 
         #endregion Defaults
 
+        #region Fields
+
+        private PersonPreferenceCollection _personPreferences;
+
+        #endregion Fields
+
         #region Properties
 
         public override string ObsidianFileUrl => $"{base.ObsidianFileUrl}.obs";
+
+        public PersonPreferenceCollection PersonPreferences
+        {
+            get
+            {
+                if ( _personPreferences == null )
+                {
+                    _personPreferences = this.GetBlockPersonPreferences();
+                }
+
+                return _personPreferences;
+            }
+        }
 
         /// <summary>
         /// Gets the current person.
@@ -354,7 +360,11 @@ namespace Rock.Blocks.Connection
             block.LoadAttributes( rockContext );
 
             GetAllowedConnectionTypes( rockContext, boardData );
-            GetOpportunityFromURLOrPersonPreferences( rockContext, boardData );
+            GetConnectionAndCampusSelectionsFromURLOrPersonPreferences( rockContext, boardData );
+            GetFilterOptions( rockContext, boardData );
+
+            // Preferences will only be saved if updates were actually set above.
+            this.PersonPreferences.Save();
 
             return boardData;
         }
@@ -367,7 +377,6 @@ namespace Rock.Blocks.Connection
         private void GetAllowedConnectionTypes( RockContext rockContext, ConnectionRequestBoardData boardData )
         {
             var allowedConnectionTypes = new List<ConnectionRequestBoardConnectionTypeBag>();
-            var availableOpportunityIds = new List<int>();
 
             var opportunitiesQuery = new ConnectionOpportunityService( rockContext )
                 .Queryable()
@@ -424,12 +433,12 @@ namespace Rock.Blocks.Connection
                 }
 
                 // Add the opportunity's type if it hasn't already been added.
-                var connectionType = allowedConnectionTypes.FirstOrDefault( t => t.Guid == opportunity.ConnectionType.Guid );
+                var connectionType = allowedConnectionTypes.FirstOrDefault( t => t.Id == opportunity.ConnectionType.Id );
                 if ( connectionType == null )
                 {
                     connectionType = new ConnectionRequestBoardConnectionTypeBag
                     {
-                        Guid = opportunity.ConnectionType.Guid,
+                        Id = opportunity.ConnectionType.Id,
                         Name = opportunity.ConnectionType.Name,
                         IconCssClass = opportunity.ConnectionType.IconCssClass,
                         Order = opportunity.ConnectionType.Order,
@@ -442,7 +451,7 @@ namespace Rock.Blocks.Connection
                 // Add the opportunity.
                 connectionType.ConnectionOpportunities.Add( new ConnectionRequestBoardConnectionOpportunityBag
                 {
-                    Guid = opportunity.Guid,
+                    Id = opportunity.Id,
                     PublicName = opportunity.PublicName,
                     IconCssClass = opportunity.IconCssClass,
                     ConnectionTypeName = connectionType.Name,
@@ -450,8 +459,6 @@ namespace Rock.Blocks.Connection
                     Order = opportunity.Order,
                     IsFavorite = favoriteOpportunityIds.Contains( opportunity.Id )
                 } );
-
-                availableOpportunityIds.Add( opportunity.Id );
             }
 
             // Sort each type's opportunities.
@@ -472,32 +479,210 @@ namespace Rock.Blocks.Connection
         }
 
         /// <summary>
-        /// Gets the selected connection opportunity and loads it onto the supplied <see cref="ConnectionRequestBoardData"/> instance.
+        /// Gets the selected connection request, connection opportunity and campus from page parameters or person preferences, loading them
+        /// onto the supplied <see cref="ConnectionRequestBoardData"/> instance.
         /// </summary>
         /// <param name="rockContext">The rock context.</param>
-        /// <param name="boardData">The board data onto which to load the selected connection opportunity.</param>
-        private void GetOpportunityFromURLOrPersonPreferences( RockContext rockContext, ConnectionRequestBoardData boardData )
+        /// <param name="boardData">The board data onto which to load the selected connection request, connection opportunity and campus.</param>
+        private void GetConnectionAndCampusSelectionsFromURLOrPersonPreferences( RockContext rockContext, ConnectionRequestBoardData boardData )
         {
-            var connectionRequestId = GetEntityIdFromPageParameter<ConnectionRequest>( PageParameterKey.ConnectionRequestId, rockContext );
-            var connectionOpportunityId = GetEntityIdFromPageParameter<ConnectionOpportunity>( PageParameterKey.ConnectionOpportunityId, rockContext );
-            var campusId = GetEntityIdFromPageParameter<Campus>( PageParameterKey.CampusId, rockContext );
+            int? connectionOpportunityId = null;
 
-            if ( connectionRequestId.HasValue && !connectionOpportunityId.HasValue )
+            var availableOpportunityIds = boardData.AllowedConnectionTypes
+                .SelectMany( ct => ct.ConnectionOpportunities.Select( co => co.Id ) )
+                .ToList();
+
+            // If a connection request page parameter was provided, it takes priority since it's more specific.
+            var paramConnectionRequestId = GetEntityIdFromPageParameter<ConnectionRequest>( PageParameterKey.ConnectionRequestId, rockContext );
+            if ( paramConnectionRequestId.HasValue )
             {
                 var result = new ConnectionRequestService( rockContext )
                     .Queryable()
-                    .Where( cr => cr.Id == connectionOpportunityId.Value )
+                    .Where( cr => cr.Id == paramConnectionRequestId.Value )
                     .Select( cr => new
                     {
                         cr.ConnectionOpportunityId
                     } )
                     .FirstOrDefault();
 
-                if ( result != null && boardData.AvailableOpportunityIds.Contains( result.ConnectionOpportunityId ) )
+                if ( result != null && availableOpportunityIds.Contains( result.ConnectionOpportunityId ) )
                 {
                     connectionOpportunityId = result.ConnectionOpportunityId;
+                    // This means we'll be auto-opening a specific connection request modal immediately.
+                    boardData.ConnectionRequestId = paramConnectionRequestId;
                 }
             }
+
+            // If not, was a connection opportunity page parameter provided?
+            var paramConnectionOpportunityId = GetEntityIdFromPageParameter<ConnectionOpportunity>( PageParameterKey.ConnectionOpportunityId, rockContext );
+            if ( !connectionOpportunityId.HasValue
+                && paramConnectionOpportunityId.HasValue
+                && availableOpportunityIds.Contains( paramConnectionOpportunityId.Value ) )
+            {
+                connectionOpportunityId = paramConnectionOpportunityId;
+            }
+
+            // If not, does this person have a connection opportunity preference?
+            var personPrefKeyConnectionOpportunityId = boardData.GetPersonPreferenceKey( PersonPreferenceKey.ConnectionOpportunityId );
+            int? personPrefConnectionOpportunityId = this.PersonPreferences.GetValue( personPrefKeyConnectionOpportunityId ).AsIntegerOrNull();
+            if ( !connectionOpportunityId.HasValue
+                && personPrefConnectionOpportunityId.HasValue
+                && availableOpportunityIds.Contains( personPrefConnectionOpportunityId.Value ) )
+            {
+                connectionOpportunityId = personPrefConnectionOpportunityId;
+            }
+
+            // If set (and different than the current preference), update preferences with this connection opportunity.
+            if ( connectionOpportunityId.HasValue && connectionOpportunityId != personPrefConnectionOpportunityId )
+            {
+                this.PersonPreferences.SetValue( personPrefKeyConnectionOpportunityId, connectionOpportunityId.ToString() );
+            }
+
+            // Get the connection opportunity instance from the database.
+            var query = new ConnectionOpportunityService( rockContext )
+                .Queryable()
+                .AsNoTracking()
+                .Include( co => co.ConnectionType.ConnectionStatuses )
+                .Include( co => co.ConnectionType.ConnectionWorkflows )
+                .Include( co => co.ConnectionWorkflows )
+                .Where( co =>
+                    co.IsActive
+                    && boardData.AllowedConnectionTypeIds.Contains( co.ConnectionTypeId )
+                )
+                .OrderBy( co => co.Order )
+                .ThenBy( co => co.Name );
+
+            // Fall back to the first record if one was not explicitly selected.
+            boardData.ConnectionOpportunity = connectionOpportunityId.HasValue
+                ? query.FirstOrDefault( co => co.Id == connectionOpportunityId.Value )
+                : query.FirstOrDefault();
+
+            // Does this person have a campus preference for this connection type?
+            int? personPrefCampusId = null;
+            var personPrefKeyCampusFilter = boardData.GetPersonPreferenceKey( PersonPreferenceKey.CampusFilter );
+            if ( personPrefKeyCampusFilter != null )
+            {
+                personPrefCampusId = this.PersonPreferences.GetValue( personPrefKeyCampusFilter ).AsIntegerOrNull();
+                boardData.Filters.CampusId = personPrefCampusId;
+            }
+
+            // If a campus page parameter was provided, it overrules any previous preference.
+            var paramCampusId = GetEntityIdFromPageParameter<Campus>( PageParameterKey.CampusId, rockContext );
+            if ( paramCampusId.HasValue )
+            {
+                boardData.Filters.CampusId = paramCampusId;
+
+                // If different than the current preference, update preferences with this campus.
+                if ( paramCampusId != personPrefCampusId && personPrefKeyCampusFilter != null )
+                {
+                    this.PersonPreferences.SetValue( personPrefKeyCampusFilter, paramCampusId.ToString() );
+                }
+            }
+        }
+
+        /// <summary>
+        /// Gets the [available] filter options, some of which are based on the currently-selected connection opportunity,
+        /// and loads them onto the supplied <see cref="ConnectionRequestBoardData"/> instance.
+        /// </summary>
+        /// <param name="rockContext">The rock context.</param>
+        /// <param name="boardData">The board data onto which to load the filter options.</param>
+        private void GetFilterOptions( RockContext rockContext, ConnectionRequestBoardData boardData )
+        {
+            boardData.FilterOptions.Connectors = GetConnectors( rockContext, boardData, false );
+        }
+
+        /// <summary>
+        /// Gets the available "connector" people.
+        /// </summary>
+        /// <param name="rockContext">The rock context.</param>
+        /// <param name="boardData">The board data containing info needed to get the connectors.</param>
+        /// <param name="includeCurrentPerson">Whether to include the current person in the returned list of connectors.</param>
+        /// <param name="personAliasIdToInclude">An optional, additional person to include in the list of connectors.</param>
+        /// <returns>The available "connector" people.</returns>
+        private List<ListItemBag> GetConnectors( RockContext rockContext, ConnectionRequestBoardData boardData, bool includeCurrentPerson, int? personAliasIdToInclude = null )
+        {
+            var connectors = new List<ListItemBag>();
+
+            var campusId = boardData.Filters?.CampusId;
+
+            if ( boardData.ConnectionOpportunity != null )
+            {
+                connectors.AddRange(
+                    new ConnectionOpportunityConnectorGroupService( rockContext )
+                        .Queryable()
+                        .AsNoTracking()
+                        .Where( g =>
+                            g.ConnectionOpportunityId == boardData.ConnectionOpportunity.Id
+                            && (
+                                !campusId.HasValue
+                                || !g.CampusId.HasValue
+                                || g.CampusId.Value == campusId.Value
+                            )
+                        )
+                        .SelectMany( g => g.ConnectorGroup.Members )
+                        .Where( m => m.GroupMemberStatus == GroupMemberStatus.Active )
+                        .Select( m => m.Person )
+                        .Distinct()
+                        .Where( p => p.Aliases.Any( a => a.AliasPersonId == p.Id ) )
+                        .Select( p => new ListItemBag
+                        {
+                            Value = p.Aliases.First( a => a.AliasPersonId == p.Id ).Id.ToString(),
+                            Text = $"{p.NickName} {p.LastName}"
+                        } )
+                        .ToList()
+                );
+            }
+
+            var personAliasIdString = CurrentPersonAliasId.ToString();
+            if ( includeCurrentPerson && CurrentPersonAliasId > 0 && !connectors.Any( c => c.Value == personAliasIdString ) )
+            {
+                connectors.Add( new ListItemBag
+                {
+                    Value = personAliasIdString,
+                    Text = $"{CurrentPerson.NickName} {CurrentPerson.LastName}"
+                } );
+            }
+
+            personAliasIdString = personAliasIdToInclude?.ToString();
+            if ( personAliasIdToInclude.GetValueOrDefault() > 0 && !connectors.Any( c => c.Value == personAliasIdString ) )
+            {
+                var person = new PersonAliasService( rockContext ).GetPersonNoTracking( personAliasIdToInclude.Value );
+                if ( person != null )
+                {
+                    connectors.Add( new ListItemBag
+                    {
+                        Value = personAliasIdString,
+                        Text = $"{person.NickName} {person.LastName}"
+                    } );
+                }
+            }
+
+            return null;
+        }
+
+        private void GetFiltersFromURLOrPersonPreferences( RockContext rockContext, ConnectionRequestBoardData boardData )
+        {
+            //boardData.Filters.CampusId = GetEntityIdFromPageParameter<Campus>( PageParameterKey.CampusId, rockContext );
+
+            //if ( boardData.ConnectionOpportunity == null )
+            //{
+            //    // The remainder of this method has to do with connection type-specific person preferences.
+            //    // If we don't have a connection info, we don't have enough info to get/save these preferences.
+            //    return;
+            //}
+
+            //int? campusId = null;
+            //var campusIdParam = 
+            //if ( campusIdParam.HasValue && boardData.ConnectionOpportunity != null )
+            //{
+            //    // Now that we have a connection opportunity, we can update the person's campus preference if needed.
+            //    var key = boardData.GetPersonPreferenceKey( PersonPreferenceKey.CampusFilter );
+            //    var personPrefCampusId = this.PersonPreferences.GetValue( key ).AsIntegerOrNull();
+            //    if ( campusIdParam != personPrefCampusId )
+            //    {
+            //        this.PersonPreferences.SetValue( key, campusIdParam.ToString() );
+            //    }
+            //}
         }
 
         /// <summary>
@@ -532,28 +717,66 @@ namespace Rock.Blocks.Connection
         #region Supporting Classes
 
         /// <summary>
-        /// A runtime object representing the connection types, opportunities, requests and supporting data needed for the board to operate.
+        /// A runtime object representing the data needed for the block to operate.
         /// <para>
         /// This object is intended to be assembled using a combination of page parameter values, person preferences and existing
-        /// database records; to be passed between private helper methods as needed.
+        /// database records; to be passed between private helper methods as needed, and ultimately sent back out the door in the
+        /// form of view models.
         /// </para>
         /// </summary>
         private class ConnectionRequestBoardData
         {
             /// <summary>
-            /// The allowed connection types for the current user.
+            /// Gets or sets the allowed connection types.
             /// </summary>
-            public List<ConnectionRequestBoardConnectionTypeBag> AllowedConnectionTypes { get; set; }
+            public List<ConnectionRequestBoardConnectionTypeBag> AllowedConnectionTypes { get; set; } = new List<ConnectionRequestBoardConnectionTypeBag>();
 
             /// <summary>
-            /// The available connection opportunity identifiers within the allowed connection types.
+            /// Gets the allowed connection type IDs.
             /// </summary>
-            public List<int> AvailableOpportunityIds { get; set; }
+            public IEnumerable<int> AllowedConnectionTypeIds => this.AllowedConnectionTypes.Select( ct => ct.Id );
 
             /// <summary>
-            /// The selected connection opportunity.
+            /// Gets or sets the selected connection opportunity.
             /// </summary>
-            public ConnectionRequestBoardConnectionOpportunityBag Opportunity { get; set; }
+            public ConnectionOpportunity ConnectionOpportunity { get; set; }
+
+            /// <summary>
+            /// Gets or sets the selected connection request identifier, if a specific request should be opened.
+            /// </summary>
+            public int? ConnectionRequestId { get; set; }
+
+            /// <summary>
+            /// Gets or sets the [available] filter options.
+            /// </summary>
+            public ConnectionRequestBoardFilterOptionsBag FilterOptions { get; } = new ConnectionRequestBoardFilterOptionsBag();
+
+            /// <summary>
+            /// Gets or sets the [selected] filters.
+            /// </summary>
+            public ConnectionRequestBoardFiltersBag Filters { get; } = new ConnectionRequestBoardFiltersBag();
+
+            /// <summary>
+            /// Gets the appropriate person preference key for the specified subkey. Most keys will be connection type-specific.
+            /// </summary>
+            /// <param name="subkey">The subkey.</param>
+            /// <returns>The appropriate person preference key for the specified subkey.</returns>
+            public string GetPersonPreferenceKey( string subkey )
+            {
+                if ( subkey == PersonPreferenceKey.ConnectionOpportunityId )
+                {
+                    // This key - in particular - should span all connection types.
+                    return subkey;
+                }
+
+                // The rest of the keys are connection type-specific.
+                if ( this.ConnectionOpportunity == null )
+                {
+                    return null;
+                }
+
+                return $"{this.ConnectionOpportunity.ConnectionTypeId}-{subkey}";
+            }
         }
 
         #endregion

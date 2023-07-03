@@ -15,38 +15,39 @@
 // </copyright>
 //
 
+using Rock.ViewModels.Utility;
 using System.Collections.Generic;
 
 namespace Rock.ViewModels.Blocks.Connection.ConnectionRequestBoard
 {
     /// <summary>
-    /// A bag that contains connection type information for the connection request board.
+    /// A bag that contains filter options information for the connection request board.
     /// </summary>
-    public class ConnectionRequestBoardConnectionTypeBag
+    public class ConnectionRequestBoardFilterOptionsBag
     {
         /// <summary>
-        /// Gets or sets the identifier.
+        /// Gets or sets the "connector" people that can be used to filter connection requests.
         /// </summary>
-        public int Id { get; set; }
+        public List<ListItemBag> Connectors { get; set; }
 
         /// <summary>
-        /// Gets or sets the name.
+        /// Gets or sets the campuses that can be used to filter connection requests.
         /// </summary>
-        public string Name { get; set; }
+        public List<ListItemBag> Campuses { get; set; }
 
         /// <summary>
-        /// Gets or sets the icon CSS class.
+        /// Gets or sets the connection statuses that can be used to filter connection requests.
         /// </summary>
-        public string IconCssClass { get; set; }
+        public List<ListItemBag> Statuses { get; set; }
 
         /// <summary>
-        /// Gets or sets the order.
+        /// Gets or sets the connection states that can be used to filter connection requests.
         /// </summary>
-        public int Order { get; set; }
+        public List<ListItemBag> ConnectionStates { get; set; }
 
         /// <summary>
-        /// Gets or sets the connection opportunities.
+        /// Gets or sets the "last activity" types that can be used to filter connection requests.
         /// </summary>
-        public List<ConnectionRequestBoardConnectionOpportunityBag> ConnectionOpportunities { get; set; }
+        public List<ListItemBag> LastActivityTypes { get; set; }
     }
 }

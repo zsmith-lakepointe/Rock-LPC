@@ -17,7 +17,6 @@
 
 using Rock.Model;
 using Rock.ViewModels.Controls;
-using Rock.ViewModels.Utility;
 using System.Collections.Generic;
 
 namespace Rock.ViewModels.Blocks.Connection.ConnectionRequestBoard
@@ -28,12 +27,12 @@ namespace Rock.ViewModels.Blocks.Connection.ConnectionRequestBoard
     public class ConnectionRequestBoardFiltersBag
     {
         /// <summary>
-        /// Gets or sets the person alias identifier of the "connector" to be used to filter connection requests.
+        /// Gets or sets the "connector" person alias identifier to be used to filter connection requests.
         /// </summary>
         public int? ConnectorPersonAliasId { get; set; }
 
         /// <summary>
-        /// Gets or sets the person alias identifier of the "requester" to be used to filter connection requests.
+        /// Gets or sets the "requester" person alias identifier to be used to filter connection requests.
         /// </summary>
         public int? RequesterPersonAliasId { get; set; }
 
@@ -53,34 +52,19 @@ namespace Rock.ViewModels.Blocks.Connection.ConnectionRequestBoard
         public bool? PastDueOnly { get; set; }
 
         /// <summary>
-        /// Gets or sets the available connection statuses that can be used to filter connection requests.
+        /// Gets or sets the connection statuses to be used to filter connection requests.
         /// </summary>
-        public List<ListItemBag> AvailableStatuses { get; set; }
+        public List<string> Statuses { get; set; }
 
         /// <summary>
-        /// Gets or sets the selected connection statuses to be used to filter connection requests.
+        /// Gets or sets the connection states to be used to filter connection requests.
         /// </summary>
-        public List<string> SelectedStatuses { get; set; }
+        public List<string> ConnectionStates { get; set; }
 
         /// <summary>
-        /// Gets or sets the available connection states that can be used to filter connection requests.
+        /// Gets or sets the "last activity" types to be used to filter connection requests.
         /// </summary>
-        public List<ListItemBag> AvailableConnectionStates { get; set; }
-
-        /// <summary>
-        /// Gets or sets the selected connection states to be used to filter connection requests.
-        /// </summary>
-        public List<string> SelectedConnectionStates { get; set; }
-
-        /// <summary>
-        /// Gets or sets the available "last activity" types that can be used to filter connection requests.
-        /// </summary>
-        public List<ListItemBag> AvailableLastActivityTypes { get; set; }
-
-        /// <summary>
-        /// Gets or sets the selected "last activity" types to be used to filter connection requests.
-        /// </summary>
-        public List<string> SelectedLastActivityTypes { get; set; }
+        public List<string> LastActivityTypes { get; set; }
 
         /// <summary>
         /// Gets or sets the model property to be used for sorting connection requests.
