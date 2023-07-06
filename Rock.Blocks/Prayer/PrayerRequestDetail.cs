@@ -219,6 +219,8 @@ namespace Rock.Blocks.Prayer
                 {
                     box.Entity = GetEntityBagForEdit( entity );
 
+                    box.Entity.IsApproved = true;
+
                     // set the default value for new prayer request from the block properties
                     box.Entity.AllowComments = GetAttributeValue( AttributeKey.DefaultAllowCommentsChecked ).AsBooleanOrNull() ?? true;
                     box.Entity.IsPublic = GetAttributeValue( AttributeKey.DefaultToPublic ).AsBoolean();
@@ -573,17 +575,10 @@ namespace Rock.Blocks.Prayer
 
                 if ( isNew )
                 {
-                    return ActionContent( System.Net.HttpStatusCode.Created, this.GetCurrentPageUrl( new Dictionary<string, string>
-                    {
-                        [PageParameterKey.PrayerRequestId] = entity.IdKey
-                    } ) );
+                    return ActionContent( System.Net.HttpStatusCode.Created, this.GetParentPageUrl() );
                 }
 
-                // Ensure navigation properties will work now.
-                entity = entityService.Get( entity.Id );
-                entity.LoadAttributes( rockContext );
-
-                return ActionOk( GetEntityBagForView( entity ) );
+                return ActionContent( System.Net.HttpStatusCode.OK, this.GetParentPageUrl() );
             }
         }
 

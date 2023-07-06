@@ -14,7 +14,6 @@
                  :isAuditHidden="false"
                  :isBadgesVisible="true"
                  :footerSecondaryActions="footerActions"
-                 :isDeleteVisible="isEditable"
                  :isEditVisible="isEditable"
                  :isFollowVisible="true"
                  :isSecurityHidden="false"

@@ -92,11 +92,14 @@
         let transactionItemCount = toNumber(props.options.transactionItemCount);
         let controlItemCount = toNumber(props.modelValue.controlItemCount);
         let itemVariance = transactionItemCount - controlItemCount;
-        if(itemVariance == 0) {
-            valueBuilder.addHtmlValue("Transaction Item Count / Control / Variance", `${transactionItemCount} / ${controlItemCount} / ${itemVariance}`);
-        }
-        else {
-            valueBuilder.addHtmlValue("Transaction Item Count / Control / Variance", `${transactionItemCount} / ${controlItemCount} / <span class='label label-danger'> ${itemVariance} </span>`);
+
+        if(props.modelValue.controlItemCount) {
+            if(itemVariance == 0) {
+                valueBuilder.addHtmlValue("Transaction Item Count / Control / Variance", `${transactionItemCount} / ${controlItemCount} / ${itemVariance}`);
+            }
+            else {
+                valueBuilder.addHtmlValue("Transaction Item Count / Control / Variance", `${transactionItemCount} / ${controlItemCount} / <span class='label label-danger'> ${itemVariance} </span>`);
+            }
         }
 
         if(props.modelValue?.accountingSystemCode) {

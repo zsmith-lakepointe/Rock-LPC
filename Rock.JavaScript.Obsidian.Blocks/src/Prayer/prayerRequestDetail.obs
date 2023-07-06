@@ -275,15 +275,8 @@
             box: data
         });
 
-        if (result.isSuccess && result.data) {
-            if (result.statusCode === 200 && typeof result.data === "object") {
-                prayerRequestViewBag.value = result.data;
-
-                return true;
-            }
-            else if (result.statusCode === 201 && typeof result.data === "string") {
-                return result.data;
-            }
+        if (result.isSuccess && result.data && typeof result.data === "string") {
+            return result.data;
         }
 
         errorMessage.value = result.errorMessage ?? "Unknown error while trying to save prayer request.";
