@@ -585,8 +585,19 @@ namespace RockWeb.Blocks.Groups
                         string errorMessage;
                         if ( !groupService.CanDelete( group, out errorMessage ) )
                         {
-                            mdGridWarning.Show( errorMessage, ModalAlertType.Information );
-                            return;
+                            if ( !group.GroupType.Equals( "Security Role" ) )
+                            {
+                                mdGridWarning.Show( errorMessage, ModalAlertType.Information );
+                                return;
+                            }
+                            else
+                            {
+                                if (!errorMessage.Contains( "Auth Audit Log" ) )
+                                {
+                                    mdGridWarning.Show( errorMessage, ModalAlertType.Information );
+                                    return;
+                                }
+                            }
                         }
 
                         groupService.Delete( group, true );
