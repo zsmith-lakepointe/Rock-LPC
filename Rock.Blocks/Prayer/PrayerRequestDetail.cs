@@ -537,7 +537,7 @@ namespace Rock.Blocks.Prayer
         }
 
         /// <summary>
-        /// Get the First Name and the Last Name of the person from the database given the Person Alias Guid
+        /// Get the Nick Name, the Last Name and the email of the person from the database given the Person Alias Guid
         /// </summary>
         /// <param name="key">The identifier of the entity to be edited.</param>
         /// <returns>A box that contains the entity and any other information required.</returns>

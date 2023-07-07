@@ -133,10 +133,9 @@
     // The properties that are being edited. This should only contain
     // objects returned by propertyRef().
     const propRefs = [isActive, requestedByPersonAlias, isApproved, firstName, lastName, email, expirationDate, campus, category, request, answer, isPublic, isUrgent, allowComments];
-
     const invokeBlockAction = useInvokeBlockAction();
-
     type NullableListItemBag = ListItemBag | null;
+
     // #endregion
 
     // #region Computed Values
