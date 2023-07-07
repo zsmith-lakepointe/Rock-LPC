@@ -4,7 +4,8 @@
         <div class="row">
             <div class="col-md-6">
                 <PersonPicker v-model="requestedByPersonAlias"
-                          label="Requested By" />
+                          label="Requested By"
+                          @update:modelValue="updatePersonName($event)" />
                 <TextBox v-model="firstName"
                           label="First Name"
                           rules="required" />
@@ -79,10 +80,11 @@
     import TextBox from "@Obsidian/Controls/textBox";
     import { ListItemBag } from "@Obsidian/ViewModels/Utility/listItemBag";
     import { EntityType } from "@Obsidian/SystemGuids/entityType";
-    import { watchPropertyChanges } from "@Obsidian/Utility/block";
+    import { watchPropertyChanges, useInvokeBlockAction } from "@Obsidian/Utility/block";
     import { propertyRef, updateRefValue } from "@Obsidian/Utility/component";
     import { PrayerRequestBag } from "@Obsidian/ViewModels/Blocks/Prayer/PrayerRequestDetail/prayerRequestBag";
     import { PrayerRequestDetailOptionsBag } from "@Obsidian/ViewModels/Blocks/Prayer/PrayerRequestDetail/prayerRequestDetailOptionsBag";
+    import { PrayerRequestDetailAddPersonResponseBag } from "@Obsidian/ViewModels/Blocks/Prayer/PrayerRequestDetail/prayerRequestDetailAddPersonResponseBag";
 
     const props = defineProps({
         modelValue: {
@@ -132,6 +134,9 @@
     // objects returned by propertyRef().
     const propRefs = [isActive, requestedByPersonAlias, isApproved, firstName, lastName, email, expirationDate, campus, category, request, answer, isPublic, isUrgent, allowComments];
 
+    const invokeBlockAction = useInvokeBlockAction();
+
+    type NullableListItemBag = ListItemBag | null;
     // #endregion
 
     // #region Computed Values
@@ -170,6 +175,16 @@
     // #endregion
 
     // #region Event Handlers
+
+    /**
+     * Event handler for the "Add Person As" person being selected.
+     */
+     async function updatePersonName(personPickerSelection: NullableListItemBag): Promise<void> {
+        var result = await invokeBlockAction<PrayerRequestDetailAddPersonResponseBag>("GetPersonName", { personAliasGuid: (personPickerSelection as ListItemBag)?.value});
+        firstName.value = result?.data?.nickName ?? "";
+        lastName.value = result?.data?.lastName ?? "";
+        email.value = result?.data?.email ?? "";
+     }
 
     // #endregion
 

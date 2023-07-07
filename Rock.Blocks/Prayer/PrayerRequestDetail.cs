@@ -537,6 +537,30 @@ namespace Rock.Blocks.Prayer
         }
 
         /// <summary>
+        /// Get the First Name and the Last Name of the person from the database given the Person Alias Guid
+        /// </summary>
+        /// <param name="key">The identifier of the entity to be edited.</param>
+        /// <returns>A box that contains the entity and any other information required.</returns>
+        [BlockAction]
+        public BlockActionResult GetPersonName( string personAliasGuid )
+        {
+            using ( var rockContext = new RockContext() )
+            {
+                var personAliasService = new PersonAliasService( rockContext );
+                var person = personAliasService.Get( personAliasGuid ).Person;
+
+
+                return ActionOk( new PrayerRequestDetailAddPersonResponseBag
+                {
+                    nickName = person.NickName,
+                    lastName = person.LastName,
+                    email = person.Email
+                } )
+                ;
+            }
+        }
+
+        /// <summary>
         /// Saves the entity contained in the box.
         /// </summary>
         /// <param name="box">The box that contains all the information required to save.</param>
