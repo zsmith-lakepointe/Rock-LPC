@@ -618,6 +618,21 @@ namespace Rock.Model
             return this.Name;
         }
 
+        /// <summary>
+        /// Delete any related Auth Audit Logs.
+        /// </summary>
+        /// <param name="dbContext">The database context.</param>
+        public void DeleteAuthAuditLogs( Data.DbContext dbContext )
+        {
+            var rockContext = ( RockContext ) dbContext;
+            var authAuditLogSerivce = new AuthAuditLogService( rockContext );
+            var auditLogsToDelete = authAuditLogSerivce.Queryable().Where( a => a.GroupId == this.Id );
+            if ( auditLogsToDelete.Any() )
+            {
+                dbContext.BulkDelete( auditLogsToDelete );
+            }
+        }
+
         #endregion Public Methods
     }
 
