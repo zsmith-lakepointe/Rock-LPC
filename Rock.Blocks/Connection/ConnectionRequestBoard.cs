@@ -75,16 +75,6 @@ namespace Rock.Blocks.Connection
         Order = 3 )]
 
     [CodeEditorField(
-        "Status Template",
-        Key = AttributeKey.StatusTemplate,
-        Description = "Lava Template that can be used to customize what is displayed in the status bar. Includes common merge fields plus ConnectionOpportunities, ConnectionTypes and the default IdleTooltip.",
-        EditorMode = CodeEditorMode.Lava,
-        EditorTheme = CodeEditorTheme.Rock,
-        DefaultValue = StatusTemplateDefaultValue,
-        IsRequired = true,
-        Order = 4 )]
-
-    [CodeEditorField(
         "Connection Request Status Icons Template",
         Key = AttributeKey.ConnectionRequestStatusIconsTemplate,
         Description = "Lava Template that can be used to customize what is displayed for the status icons in the connection request grid.",
@@ -92,7 +82,7 @@ namespace Rock.Blocks.Connection
         EditorTheme = CodeEditorTheme.Rock,
         DefaultValue = ConnectionRequestStatusIconsTemplateDefaultValue,
         IsRequired = true,
-        Order = 5 )]
+        Order = 4 )]
 
     [LinkedPage(
         "Group Detail Page",
@@ -100,7 +90,7 @@ namespace Rock.Blocks.Connection
         Description = "Page used to display group details.",
         DefaultValue = Rock.SystemGuid.Page.GROUP_VIEWER,
         IsRequired = true,
-        Order = 6 )]
+        Order = 5 )]
 
     [LinkedPage(
         "SMS Link Page",
@@ -108,14 +98,14 @@ namespace Rock.Blocks.Connection
         Description = "Page that will be linked for SMS enabled phones.",
         DefaultValue = Rock.SystemGuid.Page.NEW_COMMUNICATION,
         IsRequired = true,
-        Order = 7 )]
+        Order = 6 )]
 
     [BadgesField(
         "Badges",
         Key = AttributeKey.Badges,
         Description = "The badges to display in this block.",
         IsRequired = false,
-        Order = 8 )]
+        Order = 7 )]
 
     [CodeEditorField(
         "Lava Heading Template",
@@ -123,7 +113,7 @@ namespace Rock.Blocks.Connection
         Description = "The HTML Content to render above the person’s name. Includes merge fields ConnectionRequest and Person. <span class='tip tip-lava'></span>",
         EditorMode = CodeEditorMode.Lava,
         IsRequired = false,
-        Order = 9 )]
+        Order = 8 )]
 
     [CodeEditorField(
         "Lava Badge Bar",
@@ -131,14 +121,14 @@ namespace Rock.Blocks.Connection
         Description = "The HTML Content intended to be used as a kind of custom badge bar for the connection request. Includes merge fields ConnectionRequest and Person. <span class='tip tip-lava'></span>",
         EditorMode = CodeEditorMode.Lava,
         IsRequired = false,
-        Order = 10 )]
+        Order = 9 )]
 
     [ConnectionTypesField(
         "Connection Types",
         Key = AttributeKey.ConnectionTypes,
         Description = "Optional list of connection types to limit the display to (All will be displayed by default).",
         IsRequired = false,
-        Order = 11 )]
+        Order = 10 )]
 
     [BooleanField(
         "Limit to Assigned Connections",
@@ -146,7 +136,7 @@ namespace Rock.Blocks.Connection
         Description = "When enabled, only requests assigned to the current person will be shown.",
         DefaultBooleanValue = false,
         IsRequired = true,
-        Order = 12 )]
+        Order = 11 )]
 
     [LinkedPage(
         "Connection Request History Page",
@@ -154,7 +144,7 @@ namespace Rock.Blocks.Connection
         Description = "Page used to display history details.",
         DefaultValue = Rock.SystemGuid.Page.GROUP_VIEWER,
         IsRequired = true,
-        Order = 13 )]
+        Order = 12 )]
 
     [LinkedPage(
         "Bulk Update Requests",
@@ -162,7 +152,7 @@ namespace Rock.Blocks.Connection
         Description = "Page used to update selected connection requests",
         DefaultValue = Rock.SystemGuid.Page.CONNECTION_REQUESTS_BULK_UPDATE,
         IsRequired = true,
-        Order = 14 )]
+        Order = 13 )]
 
     #endregion
 
@@ -177,21 +167,20 @@ namespace Rock.Blocks.Connection
         /// </summary>
         private static class AttributeKey
         {
+            public const string Badges = "Badges";
+            public const string BulkUpdateRequestsPage = "BulkUpdateRequestsPage";
+            public const string ConnectionRequestHistoryPage = "ConnectionRequestHistoryPage";
+            public const string ConnectionRequestStatusIconsTemplate = "ConnectionRequestStatusIconsTemplate";
+            public const string ConnectionTypes = "ConnectionTypes";
+            public const string GroupDetailPage = "GroupDetailPage";
+            public const string LavaBadgeBar = "LavaBadgeBar";
+            public const string LavaHeadingTemplate = "LavaHeadingTemplate";
             public const string MaxCards = "MaxCards";
+            public const string OnlyShowAssigned = "OnlyShowAssigned";
             public const string PersonProfilePage = "PersonProfilePage";
+            public const string SmsLinkPage = "SmsLinkPage";
             public const string WorkflowDetailPage = "WorkflowDetailPage";
             public const string WorkflowEntryPage = "WorkflowEntryPage";
-            public const string StatusTemplate = "StatusTemplate";
-            public const string ConnectionRequestStatusIconsTemplate = "ConnectionRequestStatusIconsTemplate";
-            public const string GroupDetailPage = "GroupDetailPage";
-            public const string SmsLinkPage = "SmsLinkPage";
-            public const string Badges = "Badges";
-            public const string LavaHeadingTemplate = "LavaHeadingTemplate";
-            public const string LavaBadgeBar = "LavaBadgeBar";
-            public const string ConnectionTypes = "ConnectionTypes";
-            public const string OnlyShowAssigned = "OnlyShowAssigned";
-            public const string ConnectionRequestHistoryPage = "ConnectionRequestHistoryPage";
-            public const string BulkUpdateRequestsPage = "BulkUpdateRequestsPage";
         }
 
         /// <summary>
@@ -213,17 +202,17 @@ namespace Rock.Blocks.Connection
         /// </summary>
         private static class PersonPreferenceKey
         {
-            public const string CampusFilter = "campus-filter";
-            public const string ConnectionOpportunityId = "connection-opportunity-id";
-            public const string ConnectorPersonAliasId = "connector-person-alias-id";
-            public const string DateRange = "date-range";
-            public const string LastActivities = "last-activities";
-            public const string PastDueOnly = "past-due-only";
-            public const string Requester = "requester";
-            public const string SortBy = "sort-by";
-            public const string States = "states";
-            public const string Statuses = "statuses";
-            public const string ViewMode = "view-mode";
+            public const string CampusFilter = "CampusFilter";
+            public const string ConnectionOpportunityId = "ConnectionOpportunityId";
+            public const string ConnectorPersonAliasId = "ConnectorPersonAliasId";
+            public const string DateRange = "DateRange";
+            public const string LastActivities = "LastActivities";
+            public const string PastDueOnly = "PastDueOnly";
+            public const string Requester = "Requester";
+            public const string SortBy = "SortBy";
+            public const string States = "States";
+            public const string Statuses = "Statuses";
+            public const string ViewMode = "ViewMode";
         }
 
         #endregion Keys
@@ -240,17 +229,6 @@ namespace Rock.Blocks.Connection
         /// click if the actual count exceeds this.
         /// </summary>
         private const int InitialActivitiesToShowInGrid = 10;
-
-        /// <summary>
-        /// The default status template.
-        /// </summary>
-        private const string StatusTemplateDefaultValue = @"
-<div class='pull-left badge-legend padding-r-md'>
-    <span class='pull-left badge badge-info badge-circle js-legend-badge' data-toggle='tooltip' data-original-title='Assigned To You'><span class='sr-only'>Assigned To You</span></span>
-    <span class='pull-left badge badge-warning badge-circle js-legend-badge' data-toggle='tooltip' data-original-title='Unassigned Item'><span class='sr-only'>Unassigned Item</span></span>
-    <span class='pull-left badge badge-critical badge-circle js-legend-badge' data-toggle='tooltip' data-original-title='Critical Status'><span class='sr-only'>Critical Status</span></span>
-    <span class='pull-left badge badge-danger badge-circle js-legend-badge' data-toggle='tooltip' data-original-title='{{ IdleTooltip }}'><span class='sr-only'>{{ IdleTooltip }}</span></span>
-</div>";
 
         /// <summary>
         /// The default connection request status icons template. Used at the top of each connection request card (in card view mode),
