@@ -17,6 +17,7 @@
 using System;
 using System.Data.Entity;
 using System.Data.Entity.SqlServer;
+using System.Diagnostics;
 using System.Linq;
 using Rock.Data;
 using Rock.Web.Cache;
@@ -175,6 +176,10 @@ namespace Rock.Model
                             {
                                 rockContext.BulkDelete( groupMemberAssignmentsToDelete );
                             }
+
+                            // Remove the AuthAuditLogs if there are any.
+                            Entity.DeleteAuthAuditLogs( rockContext );
+                            Debug.WriteLine( "Deleted Auth Audit Logs" );
 
                             break;
                         }

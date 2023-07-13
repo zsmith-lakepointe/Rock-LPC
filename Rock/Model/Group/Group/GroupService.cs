@@ -19,6 +19,7 @@ using System;
 using System.Collections.Generic;
 using System.Data.Entity;
 using System.Data.Entity.Spatial;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 
@@ -1544,16 +1545,19 @@ namespace Rock.Model
             if ( removeFromAuthTables && isSecurityRoleGroup )
             {
                 AuthService authService = new AuthService( this.Context as RockContext );
+                Debug.WriteLine( "Group Service Delete Method: Auth Service Removal Started..." );
 
                 foreach ( var auth in authService.Queryable().Where( a => a.GroupId == group.Id ).ToList() )
                 {
                     authService.Delete( auth );
                 }
+                Debug.WriteLine( "Group Service Delete Method: Auth Service Removed" );
 
                 Rock.Security.Authorization.Clear();
             }
 
             this.Delete( group );
+            Debug.WriteLine( "Group Service Delete Method: Group Deleted" );
         }
 
         /// <summary>

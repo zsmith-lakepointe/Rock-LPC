@@ -18,6 +18,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data.Entity;
+using System.Diagnostics;
 using System.Linq;
 using System.Web.UI;
 using System.Web.UI.HtmlControls;
@@ -589,12 +590,15 @@ namespace RockWeb.Blocks.Groups
                             return;
                         }
 
-                        group.DeleteAuthAuditLogs( rockContext );
+                        Debug.WriteLine( "Can Delete Group" );
+                    //    group.DeleteAuthAuditLogs( rockContext );
                         groupService.Delete( group, true );
+                        Debug.WriteLine( "Deleted Group" );
                     }
                 }
 
                 rockContext.SaveChanges();
+                Debug.WriteLine( "Saved Context Changes" );
 
                 if ( isSecurityRoleGroup )
                 {

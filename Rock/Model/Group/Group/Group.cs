@@ -21,6 +21,7 @@ using System.Collections.ObjectModel;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Data.Entity.ModelConfiguration;
+using System.Diagnostics;
 using System.Linq;
 using System.Runtime.Serialization;
 using Rock.Data;
@@ -619,17 +620,18 @@ namespace Rock.Model
         }
 
         /// <summary>
-        /// Delete any related Auth Audit Logs.
+        /// Delete any Auth Audit Logs tied to this group.
         /// </summary>
         /// <param name="dbContext">The database context.</param>
         public void DeleteAuthAuditLogs( Data.DbContext dbContext )
         {
             var rockContext = ( RockContext ) dbContext;
             var authAuditLogSerivce = new AuthAuditLogService( rockContext );
-            var auditLogsToDelete = authAuditLogSerivce.Queryable().Where( a => a.GroupId == this.Id );
-            if ( auditLogsToDelete.Any() )
+            var authAuditLogsToDelete = authAuditLogSerivce.Queryable().Where( a => a.GroupId == this.Id );
+            Debug.WriteLine( "Group.cs (DeleteAuthAuditlogs) : (" + this.Id + ")auditLogstoDelete = " + authAuditLogsToDelete.Count());
+            if ( authAuditLogsToDelete.Any() )
             {
-                dbContext.BulkDelete( auditLogsToDelete );
+                dbContext.BulkDelete( authAuditLogsToDelete );
             }
         }
 
