@@ -25,34 +25,14 @@ namespace Rock.ViewModels.Blocks.Connection.ConnectionRequestBoard
     public class ConnectionRequestBoardInitializationBox : BlockBox
     {
         /// <summary>
-        /// The connection types that are available to be selected within the opportunities sidebar.
+        /// Gets or sets the connection types that are available to be selected within the opportunities sidebar.
         /// </summary>
         public List<ConnectionRequestBoardConnectionTypeBag> ConnectionTypes { get; set; }
 
         /// <summary>
-        /// Gets or sets the selected connection opportunity.
+        /// Gets or sets the selected connection opportunity and supporting information.
         /// </summary>
-        public ConnectionRequestBoardConnectionOpportunityBag ConnectionOpportunity { get; set; }
-
-        /// <summary>
-        /// Gets or sets the selected connection request identifier, if a specific request should be opened.
-        /// </summary>
-        public int? ConnectionRequestId { get; set; }
-
-        /// <summary>
-        /// Gets or sets the filter options that can be used to filter connection requests.
-        /// </summary>
-        public ConnectionRequestBoardFilterOptionsBag FilterOptions { get; set; }
-
-        /// <summary>
-        /// Gets or sets the selected filters to be used to initialize the connection request board.
-        /// </summary>
-        public ConnectionRequestBoardFiltersBag Filters { get; set; }
-
-        /// <summary>
-        /// Gets or sets whether the board is in card view mode.
-        /// </summary>
-        public bool IsCardViewMode { get; set; }
+        public ConnectionRequestBoardSelectedOpportunityBag SelectedOpportunity { get; set; }
 
         /// <summary>
         /// Gets or sets the maximum number of cards that should be displayed per column in card view mode.

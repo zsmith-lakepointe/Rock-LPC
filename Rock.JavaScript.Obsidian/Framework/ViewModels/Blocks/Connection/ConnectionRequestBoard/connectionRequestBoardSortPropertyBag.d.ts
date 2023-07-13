@@ -21,22 +21,14 @@
 // </copyright>
 //
 
-import { ConnectionRequestBoardConnectionOpportunityBag } from "@Obsidian/ViewModels/Blocks/Connection/ConnectionRequestBoard/connectionRequestBoardConnectionOpportunityBag";
+/** A bag that contains sort property information for the connection request board. */
+export type ConnectionRequestBoardSortPropertyBag = {
+    /** Gets or sets the model property (and direction: ascending vs descending). */
+    sortBy: number;
 
-/** A bag that contains connection type information for the connection request board. */
-export type ConnectionRequestBoardConnectionTypeBag = {
-    /** Gets or sets the connection opportunities. */
-    connectionOpportunities?: ConnectionRequestBoardConnectionOpportunityBag[] | null;
+    /** Gets or sets the sub title. */
+    subTitle?: string | null;
 
-    /** Gets or sets the icon CSS class. */
-    iconCssClass?: string | null;
-
-    /** Gets or sets the identifier. */
-    id: number;
-
-    /** Gets or sets the name. */
-    name?: string | null;
-
-    /** Gets or sets the order. */
-    order: number;
+    /** Gets or sets the title. */
+    title?: string | null;
 };

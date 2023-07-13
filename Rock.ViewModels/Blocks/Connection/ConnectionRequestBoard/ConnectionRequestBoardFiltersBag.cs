@@ -47,9 +47,9 @@ namespace Rock.ViewModels.Blocks.Connection.ConnectionRequestBoard
         public SlidingDateRangeBag DateRange { get; set; }
 
         /// <summary>
-        /// Gets or sets whether to only include connection requests that are "due today or already past due".
+        /// Gets or sets whether to include only connection requests that are "due today or already past due".
         /// </summary>
-        public bool? PastDueOnly { get; set; }
+        public bool PastDueOnly { get; set; }
 
         /// <summary>
         /// Gets or sets the connection statuses to be used to filter connection requests.
@@ -67,7 +67,7 @@ namespace Rock.ViewModels.Blocks.Connection.ConnectionRequestBoard
         public List<string> ConnectionActivityTypes { get; set; }
 
         /// <summary>
-        /// Gets or sets the model property to be used for sorting connection requests.
+        /// Gets or sets the model property (and direction: ascending vs descending) to be used for sorting connection requests.
         /// </summary>
         public ConnectionRequestViewModelSortProperty SortProperty { get; set; }
     }

@@ -21,18 +21,16 @@
 // </copyright>
 //
 
-import { Guid } from "@Obsidian/Types";
-
 /** A bag that contains connection opportunity information for the connection request board. */
 export type ConnectionRequestBoardConnectionOpportunityBag = {
     /** Gets or sets the name of the connection type. */
     connectionTypeName?: string | null;
 
-    /** Gets or sets the unique identifier. */
-    guid?: Guid | null;
-
     /** Gets or sets the icon CSS class. */
     iconCssClass?: string | null;
+
+    /** Gets or sets the identifier. */
+    id: number;
 
     /** Gets or sets whether this connection opportunity has been "favorited". */
     isFavorite: boolean;

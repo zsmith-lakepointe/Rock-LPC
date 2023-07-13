@@ -431,6 +431,7 @@
     <TypeScriptCompile Include="Framework\Enums\Communication\notificationClassification.ts" />
     <TypeScriptCompile Include="Framework\Enums\Communication\segmentCriteria.ts" />
     <TypeScriptCompile Include="Framework\Enums\Connection\connectionRequestViewModelSortProperty.ts" />
+    <TypeScriptCompile Include="Framework\Enums\Connection\connectionState.ts" />
     <TypeScriptCompile Include="Framework\Enums\Connection\connectionTypeViewMode.ts" />
     <TypeScriptCompile Include="Framework\Enums\Connection\connectionWorkflowTriggerType.ts" />
     <TypeScriptCompile Include="Framework\Enums\Connection\groupRequirementsFilter.ts" />
@@ -748,8 +749,11 @@
     <TypeScriptCompile Include="Framework\ViewModels\Blocks\Communication\SystemPhoneNumberDetail\systemPhoneNumberDetailOptionsBag.d.ts" />
     <TypeScriptCompile Include="Framework\ViewModels\Blocks\Connection\ConnectionRequestBoard\connectionRequestBoardConnectionOpportunityBag.d.ts" />
     <TypeScriptCompile Include="Framework\ViewModels\Blocks\Connection\ConnectionRequestBoard\connectionRequestBoardConnectionTypeBag.d.ts" />
+    <TypeScriptCompile Include="Framework\ViewModels\Blocks\Connection\ConnectionRequestBoard\connectionRequestBoardFilterOptionsBag.d.ts" />
     <TypeScriptCompile Include="Framework\ViewModels\Blocks\Connection\ConnectionRequestBoard\connectionRequestBoardFiltersBag.d.ts" />
     <TypeScriptCompile Include="Framework\ViewModels\Blocks\Connection\ConnectionRequestBoard\connectionRequestBoardInitializationBox.d.ts" />
+    <TypeScriptCompile Include="Framework\ViewModels\Blocks\Connection\ConnectionRequestBoard\connectionRequestBoardSelectedOpportunityBag.d.ts" />
+    <TypeScriptCompile Include="Framework\ViewModels\Blocks\Connection\ConnectionRequestBoard\connectionRequestBoardSortPropertyBag.d.ts" />
     <TypeScriptCompile Include="Framework\ViewModels\Blocks\Core\CampusDetail\campusBag.d.ts" />
     <TypeScriptCompile Include="Framework\ViewModels\Blocks\Core\CampusDetail\campusDetailOptionsBag.d.ts" />
     <TypeScriptCompile Include="Framework\ViewModels\Blocks\Core\CampusDetail\campusScheduleBag.d.ts" />

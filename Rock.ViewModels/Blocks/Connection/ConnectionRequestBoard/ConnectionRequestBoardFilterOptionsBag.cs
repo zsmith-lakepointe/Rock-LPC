@@ -49,5 +49,10 @@ namespace Rock.ViewModels.Blocks.Connection.ConnectionRequestBoard
         /// Gets or sets the connection activity types that can be used to filter connection requests.
         /// </summary>
         public List<ListItemBag> ConnectionActivityTypes { get; set; }
+
+        /// <summary>
+        /// Gets or sets the properties that can be used to sort connection requests.
+        /// </summary>
+        public List<ConnectionRequestBoardSortPropertyBag> SortProperties { get; set; }
     }
 }

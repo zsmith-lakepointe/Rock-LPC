@@ -21,22 +21,31 @@
 // </copyright>
 //
 
-import { ConnectionRequestBoardConnectionOpportunityBag } from "@Obsidian/ViewModels/Blocks/Connection/ConnectionRequestBoard/connectionRequestBoardConnectionOpportunityBag";
+/** Type of connection state */
+export const ConnectionState = {
+    /** Active */
+    Active: 0,
 
-/** A bag that contains connection type information for the connection request board. */
-export type ConnectionRequestBoardConnectionTypeBag = {
-    /** Gets or sets the connection opportunities. */
-    connectionOpportunities?: ConnectionRequestBoardConnectionOpportunityBag[] | null;
+    /** Inactive */
+    Inactive: 1,
 
-    /** Gets or sets the icon CSS class. */
-    iconCssClass?: string | null;
+    /** Future Follow-up */
+    FutureFollowUp: 2,
 
-    /** Gets or sets the identifier. */
-    id: number;
+    /** Connected */
+    Connected: 3
+} as const;
 
-    /** Gets or sets the name. */
-    name?: string | null;
+/** Type of connection state */
+export const ConnectionStateDescription: Record<number, string> = {
+    0: "Active",
 
-    /** Gets or sets the order. */
-    order: number;
+    1: "Inactive",
+
+    2: "Future Follow Up",
+
+    3: "Connected"
 };
+
+/** Type of connection state */
+export type ConnectionState = typeof ConnectionState[keyof typeof ConnectionState];

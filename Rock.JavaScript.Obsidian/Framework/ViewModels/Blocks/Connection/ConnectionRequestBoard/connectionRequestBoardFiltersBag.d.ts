@@ -22,43 +22,33 @@
 //
 
 import { SlidingDateRangeBag } from "@Obsidian/ViewModels/Controls/slidingDateRangeBag";
-import { ListItemBag } from "@Obsidian/ViewModels/Utility/listItemBag";
 
 /** A bag that contains filters information for the connection request board. */
 export type ConnectionRequestBoardFiltersBag = {
-    /** Gets or sets the available connection states that can be used to filter connection requests. */
-    availableConnectionStates?: ListItemBag[] | null;
-
-    /** Gets or sets the available "last activity" types that can be used to filter connection requests. */
-    availableLastActivityTypes?: ListItemBag[] | null;
-
-    /** Gets or sets the available connection statuses that can be used to filter connection requests. */
-    availableStatuses?: ListItemBag[] | null;
-
     /** Gets or sets the campus identifier to be used to filter various aspects of the connection request board. */
     campusId?: number | null;
 
-    /** Gets or sets the person alias identifier of the "connector" to be used to filter connection requests. */
+    /** Gets or sets the connection activity types to be used to filter connection requests. */
+    connectionActivityTypes?: string[] | null;
+
+    /** Gets or sets the connection states to be used to filter connection requests. */
+    connectionStates?: string[] | null;
+
+    /** Gets or sets the connection statuses to be used to filter connection requests. */
+    connectionStatuses?: string[] | null;
+
+    /** Gets or sets the "connector" person alias identifier to be used to filter connection requests. */
     connectorPersonAliasId?: number | null;
 
     /** Gets or sets the date range to be used to filter connection requests (using the last activity date). */
     dateRange?: SlidingDateRangeBag | null;
 
-    /** Gets or sets whether to only include connection requests that are "due today or already past due". */
-    pastDueOnly?: boolean | null;
+    /** Gets or sets whether to include only connection requests that are "due today or already past due". */
+    pastDueOnly: boolean;
 
-    /** Gets or sets the person alias identifier of the "requester" to be used to filter connection requests. */
+    /** Gets or sets the "requester" person alias identifier to be used to filter connection requests. */
     requesterPersonAliasId?: number | null;
 
-    /** Gets or sets the selected connection states to be used to filter connection requests. */
-    selectedConnectionStates?: string[] | null;
-
-    /** Gets or sets the selected "last activity" types to be used to filter connection requests. */
-    selectedLastActivityTypes?: string[] | null;
-
-    /** Gets or sets the selected connection statuses to be used to filter connection requests. */
-    selectedStatuses?: string[] | null;
-
-    /** Gets or sets the model property to be used for sorting connection requests. */
+    /** Gets or sets the model property (and direction: ascending vs descending) to be used for sorting connection requests. */
     sortProperty: number;
 };

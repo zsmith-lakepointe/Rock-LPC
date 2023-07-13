@@ -28,6 +28,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data.Entity;
 using System.Linq;
+using System.Text.RegularExpressions;
 
 namespace Rock.Blocks.Connection
 {
@@ -188,13 +189,13 @@ namespace Rock.Blocks.Connection
         /// </summary>
         private static class PageParameterKey
         {
-            public const string CampusId = "CampusId";
-            public const string ConnectionOpportunityId = "ConnectionOpportunityId";
-            public const string ConnectionRequestGuid = "ConnectionRequestGuid";
-            public const string ConnectionRequestId = "ConnectionRequestId";
-            public const string ConnectionTypeId = "ConnectionTypeId";
-            public const string EntitySetId = "EntitySetId";
-            public const string WorkflowId = "WorkflowId";
+            public const string CampusId = "CampusId";                                  // Incoming
+            public const string ConnectionOpportunityId = "ConnectionOpportunityId";    // Incoming
+            public const string ConnectionRequestGuid = "ConnectionRequestGuid";                        // Outgoing
+            public const string ConnectionRequestId = "ConnectionRequestId";            // Incoming
+            public const string ConnectionTypeId = "ConnectionTypeId";                                  // Outgoing
+            public const string EntitySetId = "EntitySetId";                                            // Outgoing
+            public const string WorkflowId = "WorkflowId";                                              // Outgoing
         }
 
         /// <summary>
@@ -322,7 +323,17 @@ namespace Rock.Blocks.Connection
         {
             var boardData = GetConnectionRequestBoardData( rockContext );
 
-            box.ConnectionTypes = boardData.AllowedConnectionTypes;
+            box.ConnectionTypes = boardData.AllowedConnectionTypeBags;
+            box.SelectedOpportunity = GetSelectedOpportunity( boardData );
+            box.MaxCardsPerColumn = GetAttributeValue( AttributeKey.MaxCards ).AsIntegerOrNull() ?? DefaultMaxCards;
+
+            var statusIconsTemplate = GetAttributeValue( AttributeKey.ConnectionRequestStatusIconsTemplate );
+            if ( statusIconsTemplate.IsNullOrWhiteSpace() )
+            {
+                statusIconsTemplate = ConnectionRequestStatusIconsTemplateDefaultValue;
+            }
+
+            box.StatusIconsTemplate = Regex.Replace( statusIconsTemplate, @"\s+", " " );
         }
 
         /// <summary>
@@ -340,6 +351,7 @@ namespace Rock.Blocks.Connection
             GetAllowedConnectionTypes( rockContext, boardData );
             GetConnectionAndCampusSelectionsFromURLOrPersonPreferences( rockContext, boardData );
             GetFilterOptions( rockContext, boardData );
+            GetFiltersFromPersonPreferences( boardData );
 
             // Preferences will only be saved if updates were actually set above.
             this.PersonPreferences.Save();
@@ -354,7 +366,7 @@ namespace Rock.Blocks.Connection
         /// <param name="boardData">The board data onto which to load the allowed connection types.</param>
         private void GetAllowedConnectionTypes( RockContext rockContext, ConnectionRequestBoardData boardData )
         {
-            var allowedConnectionTypes = new List<ConnectionRequestBoardConnectionTypeBag>();
+            var allowedConnectionTypeBags = new List<ConnectionRequestBoardConnectionTypeBag>();
 
             var opportunitiesQuery = new ConnectionOpportunityService( rockContext )
                 .Queryable()
@@ -411,10 +423,10 @@ namespace Rock.Blocks.Connection
                 }
 
                 // Add the opportunity's type if it hasn't already been added.
-                var connectionType = allowedConnectionTypes.FirstOrDefault( t => t.Id == opportunity.ConnectionType.Id );
-                if ( connectionType == null )
+                var connectionTypeBag = allowedConnectionTypeBags.FirstOrDefault( t => t.Id == opportunity.ConnectionType.Id );
+                if ( connectionTypeBag == null )
                 {
-                    connectionType = new ConnectionRequestBoardConnectionTypeBag
+                    connectionTypeBag = new ConnectionRequestBoardConnectionTypeBag
                     {
                         Id = opportunity.ConnectionType.Id,
                         Name = opportunity.ConnectionType.Name,
@@ -423,33 +435,33 @@ namespace Rock.Blocks.Connection
                         ConnectionOpportunities = new List<ConnectionRequestBoardConnectionOpportunityBag>()
                     };
 
-                    allowedConnectionTypes.Add( connectionType );
+                    allowedConnectionTypeBags.Add( connectionTypeBag );
                 }
 
                 // Add the opportunity.
-                connectionType.ConnectionOpportunities.Add( new ConnectionRequestBoardConnectionOpportunityBag
+                connectionTypeBag.ConnectionOpportunities.Add( new ConnectionRequestBoardConnectionOpportunityBag
                 {
                     Id = opportunity.Id,
                     PublicName = opportunity.PublicName,
                     IconCssClass = opportunity.IconCssClass,
-                    ConnectionTypeName = connectionType.Name,
-                    PhotoUrl = ConnectionOpportunity.GetPhotoUrl( opportunity.PhotoId ),
+                    ConnectionTypeName = connectionTypeBag.Name,
+                    PhotoUrl = opportunity.PhotoUrl,
                     Order = opportunity.Order,
                     IsFavorite = favoriteOpportunityIds.Contains( opportunity.Id )
                 } );
             }
 
             // Sort each type's opportunities.
-            foreach ( var connectionType in allowedConnectionTypes )
+            foreach ( var connectionTypeBag in allowedConnectionTypeBags )
             {
-                connectionType.ConnectionOpportunities = connectionType.ConnectionOpportunities
+                connectionTypeBag.ConnectionOpportunities = connectionTypeBag.ConnectionOpportunities
                     .OrderBy( co => co.Order )
                     .ThenBy( co => co.PublicName )
                     .ToList();
             }
 
             // Sort and add the allowed types.
-            boardData.AllowedConnectionTypes = allowedConnectionTypes
+            boardData.AllowedConnectionTypeBags = allowedConnectionTypeBags
                 .Where( ct => ct.ConnectionOpportunities.Any() )
                 .OrderBy( ct => ct.Order )
                 .ThenBy( ct => ct.Name )
@@ -466,7 +478,7 @@ namespace Rock.Blocks.Connection
         {
             int? connectionOpportunityId = null;
 
-            var availableOpportunityIds = boardData.AllowedConnectionTypes
+            var availableOpportunityIds = boardData.AllowedConnectionTypeBags
                 .SelectMany( ct => ct.ConnectionOpportunities.Select( co => co.Id ) )
                 .ToList();
 
@@ -571,6 +583,7 @@ namespace Rock.Blocks.Connection
             GetConnectionStatuses( rockContext, boardData );
             GetConnectionStates( boardData );
             GetConnectionActivityTypes( rockContext, boardData );
+            GetSortProperties( boardData );
         }
 
         /// <summary>
@@ -604,6 +617,7 @@ namespace Rock.Blocks.Connection
                         .Where( m => m.GroupMemberStatus == GroupMemberStatus.Active )
                         .Select( m => m.Person )
                         .Distinct()
+                        .Where( p => includeCurrentPerson || p.Id != CurrentPersonId )
                         .Where( p => p.Aliases.Any( a => a.AliasPersonId == p.Id ) )
                         .OrderBy( p => p.LastName )
                         .ThenBy( p => p.NickName )
@@ -648,7 +662,7 @@ namespace Rock.Blocks.Connection
                 }
             }
 
-            return null;
+            return connectors;
         }
 
         /// <summary>
@@ -735,29 +749,99 @@ namespace Rock.Blocks.Connection
                     .ToList();
         }
 
-        private void GetFiltersFromURLOrPersonPreferences( RockContext rockContext, ConnectionRequestBoardData boardData )
+        /// <summary>
+        /// Gets the available sort properties and loads them onto the supplied <see cref="ConnectionRequestBoardData"/> instance.
+        /// </summary>
+        /// <param name="boardData">The board data onto which to load the sort properties.</param>
+        private void GetSortProperties( ConnectionRequestBoardData boardData )
         {
-            //boardData.Filters.CampusId = GetEntityIdFromPageParameter<Campus>( PageParameterKey.CampusId, rockContext );
+            boardData.FilterOptions.SortProperties = new List<ConnectionRequestBoardSortPropertyBag>
+            {
+                new ConnectionRequestBoardSortPropertyBag { SortBy = ConnectionRequestViewModelSortProperty.Order, Title = string.Empty },
+                new ConnectionRequestBoardSortPropertyBag { SortBy = ConnectionRequestViewModelSortProperty.Requestor, Title = "Requestor" },
+                new ConnectionRequestBoardSortPropertyBag { SortBy = ConnectionRequestViewModelSortProperty.Connector, Title = "Connector" },
+                new ConnectionRequestBoardSortPropertyBag { SortBy = ConnectionRequestViewModelSortProperty.DateAdded, Title = "Date Added", SubTitle = "Oldest First" },
+                new ConnectionRequestBoardSortPropertyBag { SortBy = ConnectionRequestViewModelSortProperty.DateAddedDesc, Title = "Date Added", SubTitle = "Newest First" },
+                new ConnectionRequestBoardSortPropertyBag { SortBy = ConnectionRequestViewModelSortProperty.LastActivity, Title = "Last Activity", SubTitle = "Oldest First" },
+                new ConnectionRequestBoardSortPropertyBag { SortBy = ConnectionRequestViewModelSortProperty.LastActivityDesc, Title = "Last Activity", SubTitle = "Newest First" }
+            };
+        }
 
-            //if ( boardData.ConnectionOpportunity == null )
-            //{
-            //    // The remainder of this method has to do with connection type-specific person preferences.
-            //    // If we don't have a connection info, we don't have enough info to get/save these preferences.
-            //    return;
-            //}
+        /// <summary>
+        /// Gets the selected filters from person preferences, loading them onto the supplied <see cref="ConnectionRequestBoardData"/> instance.
+        /// </summary>
+        /// <param name="boardData">The board data onto which to load the filters.</param>
+        private void GetFiltersFromPersonPreferences( ConnectionRequestBoardData boardData )
+        {
+            if ( boardData.ConnectionOpportunity == null )
+            {
+                // These preferences are all connection type-specific, so if we don't have a connection opportunity (which will have a type)
+                // loaded at this point, we can't load preferences.
+                return;
+            }
 
-            //int? campusId = null;
-            //var campusIdParam = 
-            //if ( campusIdParam.HasValue && boardData.ConnectionOpportunity != null )
-            //{
-            //    // Now that we have a connection opportunity, we can update the person's campus preference if needed.
-            //    var key = boardData.GetPersonPreferenceKey( PersonPreferenceKey.CampusFilter );
-            //    var personPrefCampusId = this.PersonPreferences.GetValue( key ).AsIntegerOrNull();
-            //    if ( campusIdParam != personPrefCampusId )
-            //    {
-            //        this.PersonPreferences.SetValue( key, campusIdParam.ToString() );
-            //    }
-            //}
+            boardData.Filters.ConnectorPersonAliasId = this.PersonPreferences
+                .GetValue( boardData.GetPersonPreferenceKey( PersonPreferenceKey.ConnectorPersonAliasId ) )
+                .AsIntegerOrNull();
+
+            boardData.Filters.RequesterPersonAliasId = this.PersonPreferences
+                .GetValue( boardData.GetPersonPreferenceKey( PersonPreferenceKey.Requester ) )
+                .AsIntegerOrNull();
+
+            // Campus ID has already been set.
+
+            boardData.Filters.DateRange = RockDateTimeHelper.CreateSlidingDateRangeBagFromDelimitedValues(
+                    this.PersonPreferences.GetValue( boardData.GetPersonPreferenceKey( PersonPreferenceKey.DateRange ) )
+                );
+
+            boardData.Filters.PastDueOnly = this.PersonPreferences
+                .GetValue( boardData.GetPersonPreferenceKey( PersonPreferenceKey.PastDueOnly ) )
+                .AsBoolean();
+
+            boardData.Filters.ConnectionStatuses = this.PersonPreferences
+                .GetValue( boardData.GetPersonPreferenceKey( PersonPreferenceKey.Statuses ) )
+                .SplitDelimitedValues()
+                .ToList();
+
+            boardData.Filters.ConnectionStates = this.PersonPreferences
+                .GetValue( boardData.GetPersonPreferenceKey( PersonPreferenceKey.States ) )
+                .SplitDelimitedValues()
+                .ToList();
+
+            boardData.Filters.ConnectionActivityTypes = this.PersonPreferences
+                .GetValue( boardData.GetPersonPreferenceKey( PersonPreferenceKey.LastActivities ) )
+                .SplitDelimitedValues()
+                .ToList();
+
+            boardData.Filters.SortProperty = this.PersonPreferences
+                .GetValue( boardData.GetPersonPreferenceKey( PersonPreferenceKey.SortBy ) )
+                .ConvertToEnumOrNull<ConnectionRequestViewModelSortProperty>() ?? ConnectionRequestViewModelSortProperty.Order;
+        }
+
+        /// <summary>
+        /// Gets the selected connection opportunity and supporting information from the supplied <see cref="ConnectionRequestBoardData"/> instance
+        /// and person preferences.
+        /// </summary>
+        /// <param name="boardData"></param>
+        /// <returns></returns>
+        private ConnectionRequestBoardSelectedOpportunityBag GetSelectedOpportunity( ConnectionRequestBoardData boardData )
+        {
+            var selectedOpportunity = new ConnectionRequestBoardSelectedOpportunityBag
+            {
+                ConnectionOpportunity = boardData.ConnectionOpportunityBag,
+                ConnectionRequestId = boardData.ConnectionRequestId,
+                FilterOptions = boardData.FilterOptions,
+                Filters = boardData.Filters
+            };
+
+            if ( selectedOpportunity.ConnectionOpportunity != null )
+            {
+                selectedOpportunity.IsCardViewMode = this.PersonPreferences
+                    .GetValue( boardData.GetPersonPreferenceKey( PersonPreferenceKey.ViewMode ) )
+                    .AsBooleanOrNull() ?? true;
+            }
+
+            return selectedOpportunity;
         }
 
         /// <summary>
@@ -802,19 +886,28 @@ namespace Rock.Blocks.Connection
         private class ConnectionRequestBoardData
         {
             /// <summary>
-            /// Gets or sets the allowed connection types.
+            /// Gets or sets the allowed connection type bags.
             /// </summary>
-            public List<ConnectionRequestBoardConnectionTypeBag> AllowedConnectionTypes { get; set; } = new List<ConnectionRequestBoardConnectionTypeBag>();
+            public List<ConnectionRequestBoardConnectionTypeBag> AllowedConnectionTypeBags { get; set; } = new List<ConnectionRequestBoardConnectionTypeBag>();
 
             /// <summary>
             /// Gets the allowed connection type IDs.
             /// </summary>
-            public IEnumerable<int> AllowedConnectionTypeIds => this.AllowedConnectionTypes.Select( ct => ct.Id );
+            public IEnumerable<int> AllowedConnectionTypeIds => this.AllowedConnectionTypeBags?.Select( ct => ct.Id ) ?? new List<int>();
 
             /// <summary>
             /// Gets or sets the selected connection opportunity.
             /// </summary>
             public ConnectionOpportunity ConnectionOpportunity { get; set; }
+
+            /// <summary>
+            /// Gets the selected connection opportunity bag.
+            /// </summary>
+            public ConnectionRequestBoardConnectionOpportunityBag ConnectionOpportunityBag => this.ConnectionOpportunity == null
+                ? null
+                : this.AllowedConnectionTypeBags
+                    ?.SelectMany( ct => ct.ConnectionOpportunities )
+                    ?.FirstOrDefault( co => co.Id == this.ConnectionOpportunity.Id );
 
             /// <summary>
             /// Gets or sets the selected connection request identifier, if a specific request should be opened.
