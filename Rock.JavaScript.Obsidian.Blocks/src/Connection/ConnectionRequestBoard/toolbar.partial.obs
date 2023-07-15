@@ -5,7 +5,11 @@
 
             <!-- Opportunities -->
             <div class="d-inline-block btn-group-mega">
-                <button type="button" class="btn btn-xs btn-tool dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <button type="button"
+                        class="btn btn-xs btn-tool dropdown-toggle"
+                        data-toggle="dropdown"
+                        aria-haspopup="true"
+                        aria-expanded="false">
                     <i class="fa fa-plug"></i>
                     Opportunities
                 </button>
@@ -18,7 +22,9 @@
                             Favorites
                         </li>
                         <li>
-                            <a v-for="opportunity in favoriteOpportunites" :key="opportunity.guid ?? ''" href="#" @click.prevent="$emit('selectOpportunity', opportunity.guid)">
+                            <a v-for="opportunity in favoriteOpportunites" :key="opportunity.id"
+                               href="#"
+                               @click.prevent="$emit('opportunityChanged', opportunity.id)">
                                 <i v-if="opportunity.iconCssClass" :class="opportunity.iconCssClass"></i>
                                 {{ opportunity.publicName }}
                                 <span class="pull-right text-muted small">
@@ -30,13 +36,13 @@
 
                     <!-- All Opportunites, grouped by Connection Type -->
                     <template v-if="connectionTypes?.length">
-                        <template v-for="connectionType in connectionTypes" :key="connectionType.guid ?? ''">
+                        <template v-for="connectionType in connectionTypes" :key="connectionType.id">
                             <li class="dropdown-header">
                                 <i v-if="connectionType.iconCssClass" :class="connectionType.iconCssClass"></i>
                                 {{ connectionType.name }}
                             </li>
-                            <li v-for="opportunity in connectionType.connectionOpportunities" :key="`${connectionType.guid}-${opportunity.guid}`">
-                                <a href="#" @click.prevent="$emit('selectOpportunity', opportunity.guid)">
+                            <li v-for="opportunity in connectionType.connectionOpportunities" :key="`${connectionType.id}-${opportunity.id}`">
+                                <a href="#" @click.prevent="$emit('opportunityChanged', opportunity.id)">
                                     <i v-if="opportunity.iconCssClass" :class="opportunity.iconCssClass"></i>
                                     {{ opportunity.publicName }}
                                 </a>
@@ -44,7 +50,7 @@
                         </template>
                     </template>
                     <li v-else class="disabled">
-                        <a @click.prevent="$emit('selectOpportunity', null)">No Opportunities</a>
+                        <a @click.prevent="$emit('opportunityChanged', 0)">No Opportunities</a>
                     </li>
 
                 </ul>
@@ -53,19 +59,24 @@
             <div class="toolbar-group">
 
                 <!-- Sort -->
-                <div class="btn-group">
-                    <button type="button" class="btn btn-xs btn-tool dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <div v-if="filterOptions?.sortProperties?.length" class="btn-group">
+                    <button type="button"
+                            class="btn btn-xs btn-tool dropdown-toggle"
+                            data-toggle="dropdown"
+                            aria-haspopup="true"
+                            aria-expanded="false"
+                            :disabled="disabled">
                         <i class="fa fa-sort"></i>
-                        [Sort Text]
+                        {{ sortText }}
                     </button>
-                    <ul class="dropdown-menu dropdown-menu-right">
-                        <!-- No Sort -->
-                        <li>&nbsp;</li>
-                        <li>
-                            <a>
-                                [Sort Text]
+                    <ul class="dropdown-menu">
+                        <li v-for="sortProperty in filterOptions.sortProperties" :key="sortProperty.sortBy">
+                            <a href="#" @click.prevent="onSortChanged(sortProperty.sortBy)">
+                                {{ sortProperty.title }}
                                 &nbsp;
-                                <small class="text-muted">[Sort Subtitle]</small>
+                                <small v-if="sortProperty.subTitle" class="text-muted">
+                                    {{ sortProperty.subTitle }}
+                                </small>
                             </a>
                         </li>
                     </ul>
@@ -73,55 +84,73 @@
 
                 <!-- Connectors -->
                 <div class="btn-group">
-                    <button type="button" class="btn btn-xs btn-tool dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    <button type="button"
+                            class="btn btn-xs btn-tool dropdown-toggle"
+                            data-toggle="dropdown"
+                            aria-haspopup="true"
+                            aria-expanded="false"
+                            :disabled="disabled">
                         <i class="fa fa-user"></i>
-                        [All Connectors]
+                        {{ connectorText }}
                     </button>
                     <ul class="dropdown-menu">
                         <li>
-                            <a>All Connectors</a>
+                            <a href="#" @click.prevent="onConnectorChanged(undefined)">All Connectors</a>
                         </li>
                         <li>
-                            <a>My Connections</a>
+                            <a href="#" @click.prevent="onConnectorChanged(0)">My Connections</a>
                         </li>
-                        <li class="divider"></li>
-                        <!-- Specific connectors for this Opportunity -->
-                        <li>
-                            <a>[Person 1 Name]</a>
-                        </li>
-                        <li>
-                            <a>[Person 2 Name]</a>
-                        </li>
+                        <template v-if="filterOptions?.connectors?.length">
+                            <li class="divider"></li>
+                            <li v-for="connector in filterOptions.connectors">
+                                <a href="#" @click.prevent="onConnectorChanged(Number(connector.value))">
+                                    {{ connector.text }}
+                                </a>
+                            </li>
+                        </template>
                     </ul>
                 </div>
 
                 <!-- Campus -->
-                <div class="btn-group">
-                    <button type="button" class="btn btn-xs btn-tool dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <div v-if="showCampusFilter" class="btn-group">
+                    <button type="button"
+                            class="btn btn-xs btn-tool dropdown-toggle"
+                            data-toggle="dropdown"
+                            aria-haspopup="true"
+                            aria-expanded="false"
+                            :disabled="disabled">
                         <i class="fa fa-building"></i>
-                        [Campus Name]
+                        {{ campusText }}
                     </button>
                     <ul class="dropdown-menu">
-                        <!-- All Campuses -->
-                        <li>&nbsp;</li>
                         <li>
-                            <a>
-                                [Campus 1]
-                            </a>
+                            <a href="#" @click.prevent="onCampusChanged(undefined)">&nbsp;</a>
                         </li>
-                        <li>
-                            <a>
-                                [Campus 2]
+                        <li v-for="campus in filterOptions?.campuses ?? []">
+                            <a href="#" @click.prevent="onCampusChanged(Number(campus.value))">
+                                {{ campus.text }}
                             </a>
                         </li>
                     </ul>
                 </div>
 
                 <!-- Filters -->
-                <a class="btn btn-xs btn-tool">
-                    <i class="fa fa-filter"></i>
-                    Filters
-                </a>
+                <DropDownContent>
+
+                    <template #anchor>
+                        <button type="button"
+                                class="btn btn-xs btn-tool"
+                                :disabled="disabled">
+                            <i class="fa fa-filter"></i>
+                            Filters
+                        </button>
+                    </template>
+
+                    <div class="p-3">
+                        Here are the filters.
+                    </div>
+
+                </DropDownContent>
 
             </div>
         </div>
@@ -129,20 +158,57 @@
 </template>
 
 <script setup lang="ts">
-    import { computed, PropType } from "vue";
+    import { computed, PropType, ref, watch } from "vue";
+    import DropDownContent from "@Obsidian/Controls/dropDownContent.obs";
+    import RockButton from "@Obsidian/Controls/rockButton";
+    import { SlidingDateRange } from "@Obsidian/Utility/slidingDateRange";
     import { ConnectionRequestBoardConnectionOpportunityBag } from "@Obsidian/ViewModels/Blocks/Connection/ConnectionRequestBoard/connectionRequestBoardConnectionOpportunityBag";
     import { ConnectionRequestBoardConnectionTypeBag } from "@Obsidian/ViewModels/Blocks/Connection/ConnectionRequestBoard/connectionRequestBoardConnectionTypeBag";
+    import { ConnectionRequestBoardFilterOptionsBag } from "@Obsidian/ViewModels/Blocks/Connection/ConnectionRequestBoard/connectionRequestBoardFilterOptionsBag";
+    import { ConnectionRequestBoardFiltersBag } from "@Obsidian/ViewModels/Blocks/Connection/ConnectionRequestBoard/connectionRequestBoardFiltersBag";
+    import { ConnectionRequestBoardSortPropertyBag } from "@Obsidian/ViewModels/Blocks/Connection/ConnectionRequestBoard/connectionRequestBoardSortPropertyBag";
+    import { SlidingDateRangeBag } from "@Obsidian/ViewModels/Controls/slidingDateRangeBag";
 
     const props = defineProps({
         connectionTypes: {
             type: Array as PropType<ConnectionRequestBoardConnectionTypeBag[] | null | undefined>,
             required: true
+        },
+
+        filterOptions: {
+            type: Object as PropType<ConnectionRequestBoardFilterOptionsBag | null | undefined>,
+            required: true
+        },
+
+        filters: {
+            type: Object as PropType<ConnectionRequestBoardFiltersBag | null | undefined>,
+            required: true
+        },
+
+        disabled: {
+            type: Boolean as PropType<boolean>,
+            default: false
         }
     });
 
-    defineEmits<{
-        (e: "selectOpportunity", opportunityGuid: string | null | undefined): void
+    const emit = defineEmits<{
+        (e: "opportunityChanged", opportunityId: number): void,
+        (e: "filtersChanged", filters: ConnectionRequestBoardFiltersBag): void
     }>();
+
+    // #region Values
+
+    const connectorPersonAliasId = ref<number | null | undefined>(props.filters?.connectorPersonAliasId);
+    const requesterPersonAliasId = ref<number | null | undefined>(props.filters?.requesterPersonAliasId);
+    const campusId = ref<number | null | undefined>(props.filters?.campusId);
+    const dateRange = ref<SlidingDateRange | null>(getSlidingDateRange(props.filters?.dateRange));
+    const pastDueOnly = ref<boolean>(props.filters?.pastDueOnly ?? false);
+    const connectionStatuses = ref<string[]>(props.filters?.connectionStatuses ?? []);
+    const connectionStates = ref<string[]>(props.filters?.connectionStates ?? []);
+    const connectionActivityTypes = ref<string[]>(props.filters?.connectionActivityTypes ?? []);
+    const sortProperty = ref<number>(props.filters?.sortProperty ?? 8); // 8 is the default value of "Order".
+
+    // #endregion
 
     // #region Computed Values
 
@@ -158,5 +224,150 @@
         return opportunities;
     });
 
+    const sortText = computed((): string => {
+        const sortPropertyTitle = props.filterOptions
+            ?.sortProperties
+            ?.find(s => s.sortBy === sortProperty.value)
+            ?.title;
+
+        return `Sort${sortPropertyTitle ? `: ${sortPropertyTitle}` : ""}`;
+    });
+
+    const connectorText = computed((): string => {
+        if (connectorPersonAliasId.value === 0) {
+            return "My Connections";
+        }
+        else if (!connectorPersonAliasId.value) {
+            return "All Connectors";
+        }
+
+        const connectorName = props.filterOptions
+            ?.connectors
+            ?.find(c => Number(c.value) === connectorPersonAliasId.value)
+            ?.text;
+
+        return `Connector${connectorName ? `: ${connectorName}` : ""}`;
+    });
+
+    const showCampusFilter = computed((): boolean => {
+        return (props.filterOptions?.campuses?.length ?? 0) > 1;
+    });
+
+    const campusText = computed((): string => {
+        if (!campusId.value) {
+            return "All Campuses";
+        }
+
+        const campusName = props.filterOptions
+            ?.campuses
+            ?.find(c => Number(c.value) === campusId.value)
+            ?.text;
+
+        return `Campus${campusName ? `: ${campusName}` : ""}`;
+    });
+
     // #endregion
+
+    // #region Functions
+
+    /**
+     * Gets the sliding date range from the provided sliding date range bag.
+     *
+     * @param bag The date range bag from which to create a sliding date range.
+     */
+    function getSlidingDateRange(bag: SlidingDateRangeBag | null | undefined): SlidingDateRange | null {
+        return bag
+            ? bag as SlidingDateRange
+            : null;
+    }
+
+    /**
+     * Gets the current filters according to the controls' selected values.
+     */
+    function getFilters(): ConnectionRequestBoardFiltersBag {
+        var selectedDateRange: SlidingDateRange | null = dateRange.value
+            ? dateRange.value as SlidingDateRange
+            : null;
+
+        return {
+            connectorPersonAliasId: connectorPersonAliasId.value,
+            requesterPersonAliasId: requesterPersonAliasId.value,
+            campusId: campusId.value,
+            dateRange: selectedDateRange,
+            pastDueOnly: pastDueOnly.value,
+            connectionStatuses: connectionStatuses.value,
+            connectionStates: connectionStates.value,
+            connectionActivityTypes: connectionActivityTypes.value,
+            sortProperty: sortProperty.value
+        };
+    }
+
+    /**
+     * Sets the internal values using the provided filters.
+     *
+     * @param filters The filters value from which to set the internal values.
+     */
+    function setFilters(filters: ConnectionRequestBoardFiltersBag | null | undefined): void {
+        connectorPersonAliasId.value = filters?.connectorPersonAliasId;
+        requesterPersonAliasId.value = filters?.requesterPersonAliasId;
+        campusId.value = filters?.campusId;
+        dateRange.value = getSlidingDateRange(filters?.dateRange);
+        pastDueOnly.value = filters?.pastDueOnly ?? false;
+        connectionStatuses.value = filters?.connectionStatuses ?? [];
+        connectionStates.value = filters?.connectionStates ?? [];
+        connectionActivityTypes.value = filters?.connectionActivityTypes ?? [];
+        sortProperty.value = filters?.sortProperty ?? 8; // 8 is the default value of "Order".
+    }
+
+    // #endregion
+
+    // #region Event Handlers
+
+    /**
+     * Handles the selection of a sort property.
+     *
+     * @param newValue The identifier of the selected sort property.
+     */
+    function onSortChanged(newValue: number): void {
+        if (sortProperty.value === newValue) {
+            return;
+        }
+
+        sortProperty.value = newValue;
+        emit("filtersChanged", getFilters());
+    }
+
+    /**
+     * Handles the selection of a connector.
+     *
+     * @param newValue The identifier of the selected connector.
+     */
+    function onConnectorChanged(newValue?: number): void {
+        if (connectorPersonAliasId.value === newValue) {
+            return;
+        }
+
+        connectorPersonAliasId.value = newValue;
+        emit("filtersChanged", getFilters());
+    }
+
+    /**
+     * Handles the selection of a campus.
+     *
+     * @param newValue The identifier of the selected campus.
+     */
+    function onCampusChanged(newValue?: number): void {
+        if (campusId.value === newValue) {
+            return;
+        }
+
+        campusId.value = newValue;
+        emit("filtersChanged", getFilters());
+    }
+
+    // #endregion
+
+    watch(() => props.filters, () => {
+        setFilters(props.filters);
+    });
 </script>

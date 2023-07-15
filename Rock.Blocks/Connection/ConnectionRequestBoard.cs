@@ -684,6 +684,12 @@ namespace Rock.Blocks.Connection
                         : c.ShortCode
                 } )
                 .ToList();
+
+            // If there's only one campus, remove any previously-applied campus filtering.
+            if ( boardData.FilterOptions.Campuses.Count <= 1 )
+            {
+                boardData.Filters.CampusId = null;
+            }
         }
 
         /// <summary>

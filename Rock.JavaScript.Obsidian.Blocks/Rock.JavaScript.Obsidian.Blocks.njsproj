@@ -54,6 +54,12 @@
     <Content Include="src\Core\TaggedItemDetail\editPanel.partial.obs" />
     <Content Include="src\Core\TaggedItemDetail\viewPanel.partial.obs" />
     <Content Include="src\Crm\assessmentList.obs" />
+    <Content Include="src\Connection\connectionRequestBoard.obs" />
+    <Content Include="src\Connection\ConnectionRequestBoard\cardView.partial.obs" />
+    <Content Include="src\Connection\ConnectionRequestBoard\gridView.partial.obs" />
+    <Content Include="src\Connection\ConnectionRequestBoard\requestCard.partial.obs" />
+    <Content Include="src\Connection\ConnectionRequestBoard\statusColumn.partial.obs" />
+    <Content Include="src\Connection\ConnectionRequestBoard\toolbar.partial.obs" />
     <Content Include="src\Crm\familyPreRegistration.obs" />
     <Content Include="src\Crm\FamilyPreRegistration\preRegistrationChild.partial.obs" />
     <Content Include="src\Crm\FamilyPreRegistration\preRegistrationChildren.partial.obs" />
@@ -175,6 +181,20 @@
     <Content Include="src\Group\GroupAttendanceDetail\groupLocationSchedulePicker.partial.obs" />
     <Content Include="src\Group\GroupAttendanceDetail\initialsFilter.partial.obs" />
     <Content Include="src\Group\GroupAttendanceDetail\searchFilter.partial.obs" />
+    <Content Include="src\Group\Scheduling\groupScheduler.obs" />
+    <Content Include="src\Group\Scheduling\GroupScheduler\availableResources.partial.obs" />
+    <Content Include="src\Group\Scheduling\GroupScheduler\cloneSchedules.partial.obs" />
+    <Content Include="src\Group\Scheduling\GroupScheduler\group.partial.obs" />
+    <Content Include="src\Group\Scheduling\GroupScheduler\groupSchedulerHelp.partial.obs" />
+    <Content Include="src\Group\Scheduling\GroupScheduler\occurrence.partial.obs" />
+    <Content Include="src\Group\Scheduling\GroupScheduler\occurrenceDate.partial.obs" />
+    <Content Include="src\Group\Scheduling\GroupScheduler\progressBar.partial.obs" />
+    <Content Include="src\Group\Scheduling\GroupScheduler\resourceNotes.partial.obs" />
+    <Content Include="src\Group\Scheduling\GroupScheduler\schedule.partial.obs" />
+    <Content Include="src\Group\Scheduling\GroupScheduler\scheduledResource.partial.obs" />
+    <Content Include="src\Group\Scheduling\GroupScheduler\selectFilters.partial.obs" />
+    <Content Include="src\Group\Scheduling\GroupScheduler\selectIndividuals.partial.obs" />
+    <Content Include="src\Group\Scheduling\GroupScheduler\updatePreference.partial.obs" />
     <Content Include="src\Security\accountEntry.obs" />
     <Content Include="src\Security\AccountEntry\completedStep.partial.obs" />
     <Content Include="src\Security\AccountEntry\confirmationSentStep.partial.obs" />
@@ -222,6 +242,8 @@
     <Folder Include="src\Communication\SnippetDetail\" />
     <Folder Include="src\Communication\SnippetTypeDetail\" />
     <Folder Include="src\Communication\SystemPhoneNumberDetail\" />
+    <Folder Include="src\Connection\" />
+    <Folder Include="src\Connection\ConnectionRequestBoard\" />
     <Folder Include="src\Core\" />
     <Folder Include="src\Core\AssetStorageProviderDetail\" />
     <Folder Include="src\Core\CampusDetail\" />
@@ -278,6 +300,8 @@
     <Folder Include="src\Group\GroupAttendanceDetail\" />
     <Folder Include="src\Reporting\" />
     <Folder Include="src\Reporting\MergeTemplateDetail\" />
+    <Folder Include="src\Group\Scheduling\" />
+    <Folder Include="src\Group\Scheduling\GroupScheduler\" />
     <Folder Include="src\Security\" />
     <Folder Include="src\Security\AccountEntry\" />
     <Folder Include="src\Security\Login\" />
@@ -399,6 +423,7 @@
     <TypeScriptCompile Include="src\Security\ConfirmAccount\views.ts" />
     <TypeScriptCompile Include="src\Security\RestKeyDetail\types.partial.ts" />
     <TypeScriptCompile Include="src\Engagement\SignUp\SignUpFinder\signUpFilterType.ts" />
+    <TypeScriptCompile Include="src\Engagement\SignUp\SignUpFinder\signUpFilterType.partial.ts" />
     <TypeScriptCompile Include="src\Engagement\Steps\stepFlow.ts" />
     <TypeScriptCompile Include="src\Engagement\Steps\StepFlow\flowNodeDiagram.partial.ts" />
     <TypeScriptCompile Include="src\Event\InteractiveExperiences\ExperienceManagerOccurrences\types.partial.ts" />
@@ -433,6 +458,7 @@
     <TypeScriptCompile Include="src\Finance\transactionEntry.ts" />
     <TypeScriptCompile Include="src\Group\groupMemberList.ts" />
     <TypeScriptCompile Include="src\Reporting\MergeTemplateDetail\types.partial.ts" />
+    <TypeScriptCompile Include="src\Group\Scheduling\GroupScheduler\types.partial.ts" />
     <TypeScriptCompile Include="src\Security\login.ts" />
     <TypeScriptCompile Include="src\Security\Login\passwordlessCommunicationType.d.ts" />
     <TypeScriptCompile Include="src\Group\GroupAttendanceDetail\types.partial.ts" />

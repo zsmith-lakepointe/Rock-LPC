@@ -6,7 +6,7 @@
 
     <Panel v-if="!blockErrorMessage"
            type="block"
-           title="[Opportunity Name]"
+           :title="panelTitle"
            :class="panelCssClass"
            :hasFullscreen="true"
            :headerSecondaryActions="secondaryActions">
@@ -26,18 +26,33 @@
         </template>
 
         <template #preBody>
-            <Toolbar :connectionTypes="connectionTypes" />
+            <Toolbar :connectionTypes="connectionTypes"
+                     :filterOptions="filterOptions"
+                     :filters="filters"
+                     :disabled="isBoardDisabled"
+                     @opportunityChanged="onOpportunityChanged"
+                     @filtersChanged="onFiltersChanged" />
         </template>
 
         <!-- Body -->
-        <BoardView />
+        <div v-if="!connectionOpportunity" class="panel-body-alert">
+
+            <NotificationBox :alertType="AlertType.Info">
+                Please select a connection opportunity.
+            </NotificationBox>
+
+        </div>
+
+        <template v-else>
+            <CardView />
+        </template>
 
     </Panel>
 </template>
 
 <script setup lang="ts">
     import { computed, ref } from "vue";
-    import BoardView from "./ConnectionRequestBoard/boardView.partial.obs";
+    import CardView from "./ConnectionRequestBoard/cardView.partial.obs";
     import GridView from "./ConnectionRequestBoard/gridView.partial.obs";
     import Toolbar from "./ConnectionRequestBoard/toolbar.partial.obs";
     import NotificationBox from "@Obsidian/Controls/notificationBox.obs";
@@ -45,8 +60,12 @@
     import { AlertType } from "@Obsidian/Enums/Controls/alertType";
     import { PanelAction } from "@Obsidian/Types/Controls/panelAction";
     import { onConfigurationValuesChanged, useConfigurationValues, useReloadBlock } from "@Obsidian/Utility/block";
+    import { ConnectionRequestBoardConnectionOpportunityBag } from "@Obsidian/ViewModels/Blocks/Connection/ConnectionRequestBoard/connectionRequestBoardConnectionOpportunityBag";
     import { ConnectionRequestBoardConnectionTypeBag } from "@Obsidian/ViewModels/Blocks/Connection/ConnectionRequestBoard/connectionRequestBoardConnectionTypeBag";
+    import { ConnectionRequestBoardFilterOptionsBag } from "@Obsidian/ViewModels/Blocks/Connection/ConnectionRequestBoard/connectionRequestBoardFilterOptionsBag";
+    import { ConnectionRequestBoardFiltersBag } from "@Obsidian/ViewModels/Blocks/Connection/ConnectionRequestBoard/connectionRequestBoardFiltersBag";
     import { ConnectionRequestBoardInitializationBox } from "@Obsidian/ViewModels/Blocks/Connection/ConnectionRequestBoard/connectionRequestBoardInitializationBox";
+    import { ConnectionRequestBoardSelectedOpportunityBag } from "@Obsidian/ViewModels/Blocks/Connection/ConnectionRequestBoard/connectionRequestBoardSelectedOpportunityBag";
 
     const config = useConfigurationValues<ConnectionRequestBoardInitializationBox>();
     const reloadBlock = useReloadBlock();
@@ -63,6 +82,7 @@
     // #region Values
 
     const connectionTypes = ref<ConnectionRequestBoardConnectionTypeBag[] | null | undefined>(config.connectionTypes);
+    const selectedOpportunity = ref<ConnectionRequestBoardSelectedOpportunityBag | null | undefined>(config.selectedOpportunity);
 
     // #endregion
 
@@ -81,6 +101,48 @@
 
         return cssClass;
     });
+
+    const connectionOpportunity = computed((): ConnectionRequestBoardConnectionOpportunityBag | null | undefined => {
+        return selectedOpportunity.value?.connectionOpportunity;
+    });
+
+    const panelTitle = computed((): string => {
+        return connectionOpportunity.value?.publicName ?? "";
+    });
+
+    const filterOptions = computed((): ConnectionRequestBoardFilterOptionsBag | null | undefined => {
+        return selectedOpportunity.value?.filterOptions;
+    });
+
+    const filters = computed((): ConnectionRequestBoardFiltersBag | null | undefined => {
+        return selectedOpportunity.value?.filters;
+    });
+
+    const isBoardDisabled = computed((): boolean => {
+        return !connectionOpportunity.value;
+    });
+
+    // #endregion
+
+    // #region Event Handlers
+
+    /**
+     * Handles the `opportunityChanged` event of the Toolbar component.
+     *
+     * @param opportunityId The identifier of the selected connection opportunity.
+     */
+    async function onOpportunityChanged(opportunityId: number): Promise<void> {
+        console.log(`opportunityId: ${opportunityId}`);
+    }
+
+    /**
+     * Handles the `filtersChanged` event of the Toolbar component.
+     *
+     * @param filters The selected filters.
+     */
+    async function onFiltersChanged(filters: ConnectionRequestBoardFiltersBag): Promise<void> {
+        console.log(JSON.stringify(filters));
+    }
 
     // #endregion
 
