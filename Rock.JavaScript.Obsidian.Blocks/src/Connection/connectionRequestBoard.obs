@@ -51,15 +51,17 @@
 </template>
 
 <script setup lang="ts">
-    import { computed, ref } from "vue";
+    import { computed, Ref, ref } from "vue";
     import CardView from "./ConnectionRequestBoard/cardView.partial.obs";
     import GridView from "./ConnectionRequestBoard/gridView.partial.obs";
     import Toolbar from "./ConnectionRequestBoard/toolbar.partial.obs";
+    import { PageParameterKey } from "./ConnectionRequestBoard/types.partial";
     import NotificationBox from "@Obsidian/Controls/notificationBox.obs";
     import Panel from "@Obsidian/Controls/panel.obs";
     import { AlertType } from "@Obsidian/Enums/Controls/alertType";
     import { PanelAction } from "@Obsidian/Types/Controls/panelAction";
-    import { onConfigurationValuesChanged, useConfigurationValues, useReloadBlock } from "@Obsidian/Utility/block";
+    import { onConfigurationValuesChanged, useConfigurationValues, useInvokeBlockAction, useReloadBlock } from "@Obsidian/Utility/block";
+    import { syncRefsWithQueryParams } from "@Obsidian/Utility/url";
     import { ConnectionRequestBoardConnectionOpportunityBag } from "@Obsidian/ViewModels/Blocks/Connection/ConnectionRequestBoard/connectionRequestBoardConnectionOpportunityBag";
     import { ConnectionRequestBoardConnectionTypeBag } from "@Obsidian/ViewModels/Blocks/Connection/ConnectionRequestBoard/connectionRequestBoardConnectionTypeBag";
     import { ConnectionRequestBoardFilterOptionsBag } from "@Obsidian/ViewModels/Blocks/Connection/ConnectionRequestBoard/connectionRequestBoardFilterOptionsBag";
@@ -68,6 +70,7 @@
     import { ConnectionRequestBoardSelectedOpportunityBag } from "@Obsidian/ViewModels/Blocks/Connection/ConnectionRequestBoard/connectionRequestBoardSelectedOpportunityBag";
 
     const config = useConfigurationValues<ConnectionRequestBoardInitializationBox>();
+    const invokeBlockAction = useInvokeBlockAction();
     const reloadBlock = useReloadBlock();
 
     const secondaryActions: PanelAction[] = [
@@ -83,6 +86,9 @@
 
     const connectionTypes = ref<ConnectionRequestBoardConnectionTypeBag[] | null | undefined>(config.connectionTypes);
     const selectedOpportunity = ref<ConnectionRequestBoardSelectedOpportunityBag | null | undefined>(config.selectedOpportunity);
+
+    const blockActionErrorMessage = ref("");
+    const isSelectingOpportunity = ref(false);
 
     // #endregion
 
@@ -102,8 +108,16 @@
         return cssClass;
     });
 
+    const connectionRequestId = computed((): number | null | undefined => {
+        return selectedOpportunity.value?.connectionRequestId;
+    });
+
     const connectionOpportunity = computed((): ConnectionRequestBoardConnectionOpportunityBag | null | undefined => {
         return selectedOpportunity.value?.connectionOpportunity;
+    });
+
+    const connectionOpportunityId = computed((): number | null | undefined => {
+        return connectionOpportunity.value?.id;
     });
 
     const panelTitle = computed((): string => {
@@ -118,8 +132,21 @@
         return selectedOpportunity.value?.filters;
     });
 
+    const campusId = computed((): number | null | undefined => {
+        return filters.value?.campusId;
+    });
+
+    const queryParamRefs = computed((): Record<string, Ref> => {
+        return {
+            [PageParameterKey.CampusId]: campusId,
+            [PageParameterKey.ConnectionOpportunityId]: connectionOpportunityId,
+            [PageParameterKey.ConnectionRequestId]: connectionRequestId
+        };
+    });
+
     const isBoardDisabled = computed((): boolean => {
-        return !connectionOpportunity.value;
+        return !connectionOpportunity.value
+            || isSelectingOpportunity.value;
     });
 
     // #endregion
@@ -129,10 +156,21 @@
     /**
      * Handles the `opportunityChanged` event of the Toolbar component.
      *
-     * @param opportunityId The identifier of the selected connection opportunity.
+     * @param connectionOpportunityId The identifier of the selected connection opportunity.
      */
-    async function onOpportunityChanged(opportunityId: number): Promise<void> {
-        console.log(`opportunityId: ${opportunityId}`);
+    async function onOpportunityChanged(connectionOpportunityId: number): Promise<void> {
+        isSelectingOpportunity.value = true;
+        blockActionErrorMessage.value = "";
+
+        const result = await invokeBlockAction<ConnectionRequestBoardSelectedOpportunityBag>("SelectConnectionOpportunity", { connectionOpportunityId });
+        isSelectingOpportunity.value = false;
+
+        if (!result.isSuccess) {
+            blockActionErrorMessage.value = result.errorMessage || "Unknown error while trying to select connection opportunity.";
+            return;
+        }
+
+        selectedOpportunity.value = result.data ?? null;
     }
 
     /**
@@ -147,4 +185,6 @@
     // #endregion
 
     onConfigurationValuesChanged(reloadBlock);
+
+    syncRefsWithQueryParams(queryParamRefs.value);
 </script>

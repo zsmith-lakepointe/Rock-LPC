@@ -324,7 +324,7 @@ namespace Rock.Blocks.Connection
             var boardData = GetConnectionRequestBoardData( rockContext );
 
             box.ConnectionTypes = boardData.AllowedConnectionTypeBags;
-            box.SelectedOpportunity = GetSelectedOpportunity( boardData );
+            box.SelectedOpportunity = GetSelectedConnectionOpportunity( boardData );
             box.MaxCardsPerColumn = GetAttributeValue( AttributeKey.MaxCards ).AsIntegerOrNull() ?? DefaultMaxCards;
 
             var statusIconsTemplate = GetAttributeValue( AttributeKey.ConnectionRequestStatusIconsTemplate );
@@ -340,8 +340,9 @@ namespace Rock.Blocks.Connection
         /// Gets the connection request board data needed for the board to operate.
         /// </summary>
         /// <param name="rockContext">The rock context.</param>
+        /// <param name="idOverrides">Optional identifiers to override page parameters and person preferences.</param>
         /// <returns>The connection request board data needed for the board to operate.</returns>
-        private ConnectionRequestBoardData GetConnectionRequestBoardData( RockContext rockContext )
+        private ConnectionRequestBoardData GetConnectionRequestBoardData( RockContext rockContext, Dictionary<string, int?> idOverrides = null )
         {
             var boardData = new ConnectionRequestBoardData();
 
@@ -349,7 +350,7 @@ namespace Rock.Blocks.Connection
             block.LoadAttributes( rockContext );
 
             GetAllowedConnectionTypes( rockContext, boardData );
-            GetConnectionAndCampusSelectionsFromURLOrPersonPreferences( rockContext, boardData );
+            GetConnectionAndCampusSelections( rockContext, boardData, idOverrides );
             GetFilterOptions( rockContext, boardData );
             GetFiltersFromPersonPreferences( boardData );
 
@@ -469,12 +470,13 @@ namespace Rock.Blocks.Connection
         }
 
         /// <summary>
-        /// Gets the selected connection request, connection opportunity and campus from page parameters or person preferences, loading them
-        /// onto the supplied <see cref="ConnectionRequestBoardData"/> instance.
+        /// Gets the selected connection request, connection opportunity and campus, loading them onto the supplied
+        /// <see cref="ConnectionRequestBoardData"/> instance.
         /// </summary>
         /// <param name="rockContext">The rock context.</param>
         /// <param name="boardData">The board data onto which to load the selected connection request, connection opportunity and campus.</param>
-        private void GetConnectionAndCampusSelectionsFromURLOrPersonPreferences( RockContext rockContext, ConnectionRequestBoardData boardData )
+        /// <param name="idOverrides">Optional identifiers to override page parameters and person preferences.</param>
+        private void GetConnectionAndCampusSelections( RockContext rockContext, ConnectionRequestBoardData boardData, Dictionary<string, int?> idOverrides = null )
         {
             int? connectionOpportunityId = null;
 
@@ -482,13 +484,13 @@ namespace Rock.Blocks.Connection
                 .SelectMany( ct => ct.ConnectionOpportunities.Select( co => co.Id ) )
                 .ToList();
 
-            // If a connection request page parameter was provided, it takes priority since it's more specific.
-            var paramConnectionRequestId = GetEntityIdFromPageParameter<ConnectionRequest>( PageParameterKey.ConnectionRequestId, rockContext );
-            if ( paramConnectionRequestId.HasValue )
+            // If a connection request selection was provided, it takes priority since it's more specific.
+            var selectedConnectionRequestId = GetEntityIdFromPageParameterOrOverride<ConnectionRequest>( PageParameterKey.ConnectionRequestId, rockContext, idOverrides );
+            if ( selectedConnectionRequestId.HasValue )
             {
                 var result = new ConnectionRequestService( rockContext )
                     .Queryable()
-                    .Where( cr => cr.Id == paramConnectionRequestId.Value )
+                    .Where( cr => cr.Id == selectedConnectionRequestId.Value )
                     .Select( cr => new
                     {
                         cr.ConnectionOpportunityId
@@ -499,17 +501,17 @@ namespace Rock.Blocks.Connection
                 {
                     connectionOpportunityId = result.ConnectionOpportunityId;
                     // This means we'll be auto-opening a specific connection request modal immediately.
-                    boardData.ConnectionRequestId = paramConnectionRequestId;
+                    boardData.ConnectionRequestId = selectedConnectionRequestId;
                 }
             }
 
-            // If not, was a connection opportunity page parameter provided?
-            var paramConnectionOpportunityId = GetEntityIdFromPageParameter<ConnectionOpportunity>( PageParameterKey.ConnectionOpportunityId, rockContext );
+            // If not, was a connection opportunity selection provided?
+            var selectedConnectionOpportunityId = GetEntityIdFromPageParameterOrOverride<ConnectionOpportunity>( PageParameterKey.ConnectionOpportunityId, rockContext, idOverrides );
             if ( !connectionOpportunityId.HasValue
-                && paramConnectionOpportunityId.HasValue
-                && availableOpportunityIds.Contains( paramConnectionOpportunityId.Value ) )
+                && selectedConnectionOpportunityId.HasValue
+                && availableOpportunityIds.Contains( selectedConnectionOpportunityId.Value ) )
             {
-                connectionOpportunityId = paramConnectionOpportunityId;
+                connectionOpportunityId = selectedConnectionOpportunityId;
             }
 
             // If not, does this person have a connection opportunity preference?
@@ -556,16 +558,16 @@ namespace Rock.Blocks.Connection
                 boardData.Filters.CampusId = personPrefCampusId;
             }
 
-            // If a campus page parameter was provided, it overrules any previous preference.
-            var paramCampusId = GetEntityIdFromPageParameter<Campus>( PageParameterKey.CampusId, rockContext );
-            if ( paramCampusId.HasValue )
+            // If a campus selection was provided, it overrules any previous preference.
+            var selectedCampusId = GetEntityIdFromPageParameterOrOverride<Campus>( PageParameterKey.CampusId, rockContext, idOverrides );
+            if ( selectedCampusId.HasValue )
             {
-                boardData.Filters.CampusId = paramCampusId;
+                boardData.Filters.CampusId = selectedCampusId;
 
                 // If different than the current preference, update preferences with this campus.
-                if ( paramCampusId != personPrefCampusId && personPrefKeyCampusFilter != null )
+                if ( selectedCampusId != personPrefCampusId && personPrefKeyCampusFilter != null )
                 {
-                    this.PersonPreferences.SetValue( personPrefKeyCampusFilter, paramCampusId.ToString() );
+                    this.PersonPreferences.SetValue( personPrefKeyCampusFilter, selectedCampusId.ToString() );
                 }
             }
         }
@@ -829,8 +831,8 @@ namespace Rock.Blocks.Connection
         /// and person preferences.
         /// </summary>
         /// <param name="boardData"></param>
-        /// <returns></returns>
-        private ConnectionRequestBoardSelectedOpportunityBag GetSelectedOpportunity( ConnectionRequestBoardData boardData )
+        /// <returns>The selected connection opportunity and supporting information.</returns>
+        private ConnectionRequestBoardSelectedOpportunityBag GetSelectedConnectionOpportunity( ConnectionRequestBoardData boardData )
         {
             var selectedOpportunity = new ConnectionRequestBoardSelectedOpportunityBag
             {
@@ -851,7 +853,25 @@ namespace Rock.Blocks.Connection
         }
 
         /// <summary>
-        /// Gets the <see cref="IEntity"/> integer ID value if it can be parsed from page parameters, or <see langword="null"/> if not.
+        /// Validates and selects the connection opportunity with the specified identifier.
+        /// </summary>
+        /// <param name="rockContext">The rock context.</param>
+        /// <param name="connectionOpportunityId">The identifier of the connection opportunity to select.</param>
+        /// <returns>An object containing the validated / selected connection opportunity and supporting information.</returns>
+        private ConnectionRequestBoardSelectedOpportunityBag ValidateAndSelectConnectionOpportunity( RockContext rockContext, int connectionOpportunityId )
+        {
+            var boardData = GetConnectionRequestBoardData( rockContext, new Dictionary<string, int?>
+            {
+                { PageParameterKey.ConnectionOpportunityId, connectionOpportunityId },
+                { PageParameterKey.ConnectionRequestId, null }
+            } );
+
+            return GetSelectedConnectionOpportunity( boardData );
+        }
+
+        /// <summary>
+        /// Gets the <see cref="IEntity"/> integer ID value if it exists in the override collection or can be parsed from page parameters,
+        /// or <see langword="null"/> if not.
         /// <para>
         /// The page parameter's value may be an integer ID (if predictable IDs are allowed by site settings), a Guid, or an IdKey.
         /// </para>
@@ -859,9 +879,16 @@ namespace Rock.Blocks.Connection
         /// <typeparam name="T">The <see cref="IEntity"/> type whose ID should be parsed.</typeparam>
         /// <param name="pageParameterKey">The key of the page parameter from which to parse the ID.</param>
         /// <param name="rockContext">The rock context.</param>
-        /// <returns>The <see cref="IEntity"/> integer ID value if it can be parsed from page parameters, or <see langword="null"/> if not.</returns>
-        private int? GetEntityIdFromPageParameter<T>( string pageParameterKey, RockContext rockContext ) where T : IEntity
+        /// <param name="idOverrides">Optional identifiers to override page parameters.</param>
+        /// <returns>The <see cref="IEntity"/> integer ID value if it exists in the override collection or can be parsed from page parameters,
+        /// or <see langword="null"/> if not.</returns>
+        private int? GetEntityIdFromPageParameterOrOverride<T>( string pageParameterKey, RockContext rockContext, Dictionary<string, int?> idOverrides = null ) where T : IEntity
         {
+            if ( idOverrides?.TryGetValue( pageParameterKey, out int? id ) == true )
+            {
+                return id;
+            }
+
             var entityKey = PageParameter( pageParameterKey );
             if ( entityKey.IsNullOrWhiteSpace() )
             {
@@ -875,6 +902,26 @@ namespace Rock.Blocks.Connection
             }
 
             return Reflection.GetEntityIdForEntityType( entityTypeId.Value, entityKey, !PageCache.Layout.Site.DisablePredictableIds, rockContext );
+        }
+
+        #endregion
+
+        #region Block Actions
+
+        /// <summary>
+        /// Selects the specified connection opportunity.
+        /// </summary>
+        /// <param name="connectionOpportunityId">The identifier of the connection opportunity to select.</param>
+        /// <returns>An object containing the selected connection opportunity and supporting information.</returns>
+        [BlockAction]
+        public BlockActionResult SelectConnectionOpportunity( int connectionOpportunityId )
+        {
+            using ( var rockContext = new RockContext() )
+            {
+                var selectedOpportunity = ValidateAndSelectConnectionOpportunity( rockContext, connectionOpportunityId );
+
+                return ActionOk( selectedOpportunity );
+            }
         }
 
         #endregion
