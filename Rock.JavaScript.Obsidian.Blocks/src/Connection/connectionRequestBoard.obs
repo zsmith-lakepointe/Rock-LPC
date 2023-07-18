@@ -35,23 +35,25 @@
         </template>
 
         <!-- Body -->
-        <div v-if="!connectionOpportunity" class="panel-body-alert">
+        <div v-if="showPanelBodyAlert" class="panel-body-alert">
 
-            <NotificationBox :alertType="AlertType.Info">
+            <NotificationBox v-if="!connectionOpportunity" :alertType="AlertType.Info">
                 Please select a connection opportunity.
+            </NotificationBox>
+
+            <NotificationBox v-if="blockActionErrorMessage" :alertType="AlertType.Warning">
+                {{ blockActionErrorMessage }}
             </NotificationBox>
 
         </div>
 
-        <template v-else>
-            <CardView />
-        </template>
+        <CardView />
 
     </Panel>
 </template>
 
 <script setup lang="ts">
-    import { computed, Ref, ref } from "vue";
+    import { computed, ref, watch } from "vue";
     import CardView from "./ConnectionRequestBoard/cardView.partial.obs";
     import GridView from "./ConnectionRequestBoard/gridView.partial.obs";
     import Toolbar from "./ConnectionRequestBoard/toolbar.partial.obs";
@@ -61,7 +63,6 @@
     import { AlertType } from "@Obsidian/Enums/Controls/alertType";
     import { PanelAction } from "@Obsidian/Types/Controls/panelAction";
     import { onConfigurationValuesChanged, useConfigurationValues, useInvokeBlockAction, useReloadBlock } from "@Obsidian/Utility/block";
-    import { syncRefsWithQueryParams } from "@Obsidian/Utility/url";
     import { ConnectionRequestBoardConnectionOpportunityBag } from "@Obsidian/ViewModels/Blocks/Connection/ConnectionRequestBoard/connectionRequestBoardConnectionOpportunityBag";
     import { ConnectionRequestBoardConnectionTypeBag } from "@Obsidian/ViewModels/Blocks/Connection/ConnectionRequestBoard/connectionRequestBoardConnectionTypeBag";
     import { ConnectionRequestBoardFilterOptionsBag } from "@Obsidian/ViewModels/Blocks/Connection/ConnectionRequestBoard/connectionRequestBoardFilterOptionsBag";
@@ -136,18 +137,58 @@
         return filters.value?.campusId;
     });
 
-    const queryParamRefs = computed((): Record<string, Ref> => {
-        return {
-            [PageParameterKey.CampusId]: campusId,
-            [PageParameterKey.ConnectionOpportunityId]: connectionOpportunityId,
-            [PageParameterKey.ConnectionRequestId]: connectionRequestId
-        };
+    const showPanelBodyAlert = computed((): boolean => {
+        return !connectionOpportunity.value
+            || !!blockActionErrorMessage.value;
     });
 
     const isBoardDisabled = computed((): boolean => {
         return !connectionOpportunity.value
             || isSelectingOpportunity.value;
     });
+
+    // #endregion
+
+    // #region Functions
+
+    /**
+     * Updates the window query string to match the entity identifiers.
+     */
+    function updateUrl(): void {
+        const qs: string[][] = [];
+
+        if (connectionOpportunityId.value) {
+            qs.push([PageParameterKey.ConnectionOpportunityId, connectionOpportunityId.value.toString()]);
+        }
+
+        if (connectionRequestId.value) {
+            qs.push([PageParameterKey.ConnectionRequestId, connectionRequestId.value.toString()]);
+        }
+
+        if (campusId.value) {
+            qs.push([PageParameterKey.CampusId, campusId.value.toString()]);
+        }
+
+        // Add in any query string parameters not related to us.
+        for (const entry of new URLSearchParams(window.location.search).entries()) {
+            if (![
+                PageParameterKey.ConnectionOpportunityId,
+                PageParameterKey.ConnectionRequestId,
+                PageParameterKey.CampusId
+            ].some(key => key.toLowerCase() === entry[0].toLowerCase())) {
+                qs.push([entry[0], entry[1]]);
+            }
+        }
+
+        // Update the URL in the window.
+        if (qs.length) {
+            const queryString = qs.map(q => `${q[0]}=${q[1]}`).join("&");
+            window.history.replaceState(null, "", `${window.location.pathname}?${queryString}`);
+        }
+        else {
+            window.history.replaceState(null, "", window.location.pathname);
+        }
+    }
 
     // #endregion
 
@@ -186,5 +227,13 @@
 
     onConfigurationValuesChanged(reloadBlock);
 
-    syncRefsWithQueryParams(queryParamRefs.value);
+    updateUrl();
+
+    watch([
+        connectionOpportunityId,
+        connectionRequestId,
+        campusId
+    ], () => {
+        updateUrl();
+    });
 </script>
