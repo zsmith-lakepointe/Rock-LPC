@@ -33,12 +33,13 @@ namespace Rock.Blocks.Prayer
     /// <summary>
     /// Displays the details of a particular prayer request.
     /// </summary>
-    /// <seealso cref="Rock.Blocks.RockObsidianDetailBlockType" />
+    /// <seealso cref="Rock.Blocks.RockDetailBlockType" />
 
     [DisplayName( "Prayer Request Detail" )]
     [Category( "Prayer" )]
     [Description( "Displays the details of a particular prayer request." )]
     [IconCssClass( "fa fa-question" )]
+    [SupportedSiteTypes( Model.SiteType.Web )]
 
     #region Block Attributes
 
@@ -94,7 +95,7 @@ namespace Rock.Blocks.Prayer
 
     [Rock.SystemGuid.EntityTypeGuid( "d1e21128-c831-4535-b8df-0ec928dcbba4" )]
     [Rock.SystemGuid.BlockTypeGuid( "e120f06f-6db7-464a-a797-c3c90b92ef40" )]
-    public class PrayerRequestDetail : RockObsidianDetailBlockType
+    public class PrayerRequestDetail : RockDetailBlockType
     {
         #region Keys
 
@@ -125,7 +126,7 @@ namespace Rock.Blocks.Prayer
 
         #endregion
 
-        public override string BlockFileUrl => $"{base.BlockFileUrl}.obs";
+        public override string ObsidianFileUrl => $"{base.ObsidianFileUrl}.obs";
 
         #region Methods
 
@@ -140,7 +141,7 @@ namespace Rock.Blocks.Prayer
 
                 box.NavigationUrls = GetBoxNavigationUrls();
                 box.Options = GetBoxOptions( box.IsEditable, rockContext );
-                box.QualifiedAttributeProperties = GetAttributeQualifiedColumns<PrayerRequest>();
+                box.QualifiedAttributeProperties = AttributeCache.GetAttributeQualifiedColumns<PrayerRequest>();
 
                 return box;
             }

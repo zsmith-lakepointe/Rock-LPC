@@ -35,12 +35,13 @@ namespace Rock.Blocks.Engagement
     /// <summary>
     /// Displays the details of a particular streak type.
     /// </summary>
-    /// <seealso cref="Rock.Blocks.RockObsidianDetailBlockType" />
+    /// <seealso cref="Rock.Blocks.RockDetailBlockType" />
 
     [DisplayName( "Streak Type Detail" )]
     [Category( "Engagement" )]
     [Description( "Displays the details of a particular streak type." )]
     [IconCssClass( "fa fa-question" )]
+    [SupportedSiteTypes( Model.SiteType.Web )]
 
     #region Block Attributes
 
@@ -69,7 +70,7 @@ namespace Rock.Blocks.Engagement
 
     [Rock.SystemGuid.EntityTypeGuid( "8a8c5bea-6293-4ac0-8c2e-d89f541043aa" )]
     [Rock.SystemGuid.BlockTypeGuid( "a83a1f49-10a6-4362-acc3-8027224a2120" )]
-    public class StreakTypeDetail : RockObsidianDetailBlockType
+    public class StreakTypeDetail : RockDetailBlockType
     {
         #region Keys
 
@@ -110,7 +111,7 @@ namespace Rock.Blocks.Engagement
 
         #endregion Keys
 
-        public override string BlockFileUrl => $"{base.BlockFileUrl}.obs";
+        public override string ObsidianFileUrl => $"{base.ObsidianFileUrl}.obs";
 
         #region Methods
 
@@ -125,7 +126,7 @@ namespace Rock.Blocks.Engagement
 
                 box.NavigationUrls = GetBoxNavigationUrls( box.Entity.IdKey );
                 box.Options = GetBoxOptions( box.IsEditable, rockContext );
-                box.QualifiedAttributeProperties = GetAttributeQualifiedColumns<StreakType>();
+                box.QualifiedAttributeProperties = AttributeCache.GetAttributeQualifiedColumns<StreakType>();
 
                 return box;
             }
@@ -143,10 +144,8 @@ namespace Rock.Blocks.Engagement
             var checkInPurposeId = DefinedValueCache.GetId( Rock.SystemGuid.DefinedValue.GROUPTYPE_PURPOSE_CHECKIN_TEMPLATE.AsGuid() );
             var options = new StreakTypeDetailOptionsBag
             {
-                StreakOccurrenceFrequencies = typeof( StreakOccurrenceFrequency )
-                    .ToListItemBag(),
-                StreakStructureTypes = typeof( StreakStructureType )
-                    .ToListItemBag(),
+                StreakOccurrenceFrequencies = typeof( StreakOccurrenceFrequency ).ToEnumListItemBag(),
+                StreakStructureTypes = typeof( StreakStructureType ).ToEnumListItemBag(),
                 AttendanceCheckInConfigGroupTypesGuids = GroupTypeCache.All()
                     .Where( gt => gt.GroupTypePurposeValueId == checkInPurposeId )
                     .OrderBy( gt => gt.Name )

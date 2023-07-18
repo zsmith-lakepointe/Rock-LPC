@@ -27,18 +27,20 @@ using Rock.Model;
 using Rock.ViewModels.Blocks;
 using Rock.ViewModels.Blocks.CMS.PageShortLinkDetail;
 using Rock.ViewModels.Utility;
+using Rock.Web.Cache;
 
 namespace Rock.Blocks.CMS
 {
     /// <summary>
     /// Displays the details of a particular page short link.
     /// </summary>
-    /// <seealso cref="Rock.Blocks.RockObsidianDetailBlockType" />
+    /// <seealso cref="Rock.Blocks.RockDetailBlockType" />
 
     [DisplayName( "Page Short Link Detail" )]
     [Category( "CMS" )]
     [Description( "Displays the details of a particular page short link." )]
     [IconCssClass( "fa fa-question" )]
+    [SupportedSiteTypes( Model.SiteType.Web )]
 
     #region Block Attributes
 
@@ -54,7 +56,7 @@ namespace Rock.Blocks.CMS
 
     [Rock.SystemGuid.EntityTypeGuid( "AD614123-C7CA-40EE-B5D5-64D0D1C91378")]
     [Rock.SystemGuid.BlockTypeGuid( "72EDDF3D-625E-40A9-A68B-76236E77A3F3" )]
-    public class PageShortLinkDetail : RockObsidianDetailBlockType
+    public class PageShortLinkDetail : RockDetailBlockType
     {
         private int _minTokenLength = 7;
 
@@ -92,7 +94,7 @@ namespace Rock.Blocks.CMS
 
                 box.NavigationUrls = GetBoxNavigationUrls();
                 box.Options = GetBoxOptions( box.IsEditable );
-                box.QualifiedAttributeProperties = GetAttributeQualifiedColumns<PageShortLink>();
+                box.QualifiedAttributeProperties = AttributeCache.GetAttributeQualifiedColumns<PageShortLink>();
 
                 return box;
             }

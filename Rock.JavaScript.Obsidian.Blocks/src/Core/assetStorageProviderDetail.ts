@@ -51,9 +51,9 @@ export default defineComponent({
         const errorMessage = ref("");
 
         const assetStorageProviderViewBag = ref(config.entity);
-        const assetStorageProviderEditBag = ref(config.entity);
+        const assetStorageProviderEditBag = ref<AssetStorageProviderBag | null>(null);
 
-        const panelMode = ref<DetailPanelMode>(DetailPanelMode.Edit);
+        const panelMode = ref<DetailPanelMode>(DetailPanelMode.View);
 
         // The properties that are being edited in the UI. This is used to
         // inform the server which incoming values have valid data in them.
@@ -137,7 +137,15 @@ export default defineComponent({
          * @returns true if the panel should leave edit mode; otherwise false.
          */
         const onCancelEdit = async (): Promise<boolean | string> => {
-            return config?.navigationUrls?.[NavigationUrlKey.ParentPage] ?? false;
+            if (!assetStorageProviderEditBag.value?.idKey) {
+                if (config.navigationUrls?.[NavigationUrlKey.ParentPage]) {
+                    return config.navigationUrls[NavigationUrlKey.ParentPage];
+                }
+
+                return false;
+            }
+
+            return true;
         };
 
         /**

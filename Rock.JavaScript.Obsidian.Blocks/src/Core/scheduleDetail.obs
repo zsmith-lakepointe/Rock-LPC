@@ -144,7 +144,11 @@
     });
 
     const options = computed((): ScheduleDetailOptionsBag => {
-        return config.options ?? {};
+        return config.options ?? {
+            canDelete: false,
+            hasAttendance: false,
+            hasScheduleWarning: false
+        };
     });
 
     const additionalDeleteMessage = computed((): string => {
@@ -281,7 +285,10 @@
     if (config.errorMessage) {
         blockError.value = config.errorMessage;
     }
-    else if (config.entity && !config.entity.idKey) {
+    else if (!config.entity) {
+        blockError.value = "The specified schedule could not be viewed.";
+    }
+    else if (!config.entity.idKey) {
         scheduleEditBag.value = config.entity;
         panelMode.value = DetailPanelMode.Add;
     }

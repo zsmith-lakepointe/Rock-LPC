@@ -25,6 +25,7 @@ using Rock.ViewModels.Blocks;
 using Rock.ViewModels.Blocks.Engagement.StreakDetail;
 using Rock.ViewModels.Utility;
 using Rock.Web.Cache;
+using Rock.Web.UI.Controls;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -36,12 +37,13 @@ namespace Rock.Blocks.Engagement
     /// <summary>
     /// Displays the details of a particular streak.
     /// </summary>
-    /// <seealso cref="Rock.Blocks.RockObsidianDetailBlockType" />
+    /// <seealso cref="Rock.Blocks.RockDetailBlockType" />
 
     [DisplayName( "Streak Detail" )]
     [Category( "Engagement" )]
     [Description( "Displays the details of a particular streak." )]
     [IconCssClass( "fa fa-question" )]
+    [SupportedSiteTypes( Model.SiteType.Web )]
 
     #region Block Attributes
 
@@ -49,7 +51,7 @@ namespace Rock.Blocks.Engagement
 
     [Rock.SystemGuid.EntityTypeGuid( "867abce8-47a9-46fa-8a35-47ebbc60c4fe" )]
     [Rock.SystemGuid.BlockTypeGuid( "1c98107f-dfbf-44bd-a860-0c9df2e6c495" )]
-    public class StreakDetail : RockObsidianDetailBlockType
+    public class StreakDetail : RockDetailBlockType
     {
         private readonly int ChartBitsToShow = 350;
         #region Keys
@@ -68,7 +70,7 @@ namespace Rock.Blocks.Engagement
 
         #endregion Keys
 
-        public override string BlockFileUrl => $"{base.BlockFileUrl}.obs";
+        public override string ObsidianFileUrl => $"{base.ObsidianFileUrl}.obs";
 
         #region Methods
 
@@ -80,14 +82,14 @@ namespace Rock.Blocks.Engagement
                 var box = new DetailBlockBox<StreakBag, StreakDetailOptionsBag>();
 
                 SetBoxInitialEntityState( box, rockContext );
-                if ( box.Entity == null )
+                if(box.Entity == null)
                 {
                     return box;
                 }
 
                 box.NavigationUrls = GetBoxNavigationUrls( StreakTypeCache.GetId( box.Entity.StreakType.Value.AsGuid() ).ToString() );
                 box.Options = GetBoxOptions( box.IsEditable, box.Entity, rockContext );
-                box.QualifiedAttributeProperties = GetAttributeQualifiedColumns<Streak>();
+                box.QualifiedAttributeProperties = AttributeCache.GetAttributeQualifiedColumns<Streak>();
 
                 return box;
             }
@@ -199,7 +201,7 @@ namespace Rock.Blocks.Engagement
             {
                 streakTypeId = PageParameter( PageParameterKey.StreakTypeId ).AsInteger();
             }
-            ListItemBag streakType = entity.StreakType?.ToListItemBag() ?? StreakTypeCache.Get( streakTypeId ).ToListItemBag() ?? null;
+            ListItemBag streakType = entity.StreakType?.ToListItemBag() ?? StreakTypeCache.Get( streakTypeId ).ToListItemBag() ?? new ListItemBag ();
             return new StreakBag
             {
                 IdKey = entity.IdKey,

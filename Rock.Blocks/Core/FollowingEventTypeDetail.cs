@@ -27,18 +27,20 @@ using Rock.Model;
 using Rock.Security;
 using Rock.ViewModels.Blocks;
 using Rock.ViewModels.Blocks.Core.FollowingEventTypeDetail;
+using Rock.Web.Cache;
 
 namespace Rock.Blocks.Core
 {
     /// <summary>
     /// Displays the details of a particular following event type.
     /// </summary>
-    /// <seealso cref="Rock.Blocks.RockObsidianDetailBlockType" />
+    /// <seealso cref="Rock.Blocks.RockDetailBlockType" />
 
     [DisplayName( "Following Event Type Detail" )]
     [Category( "Core" )]
     [Description( "Displays the details of a particular following event type." )]
     [IconCssClass( "fa fa-question" )]
+    [SupportedSiteTypes( Model.SiteType.Web )]
 
     #region Block Attributes
 
@@ -46,7 +48,7 @@ namespace Rock.Blocks.Core
 
     [Rock.SystemGuid.EntityTypeGuid( "d9c32c98-434f-4975-8ebc-e64c628f02db" )]
     [Rock.SystemGuid.BlockTypeGuid( "78f27537-c05f-44e0-af84-2329c8b5d71d" )]
-    public class FollowingEventTypeDetail : RockObsidianDetailBlockType
+    public class FollowingEventTypeDetail : RockDetailBlockType
     {
         #region Keys
 
@@ -62,7 +64,7 @@ namespace Rock.Blocks.Core
 
         #endregion Keys
 
-        public override string BlockFileUrl => $"{base.BlockFileUrl}.obs";
+        public override string ObsidianFileUrl => $"{base.ObsidianFileUrl}.obs";
 
         #region Methods
 
@@ -77,7 +79,7 @@ namespace Rock.Blocks.Core
 
                 box.NavigationUrls = GetBoxNavigationUrls();
                 box.Options = GetBoxOptions( box.IsEditable, rockContext );
-                box.QualifiedAttributeProperties = GetAttributeQualifiedColumns<FollowingEventType>();
+                box.QualifiedAttributeProperties = AttributeCache.GetAttributeQualifiedColumns<FollowingEventType>();
 
                 return box;
             }

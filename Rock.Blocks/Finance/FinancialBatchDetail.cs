@@ -33,12 +33,13 @@ namespace Rock.Blocks.Finance
     /// <summary>
     /// Displays the details of a particular financial batch.
     /// </summary>
-    /// <seealso cref="Rock.Blocks.RockObsidianDetailBlockType" />
+    /// <seealso cref="Rock.Blocks.RockDetailBlockType" />
 
     [DisplayName( "Financial Batch Detail" )]
     [Category( "Finance" )]
     [Description( "Displays the details of a particular financial batch." )]
     [IconCssClass( "fa fa-question" )]
+    [SupportedSiteTypes( Model.SiteType.Web )]
 
     #region Block Attributes
     [LinkedPage( "Transaction Matching Page",
@@ -59,7 +60,7 @@ namespace Rock.Blocks.Finance
 
     [Rock.SystemGuid.EntityTypeGuid( "b5976e12-a3e4-4faf-95b5-3d54f25405da" )]
     [Rock.SystemGuid.BlockTypeGuid( "6be58680-8795-46a0-8bfa-434a01feb4c8" )]
-    public class FinancialBatchDetail : RockObsidianDetailBlockType
+    public class FinancialBatchDetail : RockDetailBlockType
     {
         private const string AuthorizationReopenBatch = "ReopenBatch";
 
@@ -93,7 +94,7 @@ namespace Rock.Blocks.Finance
 
         #endregion
 
-        public override string BlockFileUrl => $"{base.BlockFileUrl}.obs";
+        public override string ObsidianFileUrl => $"{base.ObsidianFileUrl}.obs";
 
         #region Methods
 
@@ -111,7 +112,7 @@ namespace Rock.Blocks.Finance
 
                 box.NavigationUrls = GetBoxNavigationUrls( id );
                 box.Options = GetBoxOptions( box.Entity, rockContext );
-                box.QualifiedAttributeProperties = GetAttributeQualifiedColumns<FinancialBatch>();
+                box.QualifiedAttributeProperties = AttributeCache.GetAttributeQualifiedColumns<FinancialBatch>();
 
                 return box;
             }

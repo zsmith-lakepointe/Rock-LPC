@@ -15,6 +15,11 @@
 // </copyright>
 //
 
+using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Data.Entity;
+using System.Linq;
 using Rock.Attribute;
 using Rock.Constants;
 using Rock.Data;
@@ -23,22 +28,19 @@ using Rock.Security;
 using Rock.ViewModels.Blocks;
 using Rock.ViewModels.Blocks.Core.ScheduleDetail;
 using Rock.Web.Cache;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data.Entity;
-using System.Linq;
 
 namespace Rock.Blocks.Core
 {
     /// <summary>
     /// Displays the details of a particular schedule.
     /// </summary>
-    /// <seealso cref="Rock.Blocks.RockObsidianDetailBlockType" />
+    /// <seealso cref="Rock.Blocks.RockDetailBlockType" />
 
     [DisplayName( "Schedule Detail" )]
     [Category( "Core" )]
     [Description( "Displays the details of a particular schedule." )]
     [IconCssClass( "fa fa-question" )]
+    [SupportedSiteTypes( Model.SiteType.Web )]
 
     #region Block Attributes
 
@@ -46,7 +48,7 @@ namespace Rock.Blocks.Core
 
     [Rock.SystemGuid.EntityTypeGuid( "ce4859a1-3e47-442f-8442-2671a89a5656" )]
     [Rock.SystemGuid.BlockTypeGuid( "7c10240a-7ee5-4720-aac9-5c162e9f5aac" )]
-    public class ScheduleDetail : RockObsidianDetailBlockType
+    public class ScheduleDetail : RockDetailBlockType
     {
         #region Keys
 
@@ -64,7 +66,7 @@ namespace Rock.Blocks.Core
 
         #endregion Keys
 
-        public override string BlockFileUrl => $"{base.BlockFileUrl}.obs";
+        public override string ObsidianFileUrl => $"{base.ObsidianFileUrl}.obs";
 
         #region Methods
 
@@ -94,7 +96,7 @@ namespace Rock.Blocks.Core
                 }
                 box.NavigationUrls = GetBoxNavigationUrls();
                 box.Options = GetBoxOptions( box.IsEditable, rockContext, entity );
-                box.QualifiedAttributeProperties = GetAttributeQualifiedColumns<Schedule>();
+                box.QualifiedAttributeProperties = AttributeCache.GetAttributeQualifiedColumns<Schedule>();
 
                 return box;
             }
@@ -139,7 +141,12 @@ namespace Rock.Blocks.Core
                             e.StartDate < nextYear )
                         .OrderBy( e => e.StartDate )
                         .ToList()
-                        .Select( e => e.ToViewModel() )
+                        .Select( e => new ScheduleExclusionBag
+                        {
+                            Title = e.Title,
+                            StartDate = e.StartDate.ToRockDateTimeOffset(),
+                            EndDate = e.EndDate.ToRockDateTimeOffset()
+                        } )
                         .ToList();
             }
             return options;
