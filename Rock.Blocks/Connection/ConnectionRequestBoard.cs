@@ -257,11 +257,27 @@ namespace Rock.Blocks.Connection
         /// </summary>
         private const string DefaultDelimiter = "|";
 
+        /// <summary>
+        /// The default sort property.
+        /// </summary>
+        private const ConnectionRequestViewModelSortProperty DefaultSortProperty = ConnectionRequestViewModelSortProperty.Order;
+
         #endregion Defaults
 
         #region Fields
 
         private PersonPreferenceCollection _personPreferences;
+
+        private readonly List<ConnectionRequestViewModelSortProperty> _allowedSortProperties = new List<ConnectionRequestViewModelSortProperty>
+        {
+            ConnectionRequestViewModelSortProperty.Order,
+            ConnectionRequestViewModelSortProperty.Requestor,
+            ConnectionRequestViewModelSortProperty.Connector,
+            ConnectionRequestViewModelSortProperty.DateAdded,
+            ConnectionRequestViewModelSortProperty.DateAddedDesc,
+            ConnectionRequestViewModelSortProperty.LastActivity,
+            ConnectionRequestViewModelSortProperty.LastActivityDesc
+        };
 
         #endregion Fields
 
@@ -340,24 +356,29 @@ namespace Rock.Blocks.Connection
         /// Gets the connection request board data needed for the board to operate.
         /// </summary>
         /// <param name="rockContext">The rock context.</param>
-        /// <param name="savePersonPreferences">Whether to save person preferences before returning board data.</param>
-        /// <param name="idOverrides">Optional identifiers to override page parameters and person preferences.</param>
+        /// <param name="config">A configuration object to dictate how connection request board data should be loaded.</param>
         /// <returns>The connection request board data needed for the board to operate.</returns>
-        private ConnectionRequestBoardData GetConnectionRequestBoardData( RockContext rockContext, bool savePersonPreferences = true, Dictionary<string, int?> idOverrides = null )
+        private ConnectionRequestBoardData GetConnectionRequestBoardData( RockContext rockContext, GetConnectionRequestBoardDataConfig config = null )
         {
             var boardData = new ConnectionRequestBoardData();
+
+            config = config ?? new GetConnectionRequestBoardDataConfig();
 
             var block = new BlockService( rockContext ).Get( this.BlockId );
             block.LoadAttributes( rockContext );
 
             GetAllowedConnectionTypes( rockContext, boardData );
-            GetConnectionAndCampusSelections( rockContext, boardData, idOverrides );
+            GetConnectionAndCampusSelections( rockContext, boardData, config.IdOverrides );
             GetFilterOptions( rockContext, boardData );
-            GetFiltersFromPersonPreferences( boardData );
 
-            if ( savePersonPreferences )
+            if ( !config.IsPersonPreferenceFilterLoadingDisabled )
             {
-                // Preferences will only be saved if updates were actually set above.
+                var filters = GetFiltersFromPersonPreferences( boardData );
+                ValidateAndApplySelectedFilters( boardData, filters );
+            }
+
+            if ( !config.IsPersonPreferenceSavingDisabled )
+            {
                 this.PersonPreferences.Save();
             }
 
@@ -479,7 +500,7 @@ namespace Rock.Blocks.Connection
         /// </summary>
         /// <param name="rockContext">The rock context.</param>
         /// <param name="boardData">The board data onto which to load the selected connection request, connection opportunity and campus.</param>
-        /// <param name="idOverrides">Optional identifiers to override page parameters and person preferences.</param>
+        /// <param name="idOverrides">Optional entity identifiers to override page parameters and person preferences.</param>
         private void GetConnectionAndCampusSelections( RockContext rockContext, ConnectionRequestBoardData boardData, Dictionary<string, int?> idOverrides = null )
         {
             int? connectionOpportunityId = null;
@@ -488,7 +509,7 @@ namespace Rock.Blocks.Connection
                 .SelectMany( ct => ct.ConnectionOpportunities.Select( co => co.Id ) )
                 .ToList();
 
-            // If a connection request selection was provided, it takes priority since it's more specific.
+            // If a connection request selection was provided via page parameter or override, it takes priority since it's more specific.
             var selectedConnectionRequestId = GetEntityIdFromPageParameterOrOverride<ConnectionRequest>( PageParameterKey.ConnectionRequestId, rockContext, idOverrides );
             if ( selectedConnectionRequestId.HasValue )
             {
@@ -497,19 +518,24 @@ namespace Rock.Blocks.Connection
                     .Where( cr => cr.Id == selectedConnectionRequestId.Value )
                     .Select( cr => new
                     {
-                        cr.ConnectionOpportunityId
+                        cr.ConnectionOpportunityId,
+                        cr.CampusId
                     } )
                     .FirstOrDefault();
 
                 if ( result != null && availableOpportunityIds.Contains( result.ConnectionOpportunityId ) )
                 {
                     connectionOpportunityId = result.ConnectionOpportunityId;
+
                     // This means we'll be auto-opening a specific connection request modal immediately.
                     boardData.ConnectionRequestId = selectedConnectionRequestId;
+                    boardData.Filters.CampusId = result.CampusId;
+
+                    boardData.IsCampusFilterFromConnectionRequest = result.CampusId.HasValue;
                 }
             }
 
-            // If not, was a connection opportunity selection provided?
+            // If not, was a connection opportunity selection provided via page parameter or override?
             var selectedConnectionOpportunityId = GetEntityIdFromPageParameterOrOverride<ConnectionOpportunity>( PageParameterKey.ConnectionOpportunityId, rockContext, idOverrides );
             if ( !connectionOpportunityId.HasValue
                 && selectedConnectionOpportunityId.HasValue
@@ -519,8 +545,8 @@ namespace Rock.Blocks.Connection
             }
 
             // If not, does this person have a connection opportunity preference?
-            var personPrefKeyConnectionOpportunityId = boardData.GetPersonPreferenceKey( PersonPreferenceKey.ConnectionOpportunityId );
-            int? personPrefConnectionOpportunityId = this.PersonPreferences.GetValue( personPrefKeyConnectionOpportunityId ).AsIntegerOrNull();
+            var personPrefKey = boardData.GetPersonPreferenceKey( PersonPreferenceKey.ConnectionOpportunityId );
+            int? personPrefConnectionOpportunityId = this.PersonPreferences.GetValue( personPrefKey ).AsIntegerOrNull();
             if ( !connectionOpportunityId.HasValue
                 && personPrefConnectionOpportunityId.HasValue
                 && availableOpportunityIds.Contains( personPrefConnectionOpportunityId.Value ) )
@@ -531,7 +557,7 @@ namespace Rock.Blocks.Connection
             // If set (and different than the current preference), update preferences with this connection opportunity.
             if ( connectionOpportunityId.HasValue && connectionOpportunityId != personPrefConnectionOpportunityId )
             {
-                this.PersonPreferences.SetValue( personPrefKeyConnectionOpportunityId, connectionOpportunityId.ToString() );
+                this.PersonPreferences.SetValue( personPrefKey, connectionOpportunityId.ToString() );
             }
 
             // Get the connection opportunity instance from the database.
@@ -553,26 +579,24 @@ namespace Rock.Blocks.Connection
                 ? query.FirstOrDefault( co => co.Id == connectionOpportunityId.Value )
                 : query.FirstOrDefault();
 
-            // Does this person have a campus preference for this connection type?
-            int? personPrefCampusId = null;
-            var personPrefKeyCampusFilter = boardData.GetPersonPreferenceKey( PersonPreferenceKey.CampusFilter );
-            if ( personPrefKeyCampusFilter != null )
+            // Only look for a campus filter if it hasn't already been set by a specific connection request.
+            if ( !boardData.Filters.CampusId.HasValue )
             {
-                personPrefCampusId = this.PersonPreferences.GetValue( personPrefKeyCampusFilter ).AsIntegerOrNull();
-                boardData.Filters.CampusId = personPrefCampusId;
-            }
-
-            // If a campus selection was provided, it overrules any previous preference.
-            var selectedCampusId = GetEntityIdFromPageParameterOrOverride<Campus>( PageParameterKey.CampusId, rockContext, idOverrides );
-            if ( selectedCampusId.HasValue )
-            {
-                boardData.Filters.CampusId = selectedCampusId;
-
-                // If different than the current preference, update preferences with this campus.
-                if ( selectedCampusId != personPrefCampusId && personPrefKeyCampusFilter != null )
+                // Does this person have a campus preference for this connection type?
+                personPrefKey = boardData.GetPersonPreferenceKey( PersonPreferenceKey.CampusFilter );
+                if ( personPrefKey.IsNotNullOrWhiteSpace() )
                 {
-                    this.PersonPreferences.SetValue( personPrefKeyCampusFilter, selectedCampusId.ToString() );
+                    boardData.Filters.CampusId = this.PersonPreferences.GetValue( personPrefKey ).AsIntegerOrNull();
                 }
+
+                // If a campus selection was provided via page parameter or override, it overrules any previous preference.
+                var selectedCampusId = GetEntityIdFromPageParameterOrOverride<Campus>( PageParameterKey.CampusId, rockContext, idOverrides );
+                if ( selectedCampusId.HasValue )
+                {
+                    boardData.Filters.CampusId = selectedCampusId;
+                }
+
+                // The campus filter will be saved to person preferences along with other filters in a later step.
             }
         }
 
@@ -690,23 +714,6 @@ namespace Rock.Blocks.Connection
                         : c.ShortCode
                 } )
                 .ToList();
-
-            // If there's only one campus or the selected campus is invalid, remove any previously-applied campus filtering.
-            var selectedCampusIdString = boardData.Filters.CampusId?.ToStringSafe();
-            if ( boardData.FilterOptions.Campuses.Count <= 1 ||
-                (
-                    selectedCampusIdString.IsNotNullOrWhiteSpace()
-                    && !boardData.FilterOptions.Campuses.Any( c => c.Value == selectedCampusIdString )
-                ) )
-            {
-                boardData.Filters.CampusId = null;
-
-                var personPrefKeyCampusFilter = boardData.GetPersonPreferenceKey( PersonPreferenceKey.CampusFilter );
-                if ( personPrefKeyCampusFilter != null && selectedCampusIdString.IsNotNullOrWhiteSpace() )
-                {
-                    this.PersonPreferences.SetValue( personPrefKeyCampusFilter, string.Empty );
-                }
-            }
         }
 
         /// <summary>
@@ -791,60 +798,199 @@ namespace Rock.Blocks.Connection
         }
 
         /// <summary>
-        /// Gets the selected filters from person preferences, loading them onto the supplied <see cref="ConnectionRequestBoardData"/> instance.
+        /// Gets any previously-saved filters from person preferences.
         /// </summary>
-        /// <param name="boardData">The board data onto which to load the filters.</param>
-        private void GetFiltersFromPersonPreferences( ConnectionRequestBoardData boardData )
+        /// <param name="boardData">The board data.</param>
+        private ConnectionRequestBoardFiltersBag GetFiltersFromPersonPreferences( ConnectionRequestBoardData boardData )
         {
+            var filters = new ConnectionRequestBoardFiltersBag();
+
             if ( boardData.ConnectionOpportunity == null )
             {
                 // These preferences are all connection type-specific, so if we don't have a connection opportunity (which will have a type)
                 // loaded at this point, we can't load preferences.
-                return;
+                return filters;
             }
 
-            var connectorPersonAliasIdString = this.PersonPreferences.GetValue( boardData.GetPersonPreferenceKey( PersonPreferenceKey.ConnectorPersonAliasId ) );
-            if ( connectorPersonAliasIdString.IsNotNullOrWhiteSpace() && boardData.FilterOptions.Connectors.Any( c => c.Value == connectorPersonAliasIdString ) )
-            {
-                boardData.Filters.ConnectorPersonAliasId = connectorPersonAliasIdString.AsInteger();
-            }
+            // Simply set any previously-saved values here; they will be validated against currently-available filter values in a later step.
 
-            // Since this value will be used in a person picker, we don't have a predefined list of IDs against which to validate; just set it on the filters.
-            boardData.Filters.RequesterPersonAliasId = this.PersonPreferences
+            filters.ConnectorPersonAliasId = this.PersonPreferences
+                .GetValue( boardData.GetPersonPreferenceKey( PersonPreferenceKey.ConnectorPersonAliasId ) )
+                .AsIntegerOrNull();
+
+            filters.RequesterPersonAliasId = this.PersonPreferences
                 .GetValue( boardData.GetPersonPreferenceKey( PersonPreferenceKey.Requester ) )
                 .AsIntegerOrNull();
 
-            // Campus ID has already been set.
+            // Campus ID will have already been set if applicable, and shouldn't be overridden.
+            filters.CampusId = boardData.Filters.CampusId;
 
-            boardData.Filters.DateRange = RockDateTimeHelper.CreateSlidingDateRangeBagFromDelimitedValues(
-                    this.PersonPreferences.GetValue( boardData.GetPersonPreferenceKey( PersonPreferenceKey.DateRange ) )
-                );
+            filters.DateRange = RockDateTimeHelper.CreateSlidingDateRangeBagFromDelimitedValues(
+                this.PersonPreferences.GetValue( boardData.GetPersonPreferenceKey( PersonPreferenceKey.DateRange ) )
+            );
 
-            boardData.Filters.PastDueOnly = this.PersonPreferences
+            filters.PastDueOnly = this.PersonPreferences
                 .GetValue( boardData.GetPersonPreferenceKey( PersonPreferenceKey.PastDueOnly ) )
                 .AsBoolean();
 
-            boardData.Filters.ConnectionStatuses = this.PersonPreferences
+            filters.ConnectionStatuses = this.PersonPreferences
                 .GetValue( boardData.GetPersonPreferenceKey( PersonPreferenceKey.Statuses ) )
                 .SplitDelimitedValues()
-                .Where( status => boardData.FilterOptions.ConnectionStatuses.Any( s => s.Value.ToLower() == status.ToLower() ) )
                 .ToList();
 
-            boardData.Filters.ConnectionStates = this.PersonPreferences
+            filters.ConnectionStates = this.PersonPreferences
                 .GetValue( boardData.GetPersonPreferenceKey( PersonPreferenceKey.States ) )
                 .SplitDelimitedValues()
-                .Where( state => boardData.FilterOptions.ConnectionStates.Any( s => s.Value.ToLower() == state.ToLower() ) )
                 .ToList();
 
-            boardData.Filters.ConnectionActivityTypes = this.PersonPreferences
+            filters.ConnectionActivityTypes = this.PersonPreferences
                 .GetValue( boardData.GetPersonPreferenceKey( PersonPreferenceKey.LastActivities ) )
                 .SplitDelimitedValues()
-                .Where( activity => boardData.FilterOptions.ConnectionActivityTypes.Any( a => a.Value.ToLower() == activity.ToLower() ) )
                 .ToList();
 
-            boardData.Filters.SortProperty = this.PersonPreferences
+            filters.SortProperty = this.PersonPreferences
                 .GetValue( boardData.GetPersonPreferenceKey( PersonPreferenceKey.SortBy ) )
-                .ConvertToEnumOrNull<ConnectionRequestViewModelSortProperty>() ?? ConnectionRequestViewModelSortProperty.Order;
+                .ConvertToEnumOrNull<ConnectionRequestViewModelSortProperty>() ?? DefaultSortProperty;
+
+            return filters;
+        }
+
+        /// <summary>
+        /// Validates and applies the provided filters to the board data instance as well as person preferences.
+        /// <para>
+        /// Person preferences will not be saved here; it's up the caller of this method to save them at the appropriate time.
+        /// </para>
+        /// </summary>
+        /// <param name="boardData">The board data onto which to apply the selected filters.</param>
+        /// <param name="selectedFilters">The filters to validate and apply.</param>
+        private void ValidateAndApplySelectedFilters( ConnectionRequestBoardData boardData, ConnectionRequestBoardFiltersBag selectedFilters )
+        {
+            // Connector person alias ID.
+            // Ensure the selected value exists in the list of [available] connectors.
+            var connectorPersonAliasIdString = selectedFilters.ConnectorPersonAliasId.ToString();
+            if ( connectorPersonAliasIdString.IsNotNullOrWhiteSpace() && boardData.FilterOptions.Connectors.Any( c => c.Value == connectorPersonAliasIdString ) )
+            {
+                boardData.Filters.ConnectorPersonAliasId = selectedFilters.ConnectorPersonAliasId;
+            }
+            else
+            {
+                boardData.Filters.ConnectorPersonAliasId = null;
+            }
+
+            var personPrefKey = boardData.GetPersonPreferenceKey( PersonPreferenceKey.ConnectorPersonAliasId );
+            if ( personPrefKey.IsNotNullOrWhiteSpace() )
+            {
+                this.PersonPreferences.SetValue( personPrefKey, boardData.Filters.ConnectorPersonAliasId.ToString() );
+            }
+
+            // Requester person alias ID.
+            // Since this value will be used in a person picker, we don't have a predefined list of IDs against which to validate.
+            // Just set the selected value - if any - on the filters.
+            boardData.Filters.RequesterPersonAliasId = selectedFilters.RequesterPersonAliasId;
+
+            personPrefKey = boardData.GetPersonPreferenceKey( PersonPreferenceKey.Requester );
+            if ( personPrefKey.IsNotNullOrWhiteSpace() )
+            {
+                this.PersonPreferences.SetValue( personPrefKey, boardData.Filters.RequesterPersonAliasId.ToString() );
+            }
+
+            // Campus ID.
+            // Ensure the selected value exists in the list of [available] campuses AND we have 2 or more campuses.
+            var campusIdString = selectedFilters.CampusId.ToString();
+            if ( campusIdString.IsNotNullOrWhiteSpace()
+                && boardData.FilterOptions.Campuses.Count > 1
+                && boardData.FilterOptions.Campuses.Any( c => c.Value == campusIdString ) )
+            {
+                boardData.Filters.CampusId = selectedFilters.CampusId;
+            }
+            else
+            {
+                boardData.Filters.CampusId = null;
+            }
+
+            // Only save the campus filter to person preferences if it didn't come from a specific connection request.
+            if ( !boardData.IsCampusFilterFromConnectionRequest )
+            {
+                personPrefKey = boardData.GetPersonPreferenceKey( PersonPreferenceKey.CampusFilter );
+                if ( personPrefKey.IsNotNullOrWhiteSpace() )
+                {
+                    this.PersonPreferences.SetValue( personPrefKey, boardData.Filters.CampusId.ToString() );
+                }
+            }
+
+            // Date range.
+            boardData.Filters.DateRange = selectedFilters.DateRange;
+
+            personPrefKey = boardData.GetPersonPreferenceKey( PersonPreferenceKey.DateRange );
+            if ( personPrefKey.IsNotNullOrWhiteSpace() )
+            {
+                this.PersonPreferences.SetValue( personPrefKey, RockDateTimeHelper.GetDelimitedValues( boardData.Filters.DateRange ) );
+            }
+
+            // Past due only.
+            boardData.Filters.PastDueOnly = selectedFilters.PastDueOnly;
+
+            personPrefKey = boardData.GetPersonPreferenceKey( PersonPreferenceKey.PastDueOnly );
+            if ( personPrefKey.IsNotNullOrWhiteSpace() )
+            {
+                this.PersonPreferences.SetValue( personPrefKey, boardData.Filters.PastDueOnly.ToString() );
+            }
+
+            // Connection statuses.
+            // Ensure the selected values exist in the list of [available] statuses.
+            var statuses = ( selectedFilters.ConnectionStatuses ?? new List<string>() )
+                .Where( status => boardData.FilterOptions.ConnectionStatuses.Any( s => s.Value == status ) )
+                .ToList();
+
+            boardData.Filters.ConnectionStatuses = statuses;
+
+            personPrefKey = boardData.GetPersonPreferenceKey( PersonPreferenceKey.Statuses );
+            if ( personPrefKey.IsNotNullOrWhiteSpace() )
+            {
+                this.PersonPreferences.SetValue( personPrefKey, statuses.AsDelimited( DefaultDelimiter ) );
+            }
+
+            // Connection states.
+            // Ensure the selected values exist in the list of [available] states.
+            var states = ( selectedFilters.ConnectionStates ?? new List<string>() )
+                .Where( state => boardData.FilterOptions.ConnectionStates.Any( s => s.Value == state ) )
+                .ToList();
+
+            boardData.Filters.ConnectionStates = states;
+
+            personPrefKey = boardData.GetPersonPreferenceKey( PersonPreferenceKey.States );
+            if ( personPrefKey.IsNotNullOrWhiteSpace() )
+            {
+                this.PersonPreferences.SetValue( personPrefKey, states.AsDelimited( DefaultDelimiter ) );
+            }
+
+            // Connection activity types.
+            // Ensure the selected values exist in the list if [available] activity types.
+            var activityTypes = ( selectedFilters.ConnectionActivityTypes ?? new List<string>() )
+                .Where( activityType => boardData.FilterOptions.ConnectionActivityTypes.Any( a => a.Value == activityType ) )
+                .ToList();
+
+            boardData.Filters.ConnectionActivityTypes = activityTypes;
+
+            personPrefKey = boardData.GetPersonPreferenceKey( PersonPreferenceKey.LastActivities );
+            if ( personPrefKey.IsNotNullOrWhiteSpace() )
+            {
+                this.PersonPreferences.SetValue( personPrefKey, activityTypes.AsDelimited( DefaultDelimiter ) );
+            }
+
+            // Sort property.
+            // Ensure the selected value exists in the list of [allowed] sort properties.
+            var sortProperty = _allowedSortProperties.Contains( selectedFilters.SortProperty )
+                ? selectedFilters.SortProperty
+                : DefaultSortProperty;
+
+            boardData.Filters.SortProperty = sortProperty;
+
+            personPrefKey = boardData.GetPersonPreferenceKey( PersonPreferenceKey.SortBy );
+            if ( personPrefKey.IsNotNullOrWhiteSpace() )
+            {
+                this.PersonPreferences.SetValue( personPrefKey, sortProperty.ConvertToStringSafe() );
+            }
         }
 
         /// <summary>
@@ -881,29 +1027,48 @@ namespace Rock.Blocks.Connection
         /// <returns>An object containing the validated and selected connection opportunity and supporting information.</returns>
         private ConnectionRequestBoardSelectedOpportunityBag ValidateAndSelectConnectionOpportunity( RockContext rockContext, int connectionOpportunityId )
         {
-            var boardData = GetConnectionRequestBoardData( rockContext, idOverrides: new Dictionary<string, int?>
+            var config = new GetConnectionRequestBoardDataConfig
             {
-                { PageParameterKey.ConnectionOpportunityId, connectionOpportunityId },
-                { PageParameterKey.ConnectionRequestId, null }
-            } );
+                IdOverrides = new Dictionary<string, int?>
+                {
+                    { PageParameterKey.ConnectionOpportunityId, connectionOpportunityId },
+                    { PageParameterKey.ConnectionRequestId, null } // Overwrite any connection request ID that might be in the query string in this case.
+                }
+            };
+
+            var boardData = GetConnectionRequestBoardData( rockContext, config );
 
             return GetSelectedConnectionOpportunity( boardData );
         }
 
         /// <summary>
-        /// Validates and saves filters to person preferences.
+        /// Saves filters to person preferences.
         /// </summary>
         /// <param name="rockContext">The rock context.</param>
-        /// <param name="filters">The filters to validate and save.</param>
+        /// <param name="filters">The filters to save.</param>
         /// <returns>An object containing the validated and saved filters.</returns>
-        private ConnectionRequestBoardFiltersBag ValidateAndSaveFilters( RockContext rockContext, ConnectionRequestBoardFiltersBag filters )
+        private ConnectionRequestBoardFiltersBag SaveFilters( RockContext rockContext, ConnectionRequestBoardFiltersBag filters )
         {
-            var boardData = GetConnectionRequestBoardData( rockContext, savePersonPreferences: false, idOverrides: new Dictionary<string, int?>
-            {
-                { PageParameterKey.CampusId, filters?.CampusId }
-            } );
+            filters = filters ?? new ConnectionRequestBoardFiltersBag();
 
-            // TODO (Jason): validate and save the filters to person preferences.
+            // Don't load current filter selections from person preferences, as the provided filters object is the source of truth for this call.
+            // Also, we'll manually save person preferences after applying the provided filters selections.
+            var config = new GetConnectionRequestBoardDataConfig
+            {
+                IdOverrides = new Dictionary<string, int?>
+                {
+                    { PageParameterKey.CampusId, filters.CampusId }
+                },
+                IsPersonPreferenceFilterLoadingDisabled = true,
+                IsPersonPreferenceSavingDisabled = true
+            };
+
+            // This call will preload the [available] filter options, against which we can validate the provided filter selections.
+            var boardData = GetConnectionRequestBoardData( rockContext, config );
+
+            ValidateAndApplySelectedFilters( boardData, filters );
+
+            this.PersonPreferences.Save();
 
             return boardData.Filters;
         }
@@ -918,7 +1083,7 @@ namespace Rock.Blocks.Connection
         /// <typeparam name="T">The <see cref="IEntity"/> type whose ID should be parsed.</typeparam>
         /// <param name="pageParameterKey">The key of the page parameter from which to parse the ID.</param>
         /// <param name="rockContext">The rock context.</param>
-        /// <param name="idOverrides">Optional identifiers to override page parameters.</param>
+        /// <param name="idOverrides">Optional entity identifiers to override page parameters and person preferences.</param>
         /// <returns>The <see cref="IEntity"/> integer ID value if it exists in the override collection or can be parsed from page parameters,
         /// or <see langword="null"/> if not.</returns>
         private int? GetEntityIdFromPageParameterOrOverride<T>( string pageParameterKey, RockContext rockContext, Dictionary<string, int?> idOverrides = null ) where T : IEntity
@@ -973,7 +1138,7 @@ namespace Rock.Blocks.Connection
         {
             using ( var rockContext = new RockContext() )
             {
-                var savedFilters = ValidateAndSaveFilters( rockContext, bag );
+                var savedFilters = SaveFilters( rockContext, bag );
 
                 return ActionOk( savedFilters );
             }
@@ -1033,6 +1198,11 @@ namespace Rock.Blocks.Connection
             public ConnectionRequestBoardFiltersBag Filters { get; } = new ConnectionRequestBoardFiltersBag();
 
             /// <summary>
+            /// Gets or sets whether the currently-selected campus filter came from a specific connection request.
+            /// </summary>
+            public bool IsCampusFilterFromConnectionRequest { get; set; }
+
+            /// <summary>
             /// Gets the appropriate person preference key for the specified subkey. Most keys will be connection type-specific.
             /// </summary>
             /// <param name="subkey">The subkey.</param>
@@ -1053,6 +1223,27 @@ namespace Rock.Blocks.Connection
 
                 return $"{this.ConnectionOpportunity.ConnectionTypeId}-{subkey}";
             }
+        }
+
+        /// <summary>
+        /// A runtime object to dictate how connection request board data should be loaded.
+        /// </summary>
+        private class GetConnectionRequestBoardDataConfig
+        {
+            /// <summary>
+            /// Gets or sets optional entity identifiers to override page parameters and person preferences.
+            /// </summary>
+            public Dictionary<string, int?> IdOverrides { get; set; }
+
+            /// <summary>
+            /// Gets or sets whether to disable the loading of current filter selections from person preferences.
+            /// </summary>
+            public bool IsPersonPreferenceFilterLoadingDisabled { get; set; }
+
+            /// <summary>
+            /// Gets or sets whether to disable the saving of any person preferences changes, as a final step of loading connection request board data.
+            /// </summary>
+            public bool IsPersonPreferenceSavingDisabled { get; set; }
         }
 
         #endregion
