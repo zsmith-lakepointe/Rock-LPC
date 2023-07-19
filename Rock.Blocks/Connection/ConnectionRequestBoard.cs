@@ -350,6 +350,7 @@ namespace Rock.Blocks.Connection
             }
 
             box.StatusIconsTemplate = Regex.Replace( statusIconsTemplate, @"\s+", " " );
+            box.SecurityGrantToken = GetSecurityGrantToken();
         }
 
         /// <summary>
@@ -374,7 +375,7 @@ namespace Rock.Blocks.Connection
             if ( !config.IsPersonPreferenceFilterLoadingDisabled )
             {
                 var filters = GetFiltersFromPersonPreferences( boardData );
-                ValidateAndApplySelectedFilters( boardData, filters );
+                ValidateAndApplySelectedFilters( rockContext, boardData, filters );
             }
 
             if ( !config.IsPersonPreferenceSavingDisabled )
@@ -818,7 +819,7 @@ namespace Rock.Blocks.Connection
                 .GetValue( boardData.GetPersonPreferenceKey( PersonPreferenceKey.ConnectorPersonAliasId ) )
                 .AsIntegerOrNull();
 
-            filters.RequesterPersonAliasId = this.PersonPreferences
+            filters.RequesterPersonId = this.PersonPreferences
                 .GetValue( boardData.GetPersonPreferenceKey( PersonPreferenceKey.Requester ) )
                 .AsIntegerOrNull();
 
@@ -858,12 +859,13 @@ namespace Rock.Blocks.Connection
         /// <summary>
         /// Validates and applies the provided filters to the board data instance as well as person preferences.
         /// <para>
-        /// Person preferences will not be saved here; it's up the caller of this method to save them at the appropriate time.
+        /// Person preferences will not be saved to the database here; it's up the caller of this method to save them at the appropriate time.
         /// </para>
         /// </summary>
+        /// <param name="rockContext">The rock context.</param>
         /// <param name="boardData">The board data onto which to apply the selected filters.</param>
         /// <param name="selectedFilters">The filters to validate and apply.</param>
-        private void ValidateAndApplySelectedFilters( ConnectionRequestBoardData boardData, ConnectionRequestBoardFiltersBag selectedFilters )
+        private void ValidateAndApplySelectedFilters( RockContext rockContext, ConnectionRequestBoardData boardData, ConnectionRequestBoardFiltersBag selectedFilters )
         {
             // Connector person alias ID.
             // Ensure the selected value exists in the list of [available] connectors.
@@ -883,16 +885,54 @@ namespace Rock.Blocks.Connection
                 this.PersonPreferences.SetValue( personPrefKey, boardData.Filters.ConnectorPersonAliasId.ToString() );
             }
 
-            // Requester person alias ID.
-            // Since this value will be used in a person picker, we don't have a predefined list of IDs against which to validate.
-            // Just set the selected value - if any - on the filters.
-            boardData.Filters.RequesterPersonAliasId = selectedFilters.RequesterPersonAliasId;
-
-            personPrefKey = boardData.GetPersonPreferenceKey( PersonPreferenceKey.Requester );
-            if ( personPrefKey.IsNotNullOrWhiteSpace() )
+            // Requester person alias list item bag, person alias ID & person ID.
+            // This one's a bit unique, in that all 3 of these values are needed to manage the selected "requester" person:
+            //
+            //  1) The list item bag is used with an Obsidian person [alias] picker.
+            //  2) The person alias ID is what's actually sent to a preexisting v1 API endpoint in order to perform filtering when
+            //     retrieving connection requests.
+            //  3) The person ID is stored as a person preference (to maintain compatibility with person preferences previously
+            //     stored via the Web Forms version of this block).
+            //
+            // IF the list item bag value is set on the selected filters, assume a selection was made on the client and use it to:
+            //  1) Set the same list item bag value on the outgoing filters (which we'll send back to the client to preselect the
+            //     person in the Obsidian person picker).
+            //  2) Look up and set the person ID on person preferences.
+            //
+            // ELSE IF the person ID is set on the selected filters, assume it was loaded from person preferences and use it to:
+            //  1) Look up and set the corresponding list item bag value on the outgoing filters (which we'll send back to the client
+            //     to preselect the person in the Obsidian person picker).
+            //
+            // IN EITHER CASE
+            //  1) Ensure the selected value represents a valid person.
+            //  2) Look up and set the person alias ID on the outgoing filters (which we'll send back to the client for use with the v1 API).
+            //  3) Ensure person ID is never set on the outgoing filters, as there's no need to send this to the client.
+            PersonAlias requesterPersonAlias = null;
+            var personAliasService = new PersonAliasService( rockContext );
+            if ( !string.IsNullOrWhiteSpace( selectedFilters.Requester?.Value ) )
             {
-                this.PersonPreferences.SetValue( personPrefKey, boardData.Filters.RequesterPersonAliasId.ToString() );
+                requesterPersonAlias = personAliasService.GetNoTracking( selectedFilters.Requester.Value );
+                if ( requesterPersonAlias != null )
+                {
+                    personPrefKey = boardData.GetPersonPreferenceKey( PersonPreferenceKey.Requester );
+                    if ( personPrefKey.IsNotNullOrWhiteSpace() )
+                    {
+                        this.PersonPreferences.SetValue( personPrefKey, requesterPersonAlias.PersonId.ToString() );
+                    }
+                }
             }
+            else if ( selectedFilters.RequesterPersonId.HasValue )
+            {
+                requesterPersonAlias = personAliasService.GetPrimaryAlias( selectedFilters.RequesterPersonId.Value );
+            }
+
+            if ( requesterPersonAlias != null )
+            {
+                boardData.Filters.Requester = requesterPersonAlias.ToListItemBag();
+                boardData.Filters.RequesterPersonAliasId = requesterPersonAlias.Id;
+            }
+
+            boardData.Filters.RequesterPersonId = null;
 
             // Campus ID.
             // Ensure the selected value exists in the list of [available] campuses AND we have 2 or more campuses.
@@ -1066,7 +1106,7 @@ namespace Rock.Blocks.Connection
             // This call will preload the [available] filter options, against which we can validate the provided filter selections.
             var boardData = GetConnectionRequestBoardData( rockContext, config );
 
-            ValidateAndApplySelectedFilters( boardData, filters );
+            ValidateAndApplySelectedFilters( rockContext, boardData, filters );
 
             this.PersonPreferences.Save();
 
@@ -1108,6 +1148,15 @@ namespace Rock.Blocks.Connection
             return Reflection.GetEntityIdForEntityType( entityTypeId.Value, entityKey, !PageCache.Layout.Site.DisablePredictableIds, rockContext );
         }
 
+        /// <summary>
+        /// Gets the security grant token that will be used by UI controls on this block to ensure they have the proper permissions.
+        /// </summary>
+        /// <returns>A string that represents the security grant token.</returns>
+        private string GetSecurityGrantToken()
+        {
+            return new Rock.Security.SecurityGrant().ToToken();
+        }
+
         #endregion
 
         #region Block Actions
@@ -1131,14 +1180,14 @@ namespace Rock.Blocks.Connection
         /// <summary>
         /// Saves the provided filters to person preferences.
         /// </summary>
-        /// <param name="bag">The filters to save.</param>
+        /// <param name="filters">The filters to save.</param>
         /// <returns>An object containing the validated and saved filters.</returns>
         [BlockAction]
-        public BlockActionResult SaveFilters( ConnectionRequestBoardFiltersBag bag )
+        public BlockActionResult SaveFilters( ConnectionRequestBoardFiltersBag filters )
         {
             using ( var rockContext = new RockContext() )
             {
-                var savedFilters = SaveFilters( rockContext, bag );
+                var savedFilters = SaveFilters( rockContext, filters );
 
                 return ActionOk( savedFilters );
             }

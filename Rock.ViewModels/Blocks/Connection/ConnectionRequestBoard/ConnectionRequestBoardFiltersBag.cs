@@ -17,6 +17,7 @@
 
 using Rock.Model;
 using Rock.ViewModels.Controls;
+using Rock.ViewModels.Utility;
 using System.Collections.Generic;
 
 namespace Rock.ViewModels.Blocks.Connection.ConnectionRequestBoard
@@ -32,9 +33,19 @@ namespace Rock.ViewModels.Blocks.Connection.ConnectionRequestBoard
         public int? ConnectorPersonAliasId { get; set; }
 
         /// <summary>
-        /// Gets or sets the "requester" person alias identifier to be used to filter connection requests.
+        /// Gets or sets the "requester" person alias list item bag to be used with a person picker, in order to filter connection requests.
+        /// </summary>
+        public ListItemBag Requester { get; set; }
+
+        /// <summary>
+        /// Gets or sets the "requester" person alias identifier to be used with a preexisting v1 API endpoint, in order to filter connection requests.
         /// </summary>
         public int? RequesterPersonAliasId { get; set; }
+
+        /// <summary>
+        /// Gets or sets the "requester" person identifier to be used with person preferences, in order to filter connection requests.
+        /// </summary>
+        public int? RequesterPersonId { get; set; }
 
         /// <summary>
         /// Gets or sets the campus identifier to be used to filter various aspects of the connection request board.

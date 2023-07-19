@@ -135,7 +135,7 @@
                 </div>
 
                 <!-- Filters -->
-                <DropDownContent>
+                <DropDownContent v-model="isFiltersOpen">
 
                     <template #anchor>
                         <button type="button"
@@ -147,7 +147,14 @@
                     </template>
 
                     <div class="p-3">
-                        Here are the filters.
+
+                        <SlidingDateRangePicker v-model="dateRange"
+                            label="Last Activity Date Range"
+                            previewLocation="Top" />
+
+                        <PersonPicker v-model="requester"
+                            label="Requester" />
+
                     </div>
 
                 </DropDownContent>
@@ -160,12 +167,15 @@
 <script setup lang="ts">
     import { computed, PropType, ref, watch } from "vue";
     import DropDownContent from "@Obsidian/Controls/dropDownContent.obs";
+    import PersonPicker from "@Obsidian/Controls/personPicker";
+    import SlidingDateRangePicker from "@Obsidian/Controls/slidingDateRangePicker.obs";
     import { SlidingDateRange } from "@Obsidian/Utility/slidingDateRange";
     import { ConnectionRequestBoardConnectionOpportunityBag } from "@Obsidian/ViewModels/Blocks/Connection/ConnectionRequestBoard/connectionRequestBoardConnectionOpportunityBag";
     import { ConnectionRequestBoardConnectionTypeBag } from "@Obsidian/ViewModels/Blocks/Connection/ConnectionRequestBoard/connectionRequestBoardConnectionTypeBag";
     import { ConnectionRequestBoardFilterOptionsBag } from "@Obsidian/ViewModels/Blocks/Connection/ConnectionRequestBoard/connectionRequestBoardFilterOptionsBag";
     import { ConnectionRequestBoardFiltersBag } from "@Obsidian/ViewModels/Blocks/Connection/ConnectionRequestBoard/connectionRequestBoardFiltersBag";
     import { SlidingDateRangeBag } from "@Obsidian/ViewModels/Controls/slidingDateRangeBag";
+    import { ListItemBag } from "@Obsidian/ViewModels/Utility/listItemBag";
 
     const props = defineProps({
         connectionTypes: {
@@ -197,6 +207,7 @@
     // #region Values
 
     const connectorPersonAliasId = ref<number | null | undefined>(props.filters?.connectorPersonAliasId);
+    const requester = ref<ListItemBag | undefined>(props.filters?.requester ?? undefined);
     const requesterPersonAliasId = ref<number | null | undefined>(props.filters?.requesterPersonAliasId);
     const campusId = ref<number | null | undefined>(props.filters?.campusId);
     const dateRange = ref<SlidingDateRange | null>(getSlidingDateRange(props.filters?.dateRange));
@@ -205,6 +216,8 @@
     const connectionStates = ref<string[]>(props.filters?.connectionStates ?? []);
     const connectionActivityTypes = ref<string[]>(props.filters?.connectionActivityTypes ?? []);
     const sortProperty = ref<number>(props.filters?.sortProperty ?? 8); // 8 is the default value of "Order".
+
+    const isFiltersOpen = ref(false);
 
     // #endregion
 
@@ -289,6 +302,7 @@
 
         return {
             connectorPersonAliasId: connectorPersonAliasId.value,
+            requester: requester.value,
             requesterPersonAliasId: requesterPersonAliasId.value,
             campusId: campusId.value,
             dateRange: selectedDateRange,
@@ -307,6 +321,7 @@
      */
     function setFilters(filters: ConnectionRequestBoardFiltersBag | null | undefined): void {
         connectorPersonAliasId.value = filters?.connectorPersonAliasId;
+        requester.value = filters?.requester ?? undefined;
         requesterPersonAliasId.value = filters?.requesterPersonAliasId;
         campusId.value = filters?.campusId;
         dateRange.value = getSlidingDateRange(filters?.dateRange);
@@ -367,5 +382,11 @@
 
     watch(() => props.filters, () => {
         setFilters(props.filters);
+    });
+
+    watch(isFiltersOpen, () => {
+        if (!isFiltersOpen.value) {
+            emit("filtersChanged", getFilters());
+        }
     });
 </script>

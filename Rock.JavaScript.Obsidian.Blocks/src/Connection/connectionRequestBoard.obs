@@ -87,9 +87,11 @@
 
     const connectionTypes = ref<ConnectionRequestBoardConnectionTypeBag[] | null | undefined>(config.connectionTypes);
     const selectedOpportunity = ref<ConnectionRequestBoardSelectedOpportunityBag | null | undefined>(config.selectedOpportunity);
+    const filters = ref<ConnectionRequestBoardFiltersBag | null | undefined>(config.selectedOpportunity?.filters);
 
     const blockActionErrorMessage = ref("");
     const isSelectingOpportunity = ref(false);
+    const isSavingFilters = ref(false);
 
     // #endregion
 
@@ -129,10 +131,6 @@
         return selectedOpportunity.value?.filterOptions;
     });
 
-    const filters = computed((): ConnectionRequestBoardFiltersBag | null | undefined => {
-        return selectedOpportunity.value?.filters;
-    });
-
     const campusId = computed((): number | null | undefined => {
         return filters.value?.campusId;
     });
@@ -144,7 +142,8 @@
 
     const isBoardDisabled = computed((): boolean => {
         return !connectionOpportunity.value
-            || isSelectingOpportunity.value;
+            || isSelectingOpportunity.value
+            || isSavingFilters.value;
     });
 
     // #endregion
@@ -211,16 +210,28 @@
             return;
         }
 
-        selectedOpportunity.value = result.data ?? null;
+        selectedOpportunity.value = result.data;
+        filters.value = result.data?.filters;
     }
 
     /**
      * Handles the `filtersChanged` event of the Toolbar component.
      *
-     * @param filters The selected filters.
+     * @param selectedFilters The selected filters.
      */
-    async function onFiltersChanged(filters: ConnectionRequestBoardFiltersBag): Promise<void> {
-        console.log(JSON.stringify(filters));
+    async function onFiltersChanged(selectedFilters: ConnectionRequestBoardFiltersBag): Promise<void> {
+        isSavingFilters.value = true;
+        blockActionErrorMessage.value = "";
+
+        const result = await invokeBlockAction<ConnectionRequestBoardFiltersBag>("SaveFilters", { filters: selectedFilters });
+        isSavingFilters.value = false;
+
+        if (!result.isSuccess) {
+            blockActionErrorMessage.value = result.errorMessage || "Unkown error while trying to save filters.";
+            return;
+        }
+
+        filters.value = result.data;
     }
 
     // #endregion

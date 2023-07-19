@@ -22,6 +22,7 @@
 //
 
 import { SlidingDateRangeBag } from "@Obsidian/ViewModels/Controls/slidingDateRangeBag";
+import { ListItemBag } from "@Obsidian/ViewModels/Utility/listItemBag";
 
 /** A bag that contains filters information for the connection request board. */
 export type ConnectionRequestBoardFiltersBag = {
@@ -46,8 +47,14 @@ export type ConnectionRequestBoardFiltersBag = {
     /** Gets or sets whether to include only connection requests that are "due today or already past due". */
     pastDueOnly: boolean;
 
-    /** Gets or sets the "requester" person alias identifier to be used to filter connection requests. */
+    /** Gets or sets the "requester" person list item bag to be used with a person picker, in order to filter connection requests. */
+    requester?: ListItemBag | null;
+
+    /** Gets or sets the "requester" person alias identifier to be used with a preexisting v1 API endpoint, in order to filter connection requests. */
     requesterPersonAliasId?: number | null;
+
+    /** Gets or sets the "requester" person identifier to be used with person preferences, in order to filter connection requests. */
+    requesterPersonId?: number | null;
 
     /** Gets or sets the model property (and direction: ascending vs descending) to be used for sorting connection requests. */
     sortProperty: number;
