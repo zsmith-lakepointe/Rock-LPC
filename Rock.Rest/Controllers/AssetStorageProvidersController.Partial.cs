@@ -44,6 +44,11 @@ namespace Rock.Rest.Controllers
                 foreach ( var assetStorageProviderCache in AssetStorageProviderCache.All().Where( a => a.IsActive ) )
                 {
                     var component = assetStorageProviderCache.AssetStorageComponent;
+                    if ( component == null )
+                    {
+                        continue;
+                    }
+
                     var rootFolder = component.GetRootFolder( assetStorageProviderCache.ToEntity() );
 
                     var treeViewItem = new TreeViewItem();
