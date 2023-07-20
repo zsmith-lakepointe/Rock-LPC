@@ -2736,6 +2736,12 @@ $.ajax({
             if ( ScriptManager.GetCurrent( Page ) != null )
             {
                 ScriptManager sManager = ScriptManager.GetCurrent( Page );
+                // Check if this is an asynchronous postback, otherwise history points are not available.
+                if ( !sManager.IsInAsyncPostBack )
+                {
+                    return;
+                }
+
                 if ( string.IsNullOrWhiteSpace( title ) )
                 {
                     sManager.AddHistoryPoint( key, state );
