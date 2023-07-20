@@ -15,15 +15,17 @@
 // </copyright>
 //
 
+using System;
+using System.Collections.Generic;
+using System.Data.Entity;
+using System.IO;
+using System.Linq;
+using System.Text;
+
 using Rock.Attribute;
 using Rock.Data;
 using Rock.Model;
 using Rock.Web.Cache;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Text;
 
 namespace Rock.Jobs
 {
@@ -151,7 +153,7 @@ namespace Rock.Jobs
                 throw new RockJobWarningException( String.Join( ",\n", ErrorMessage ) );
             }
 
-            DeleteJob();
+            // DeleteJob();
         }
 
         /// <summary>
@@ -221,6 +223,8 @@ namespace Rock.Jobs
 
                     CopyAuthFromOldBlocksToNewBlocks( migrationHelper, copiedBlockMappings );
 
+                    CopyPersonPreferenceFromOldBlocksToNewBlocks( rockContext, copiedBlockMappings );
+
                     DeleteOldBlocks( migrationHelper, copiedBlockMappings );
 
                     ChopBlock( oldBlockTypeGuid, rockContext );
@@ -235,6 +239,33 @@ namespace Rock.Jobs
             }
         }
 
+        private void CopyPersonPreferenceFromOldBlocksToNewBlocks( RockContext rockContext, Dictionary<Block, Block> copiedBlockMappings )
+        {
+            PersonPreferenceService personPreferenceService = new PersonPreferenceService( rockContext );
+            var oldBlockIds = copiedBlockMappings.Keys
+                .Select( b => b.Id )
+                .ToHashSet();
+            var blockIdMap = copiedBlockMappings
+                .ToDictionary( c => c.Key.Id, c => c.Value.Id );
+            var oldBlocksPreferences = personPreferenceService
+                .Queryable()
+                .AsNoTracking()
+                .Where( p => oldBlockIds.Contains( p.EntityId.Value ) )
+                .ToList();
+
+            var newBlockPreferences = new List<PersonPreference>();
+            foreach ( var personPreference in oldBlocksPreferences )
+            {
+                var newPersonPreference = personPreference.CloneWithoutIdentity();
+                newPersonPreference.Key = personPreference.Key.Replace( newPersonPreference.EntityId.ToString(), blockIdMap[newPersonPreference.EntityId.Value].ToString() );
+                newPersonPreference.EntityId = blockIdMap[newPersonPreference.EntityId.Value];
+                newBlockPreferences.Add( newPersonPreference );
+            }
+
+            personPreferenceService.AddRange( newBlockPreferences );
+            rockContext.SaveChanges( );
+        }
+
         private void ChopBlock( Guid oldBlockTypeGuid, RockContext rockContext )
         {
             if ( this.MigrationStrategy != "Chop" )
@@ -244,7 +275,7 @@ namespace Rock.Jobs
             var blockTypeService = new BlockTypeService( rockContext );
             var blockTypeToBeDeleted = blockTypeService.Get( oldBlockTypeGuid );
 
-            var blockTypeFilePath = blockTypeToBeDeleted?.Path
+            var blockTypeFilePath = blockTypeToBeDeleted?.Path?
                 .Replace( '/', Path.DirectorySeparatorChar )
                 .Replace( "~", AppDomain.CurrentDomain.BaseDirectory ) ?? "";
             if ( File.Exists( blockTypeFilePath ) )
