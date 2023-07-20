@@ -44,5 +44,10 @@ namespace Rock.ViewModels.Blocks.Connection.ConnectionRequestBoard
         /// the first column of each row (in grid view mode) + the top of the connection request modal.
         /// </summary>
         public string StatusIconsTemplate { get; set; }
+
+        /// <summary>
+        /// The person alias identifier for the current person.
+        /// </summary>
+        public int CurrentPersonAliasId { get; set; }
     }
 }

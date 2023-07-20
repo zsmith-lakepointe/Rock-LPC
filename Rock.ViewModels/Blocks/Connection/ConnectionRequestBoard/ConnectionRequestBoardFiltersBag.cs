@@ -18,6 +18,7 @@
 using Rock.Model;
 using Rock.ViewModels.Controls;
 using Rock.ViewModels.Utility;
+using System;
 using System.Collections.Generic;
 
 namespace Rock.ViewModels.Blocks.Connection.ConnectionRequestBoard
@@ -56,6 +57,16 @@ namespace Rock.ViewModels.Blocks.Connection.ConnectionRequestBoard
         /// Gets or sets the date range to be used to filter connection requests (using the last activity date).
         /// </summary>
         public SlidingDateRangeBag DateRange { get; set; }
+
+        /// <summary>
+        /// Gets or sets the minimum date to be used to filter connection requests (using the last activity date).
+        /// </summary>
+        public DateTimeOffset? MinDate { get; set; }
+
+        /// <summary>
+        /// Gets or sets the maximum date to be used to filter connection requests (using the last activity date).
+        /// </summary>
+        public DateTimeOffset? MaxDate { get; set; }
 
         /// <summary>
         /// Gets or sets whether to include only connection requests that are "due today or already past due".

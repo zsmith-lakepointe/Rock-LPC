@@ -97,8 +97,8 @@
                         <li>
                             <a href="#" @click.prevent="onConnectorChanged(undefined)">All Connectors</a>
                         </li>
-                        <li>
-                            <a href="#" @click.prevent="onConnectorChanged(0)">My Connections</a>
+                        <li v-if="currentPersonAliasId > 0">
+                            <a href="#" @click.prevent="onConnectorChanged(currentPersonAliasId)">My Connections</a>
                         </li>
                         <template v-if="filterOptions?.connectors?.length">
                             <li class="divider"></li>
@@ -142,18 +142,44 @@
                                 class="btn btn-xs btn-tool"
                                 :disabled="disabled">
                             <i class="fa fa-filter"></i>
-                            Filters
+                            {{ filtersText }}
                         </button>
                     </template>
 
-                    <div class="p-3">
+                    <div class="filters-container p-3">
 
                         <SlidingDateRangePicker v-model="dateRange"
-                            label="Last Activity Date Range"
-                            previewLocation="Top" />
+                                                label="Last Activity Date Range"
+                                                previewLocation="Top" />
 
                         <PersonPicker v-model="requester"
-                            label="Requester" />
+                                      label="Requester" />
+
+                        <CheckBox v-model="pastDueOnly"
+                                  label="Only Past Due"
+                                  help="Only show future follow-up requests that are past due." />
+
+                        <CheckBoxList v-model="connectionStatuses"
+                                      label="Status"
+                                      :items="statusOptions"
+                                      :horizontal="true"
+                                      :repeatColumns="2" />
+
+                        <CheckBoxList v-model="connectionStates"
+                                      label="State"
+                                      :items="stateOptions"
+                                      :horizontal="true"
+                                      :repeatColumns="2" />
+
+                        <CheckBoxList v-model="connectionActivityTypes"
+                                      label="Last Activity"
+                                      :items="activityTypeOptions"
+                                      :horizontal="true"
+                                      :repeatColumns="2" />
+
+                        <RockButton :btnSize="BtnSize.ExtraSmall" @click="onClearFilters">
+                            Clear All
+                        </RockButton>
 
                     </div>
 
@@ -166,9 +192,13 @@
 
 <script setup lang="ts">
     import { computed, PropType, ref, watch } from "vue";
+    import CheckBox from "@Obsidian/Controls/checkBox";
+    import CheckBoxList from "@Obsidian/Controls/checkBoxList";
     import DropDownContent from "@Obsidian/Controls/dropDownContent.obs";
     import PersonPicker from "@Obsidian/Controls/personPicker";
+    import RockButton from "@Obsidian/Controls/rockButton";
     import SlidingDateRangePicker from "@Obsidian/Controls/slidingDateRangePicker.obs";
+    import { BtnSize } from "@Obsidian/Enums/Controls/btnSize";
     import { SlidingDateRange } from "@Obsidian/Utility/slidingDateRange";
     import { ConnectionRequestBoardConnectionOpportunityBag } from "@Obsidian/ViewModels/Blocks/Connection/ConnectionRequestBoard/connectionRequestBoardConnectionOpportunityBag";
     import { ConnectionRequestBoardConnectionTypeBag } from "@Obsidian/ViewModels/Blocks/Connection/ConnectionRequestBoard/connectionRequestBoardConnectionTypeBag";
@@ -193,6 +223,11 @@
             required: true
         },
 
+        currentPersonAliasId: {
+            type: Number as PropType<number>,
+            required: true
+        },
+
         disabled: {
             type: Boolean as PropType<boolean>,
             default: false
@@ -203,6 +238,8 @@
         (e: "opportunityChanged", opportunityId: number): void,
         (e: "filtersChanged", filters: ConnectionRequestBoardFiltersBag): void
     }>();
+
+    const sortPropertyDefault = 8; // This is the default value of "Order".
 
     // #region Values
 
@@ -215,9 +252,10 @@
     const connectionStatuses = ref<string[]>(props.filters?.connectionStatuses ?? []);
     const connectionStates = ref<string[]>(props.filters?.connectionStates ?? []);
     const connectionActivityTypes = ref<string[]>(props.filters?.connectionActivityTypes ?? []);
-    const sortProperty = ref<number>(props.filters?.sortProperty ?? 8); // 8 is the default value of "Order".
+    const sortProperty = ref<number>(props.filters?.sortProperty ?? sortPropertyDefault);
 
     const isFiltersOpen = ref(false);
+    const filtersText = ref(getFiltersText());
 
     // #endregion
 
@@ -245,7 +283,7 @@
     });
 
     const connectorText = computed((): string => {
-        if (connectorPersonAliasId.value === 0) {
+        if (connectorPersonAliasId.value === props.currentPersonAliasId) {
             return "My Connections";
         }
         else if (!connectorPersonAliasId.value) {
@@ -277,6 +315,18 @@
         return `Campus${campusName ? `: ${campusName}` : ""}`;
     });
 
+    const statusOptions = computed((): ListItemBag[] => {
+        return props.filterOptions?.connectionStatuses ?? [];
+    });
+
+    const stateOptions = computed((): ListItemBag[] => {
+        return props.filterOptions?.connectionStates ?? [];
+    });
+
+    const activityTypeOptions = computed((): ListItemBag[] => {
+        return props.filterOptions?.connectionActivityTypes ?? [];
+    });
+
     // #endregion
 
     // #region Functions
@@ -290,6 +340,64 @@
         return bag
             ? bag as SlidingDateRange
             : null;
+    }
+
+    /**
+     * Gets a friendly filters text based on the currently-applied filters.
+     */
+    function getFiltersText(): string {
+        const filtersApplied: string[] = [];
+
+        if (requester.value?.text) {
+            filtersApplied.push(requester.value.text);
+        }
+
+        if (props.filters?.minDate || props.filters?.maxDate) {
+            filtersApplied.push("Last Activity Date");
+        }
+
+        if (pastDueOnly.value) {
+            filtersApplied.push("Past Due");
+        }
+
+        connectionStatuses.value?.forEach((value: string) => {
+            const status = props.filterOptions
+                ?.connectionStatuses
+                ?.find(s => s.value === value);
+
+            if (status?.text) {
+                filtersApplied.push(status.text);
+            }
+        });
+
+        connectionStates.value?.forEach((value: string) => {
+            const state = props.filterOptions
+                ?.connectionStates
+                ?.find(s => s.value === value);
+
+            if (state?.text) {
+                filtersApplied.push(state.text);
+            }
+        });
+
+        connectionActivityTypes.value?.forEach((value: string) => {
+            const activityType = props.filterOptions
+                ?.connectionActivityTypes
+                ?.find(a => a.value === value);
+
+            if (activityType?.text) {
+                filtersApplied.push(activityType.text);
+            }
+        });
+
+        if (filtersApplied.length > 1) {
+            return `Filters Applied: ${filtersApplied.length}`;
+        }
+        else if (filtersApplied.length === 1) {
+            return `Filter: ${filtersApplied[0]}`;
+        }
+
+        return "Filter";
     }
 
     /**
@@ -329,7 +437,9 @@
         connectionStatuses.value = filters?.connectionStatuses ?? [];
         connectionStates.value = filters?.connectionStates ?? [];
         connectionActivityTypes.value = filters?.connectionActivityTypes ?? [];
-        sortProperty.value = filters?.sortProperty ?? 8; // 8 is the default value of "Order".
+        sortProperty.value = filters?.sortProperty ?? sortPropertyDefault;
+
+        filtersText.value = getFiltersText();
     }
 
     // #endregion
@@ -376,6 +486,25 @@
 
         campusId.value = newValue;
         emit("filtersChanged", getFilters());
+    }
+
+    /**
+     * Handles the `click` event of the "Filters" > "Clear All" button.
+     */
+    function onClearFilters(): void {
+        // Some filter values (commented out below) should be preserved,
+        // as they're outside of the "Filters" drop down content control.
+
+        // connectorPersonAliasId.value = undefined;
+        requester.value = undefined;
+        requesterPersonAliasId.value = undefined;
+        // campusId.value = undefined;
+        dateRange.value = null;
+        pastDueOnly.value = false;
+        connectionStatuses.value = [];
+        connectionStates.value = [];
+        connectionActivityTypes.value = [];
+        // sortProperty.value = sortPropertyDefault;
     }
 
     // #endregion

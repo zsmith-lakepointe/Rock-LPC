@@ -44,10 +44,16 @@ export type ConnectionRequestBoardFiltersBag = {
     /** Gets or sets the date range to be used to filter connection requests (using the last activity date). */
     dateRange?: SlidingDateRangeBag | null;
 
+    /** Gets or sets the maximum date to be used to filter connection requests (using the last activity date). */
+    maxDate?: string | null;
+
+    /** Gets or sets the minimum date to be used to filter connection requests (using the last activity date). */
+    minDate?: string | null;
+
     /** Gets or sets whether to include only connection requests that are "due today or already past due". */
     pastDueOnly: boolean;
 
-    /** Gets or sets the "requester" person list item bag to be used with a person picker, in order to filter connection requests. */
+    /** Gets or sets the "requester" person alias list item bag to be used with a person picker, in order to filter connection requests. */
     requester?: ListItemBag | null;
 
     /** Gets or sets the "requester" person alias identifier to be used with a preexisting v1 API endpoint, in order to filter connection requests. */

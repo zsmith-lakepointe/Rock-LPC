@@ -29,6 +29,9 @@ export type ConnectionRequestBoardInitializationBox = {
     /** Gets or sets the connection types that are available to be selected within the opportunities sidebar. */
     connectionTypes?: ConnectionRequestBoardConnectionTypeBag[] | null;
 
+    /** The person alias identifier for the current person. */
+    currentPersonAliasId: number;
+
     /**
      * Gets or sets the error message. A non-empty value indicates that
      * an error is preventing the block from being displayed.

@@ -29,6 +29,7 @@
             <Toolbar :connectionTypes="connectionTypes"
                      :filterOptions="filterOptions"
                      :filters="filters"
+                     :currentPersonAliasId="currentPersonAliasId"
                      :disabled="isBoardDisabled"
                      @opportunityChanged="onOpportunityChanged"
                      @filtersChanged="onFiltersChanged" />
@@ -68,6 +69,7 @@
     import { ConnectionRequestBoardFilterOptionsBag } from "@Obsidian/ViewModels/Blocks/Connection/ConnectionRequestBoard/connectionRequestBoardFilterOptionsBag";
     import { ConnectionRequestBoardFiltersBag } from "@Obsidian/ViewModels/Blocks/Connection/ConnectionRequestBoard/connectionRequestBoardFiltersBag";
     import { ConnectionRequestBoardInitializationBox } from "@Obsidian/ViewModels/Blocks/Connection/ConnectionRequestBoard/connectionRequestBoardInitializationBox";
+    import { ConnectionRequestBoardSaveFiltersBag } from "@Obsidian/ViewModels/Blocks/Connection/ConnectionRequestBoard/connectionRequestBoardSaveFiltersBag";
     import { ConnectionRequestBoardSelectedOpportunityBag } from "@Obsidian/ViewModels/Blocks/Connection/ConnectionRequestBoard/connectionRequestBoardSelectedOpportunityBag";
 
     const config = useConfigurationValues<ConnectionRequestBoardInitializationBox>();
@@ -88,6 +90,7 @@
     const connectionTypes = ref<ConnectionRequestBoardConnectionTypeBag[] | null | undefined>(config.connectionTypes);
     const selectedOpportunity = ref<ConnectionRequestBoardSelectedOpportunityBag | null | undefined>(config.selectedOpportunity);
     const filters = ref<ConnectionRequestBoardFiltersBag | null | undefined>(config.selectedOpportunity?.filters);
+    const currentPersonAliasId = ref<number>(config.currentPersonAliasId);
 
     const blockActionErrorMessage = ref("");
     const isSelectingOpportunity = ref(false);
@@ -220,10 +223,19 @@
      * @param selectedFilters The selected filters.
      */
     async function onFiltersChanged(selectedFilters: ConnectionRequestBoardFiltersBag): Promise<void> {
+        if (!connectionOpportunityId.value) {
+            return;
+        }
+
         isSavingFilters.value = true;
         blockActionErrorMessage.value = "";
 
-        const result = await invokeBlockAction<ConnectionRequestBoardFiltersBag>("SaveFilters", { filters: selectedFilters });
+        const saveFilters: ConnectionRequestBoardSaveFiltersBag = {
+            connectionOpportunityId: connectionOpportunityId.value,
+            filters: selectedFilters
+        };
+
+        const result = await invokeBlockAction<ConnectionRequestBoardFiltersBag>("SaveFilters", { saveFilters });
         isSavingFilters.value = false;
 
         if (!result.isSuccess) {
