@@ -18,7 +18,8 @@
                            @followedStateUpdated="onFollowedStateUpdated" />
             </span>
 
-            <span :class="viewModeActionCssClass"
+            <span title="Click to change display mode."
+                  :class="viewModeActionCssClass"
                   @click="onViewModeChanged()">
                 <i :class="viewModeCssClass"></i>
             </span>
@@ -66,18 +67,31 @@
 </template>
 
 <script setup lang="ts">
-    import { computed, ref, watch } from "vue";
+    import { computed, provide, ref, watch } from "vue";
     import CardView from "./ConnectionRequestBoard/cardView.partial.obs";
     import GridView from "./ConnectionRequestBoard/gridView.partial.obs";
     import Toolbar from "./ConnectionRequestBoard/toolbar.partial.obs";
-    import { IConnectionRequestViewModel, IConnectionStatusViewModel, IConnectionStatusViewModelsRequest, PageParameterKey } from "./ConnectionRequestBoard/types.partial";
+    import {
+        IConnectionRequestViewModel,
+        IConnectionStatusViewModel,
+        IConnectionStatusViewModelsRequest,
+        IsRequestSecurityEnabled,
+        PageParameterKey
+    } from "./ConnectionRequestBoard/types.partial";
     import Following from "@Obsidian/Controls/following";
     import NotificationBox from "@Obsidian/Controls/notificationBox.obs";
     import Panel from "@Obsidian/Controls/panel.obs";
     import { AlertType } from "@Obsidian/Enums/Controls/alertType";
     import { EntityType } from "@Obsidian/SystemGuids/entityType";
     import { PanelAction } from "@Obsidian/Types/Controls/panelAction";
-    import { getSecurityGrant, onConfigurationValuesChanged, provideSecurityGrant, useConfigurationValues, useInvokeBlockAction, useReloadBlock } from "@Obsidian/Utility/block";
+    import {
+        getSecurityGrant,
+        onConfigurationValuesChanged,
+        provideSecurityGrant,
+        useConfigurationValues,
+        useInvokeBlockAction,
+        useReloadBlock
+    } from "@Obsidian/Utility/block";
     import { useHttp } from "@Obsidian/Utility/http";
     import { ConnectionRequestBoardConnectionOpportunityBag } from "@Obsidian/ViewModels/Blocks/Connection/ConnectionRequestBoard/connectionRequestBoardConnectionOpportunityBag";
     import { ConnectionRequestBoardConnectionTypeBag } from "@Obsidian/ViewModels/Blocks/Connection/ConnectionRequestBoard/connectionRequestBoardConnectionTypeBag";
@@ -110,10 +124,11 @@
 
     const connectionTypes = ref<ConnectionRequestBoardConnectionTypeBag[] | null | undefined>(config.connectionTypes);
     const selectedOpportunity = ref<ConnectionRequestBoardSelectedOpportunityBag | null | undefined>(config.selectedOpportunity);
-    const isCardViewMode = ref(config.selectedOpportunity?.isCardViewMode ?? true);
     const filters = ref<ConnectionRequestBoardFiltersBag | null | undefined>(config.selectedOpportunity?.filters);
-    const currentPersonAliasId = ref<number>(config.currentPersonAliasId);
-    const maxRequestsPerStatus = ref<number>(config.maxCardsPerColumn);
+    const isCardViewMode = ref(config.selectedOpportunity?.isCardViewMode ?? true);
+    const maxRequestsPerStatus = ref(config.maxCardsPerColumn);
+    const statusIconsTemplate = ref(config.statusIconsTemplate);
+    const currentPersonAliasId = ref(config.currentPersonAliasId);
 
     const blockActionErrorMessage = ref("");
     const isSelectingOpportunity = ref(false);
@@ -174,6 +189,10 @@
         return filters.value?.campusId;
     });
 
+    const isRequestSecurityEnabled = computed((): boolean => {
+        return selectedOpportunity.value?.isRequestSecurityEnabled ?? false;
+    });
+
     const showPanelBodyAlert = computed((): boolean => {
         return !connectionOpportunity.value
             || !!blockActionErrorMessage.value
@@ -184,9 +203,9 @@
         const requests: IConnectionRequestViewModel[] = [];
 
         connectionStatuses.value
-            .filter((status: IConnectionStatusViewModel) => status?.requests?.length)
+            .filter((status: IConnectionStatusViewModel) => status?.Requests?.length)
             .forEach((status: IConnectionStatusViewModel) => {
-                status.requests?.forEach((request: IConnectionRequestViewModel) => requests.push(request));
+                status.Requests?.forEach((request: IConnectionRequestViewModel) => requests.push(request));
             });
 
         // TODO (Jason): Need to sort the combined array.
@@ -256,11 +275,17 @@
         isLoadingConnectionStatuses.value = true;
         loadConnectionStatusesWarningMessage.value = "";
 
-        connectionStatuses.value = [];
+        const delimitedStatusIds = filters.value?.connectionStatuses?.length
+            ? filters.value.connectionStatuses.join(defaultDelimiter)
+            : null;
 
-        // Note that we're assiging this value AFTER clearing out any previously-loaded connection statuses and requests
-        // to prevent a jarring experience as the block transitions from one view mode to the other.
-        isCardViewMode.value = selectedOpportunity.value?.isCardViewMode ?? true;
+        const delimitedConnectionStates = filters.value?.connectionStates?.length
+            ? filters.value.connectionStates.join(defaultDelimiter)
+            : null;
+
+        const delimitedLastActivityTypeIds = filters.value?.connectionActivityTypes?.length
+            ? filters.value.connectionActivityTypes.join(defaultDelimiter)
+            : null;
 
         const params: Partial<IConnectionStatusViewModelsRequest> = {
             campusId: filters.value?.campusId,
@@ -268,9 +293,10 @@
             requesterPersonAliasId: filters.value?.requesterPersonAliasId,
             minDate: filters.value?.minDate,
             maxDate: filters.value?.maxDate,
-            delimitedStatusIds: filters.value?.connectionStatuses?.join(defaultDelimiter),
-            delimitedConnectionStates: filters.value?.connectionStates?.join(defaultDelimiter),
-            delimitedLastActivityTypeIds: filters.value?.connectionActivityTypes?.join(defaultDelimiter),
+            delimitedStatusIds,
+            delimitedConnectionStates,
+            delimitedLastActivityTypeIds,
+            statusIconsTemplate: statusIconsTemplate.value,
             sortProperty: filters.value?.sortProperty,
             maxRequestsPerStatus: isCardViewMode.value ? maxRequestsPerStatus.value : null,
             pastDueOnly: filters.value?.pastDueOnly
@@ -314,6 +340,7 @@
 
         selectedOpportunity.value = result.data;
         filters.value = result.data?.filters;
+        isCardViewMode.value = result.data?.isCardViewMode ?? true;
 
         getConnectionStatuses();
     }
@@ -358,11 +385,7 @@
             return;
         }
 
-        // Note that we're not actually displaying the new view mode just yet; this will be done in the `getConnectionStatuses()`
-        // method call below, to prevent a jarring experience as the block transitions from one view mode to the other.
-        if (selectedOpportunity.value) {
-            selectedOpportunity.value.isCardViewMode = newValue;
-        }
+        isCardViewMode.value = newValue;
 
         // Reload connection statuses since we limit the results based on board view mode
         // (limited for card view mode / unlimited for grid view mode).
@@ -402,6 +425,7 @@
 
     // #endregion
 
+    provide(IsRequestSecurityEnabled, isRequestSecurityEnabled);
     provideSecurityGrant(securityGrant);
     onConfigurationValuesChanged(reloadBlock);
 

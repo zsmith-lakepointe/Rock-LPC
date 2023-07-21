@@ -47,5 +47,10 @@ namespace Rock.ViewModels.Blocks.Connection.ConnectionRequestBoard
         /// Gets or sets whether the board is in card view mode.
         /// </summary>
         public bool IsCardViewMode { get; set; } = true;
+
+        /// <summary>
+        /// Gets or sets whether connection request security is enabled.
+        /// </summary>
+        public bool IsRequestSecurityEnabled { get; set; }
     }
 }

@@ -41,4 +41,7 @@ export type ConnectionRequestBoardSelectedOpportunityBag = {
 
     /** Gets or sets whether the board is in card view mode. */
     isCardViewMode: boolean;
+
+    /** Gets or sets whether connection request security is enabled. */
+    isRequestSecurityEnabled: boolean;
 };

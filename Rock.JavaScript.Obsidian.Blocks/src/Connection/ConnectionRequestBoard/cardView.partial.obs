@@ -3,7 +3,9 @@
     <div class="drag-scroll-zone-container">
         <div v-drag-scroll.left="{ id: newGuid() }" class="board-view-panel-body overflow-scroll">
             <div class="board-column-container">
-                <StatusColumn v-for="n in 20" :title="`Status #${n}`" />
+                <StatusColumn v-for="connectionStatus in connectionStatuses"
+                              :key="connectionStatus.Id"
+                              :connectionStatus="connectionStatus" />
             </div>
         </div>
     </div>
@@ -16,7 +18,7 @@
     import { DragScroll as vDragScroll } from "@Obsidian/Directives/dragScroll";
     import { newGuid } from "@Obsidian/Utility/guid";
 
-    const props = defineProps({
+    defineProps({
         connectionStatuses: {
             type: Array as PropType<IConnectionStatusViewModel[]>,
             required: true

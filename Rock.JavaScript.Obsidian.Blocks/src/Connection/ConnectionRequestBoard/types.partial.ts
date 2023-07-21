@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/naming-convention */
+
 // <copyright>
 // Copyright by the Spark Development Network
 //
@@ -15,6 +17,7 @@
 // </copyright>
 //
 
+import { InjectionKey, Ref } from "vue";
 import { ConnectionState } from "@Obsidian/Enums/Connection/connectionState";
 import { GroupMemberStatus } from "@Obsidian/Enums/Group/groupMemberStatus";
 import { CampusBag } from "@Obsidian/ViewModels/Blocks/Core/CampusDetail/campusBag";
@@ -34,6 +37,7 @@ export interface IConnectionStatusViewModelsRequest {
     delimitedStatusIds?: string | null,
     delimitedConnectionStates?: string | null,
     delimitedLastActivityTypeIds?: string | null,
+    statusIconsTemplate?: string | null,
     sortProperty?: number | null,
     maxRequestsPerStatus?: number | null,
     pastDueOnly: boolean
@@ -48,11 +52,11 @@ export interface IConnectionStatusViewModelsRequest {
  * Representation of: https://github.com/SparkDevNetwork/Rock/blob/1e1558e2d222df7a3f7bcf36ff4e419a7e9b7a64/Rock/Model/Connection/ConnectionRequest/ConnectionStatusViewModel.cs#L25
  */
 export interface IConnectionStatusViewModel {
-    id: number;
-    name?: string | null;
-    highlightColor?: string | null;
-    requestCount: number;
-    requests?: IConnectionRequestViewModel[] | null;
+    Id: number;
+    Name?: string | null;
+    HighlightColor?: string | null;
+    RequestCount: number;
+    Requests?: IConnectionRequestViewModel[] | null;
 }
 
 /**
@@ -60,68 +64,68 @@ export interface IConnectionStatusViewModel {
  * Representation of: https://github.com/SparkDevNetwork/Rock/blob/1e1558e2d222df7a3f7bcf36ff4e419a7e9b7a64/Rock/Model/Connection/ConnectionRequest/ConnectionRequestViewModel.cs#L28
  */
 export interface IConnectionRequestViewModel {
-    id: number;
-    placementGroupId?: number | null;
-    placementGroupRoleId?: number | null;
-    placementGroupMemberStatus?: GroupMemberStatus | null;
-    placementGroupRoleName?: string | null;
-    comments?: string | null;
-    personId: number;
-    personAliasId: number;
-    personEmail?: string | null;
-    personNickName?: string | null;
-    personLastName?: string | null;
-    personPhotoId?: number | null;
-    personPhones?: IPhoneViewModel[] | null;
-    campus?: CampusBag | null;
-    campusId?: number | null;
-    campusName?: string | null;
-    campusCode?: string | null;
-    connectorPhotoId?: number | null;
-    connectorPersonNickName?: string | null;
-    connectorPersonLastName?: string | null;
-    connectorPersonId?: number | null;
-    connectorPersonAliasId?: number | null;
-    statusId: number;
-    connectionOpportunityId: number;
-    connectionTypeId: number;
-    statusName?: string | null;
-    statusHighlightColor?: string | null;
-    isStatusCritical: boolean;
-    activityCount: number;
-    lastActivityDate?: string | null;
-    dateOpened?: string | null;
-    groupName?: string | null;
-    lastActivityTypeName?: string | null;
-    lastActivityTypeId?: number | null;
-    order: number;
-    connectionState: ConnectionState;
-    isAssignedToYou: boolean;
-    isCritical: boolean;
-    isIdle: boolean;
-    isUnassigned: boolean;
-    followupDate?: string | null;
-    statusIconsHtml?: string | null;
-    canConnect: boolean;
-    canCurrentUserEdit: boolean;
-    requestAttributes?: string | null;
-    stateLabel?: string | null;
-    statusLabelClass?: string | null;
-    activityCountText?: string | null;
-    lastActivityText?: string | null;
-    connectorPersonFullname?: string | null;
-    personFullname?: string | null;
-    personPhotoUrl?: string | null;
-    connectorPhotoUrl?: string | null;
-    campusHtml?: string | null;
-    daysSinceOpening?: number | null;
-    daysSinceOpeningShortText?: string | null;
-    daysOrWeeksSinceOpeningText?: string | null;
-    daysSinceOpeningLongText?: string | null;
-    daysSinceLastActivity?: number | null;
-    daysSinceLastActivityShortText?: string | null;
-    daysSinceLastActivityLongText?: string | null;
-    groupNameWithRoleAndStatus?: string | null;
+    Id: number;
+    PlacementGroupId?: number | null;
+    PlacementGroupRoleId?: number | null;
+    PlacementGroupMemberStatus?: GroupMemberStatus | null;
+    PlacementGroupRoleName?: string | null;
+    Comments?: string | null;
+    PersonId: number;
+    PersonAliasId: number;
+    PersonEmail?: string | null;
+    PersonNickName?: string | null;
+    PersonLastName?: string | null;
+    PersonPhotoId?: number | null;
+    PersonPhones?: IPhoneViewModel[] | null;
+    Campus?: CampusBag | null;
+    CampusId?: number | null;
+    CampusName?: string | null;
+    CampusCode?: string | null;
+    ConnectorPhotoId?: number | null;
+    ConnectorPersonNickName?: string | null;
+    ConnectorPersonLastName?: string | null;
+    ConnectorPersonId?: number | null;
+    ConnectorPersonAliasId?: number | null;
+    StatusId: number;
+    ConnectionOpportunityId: number;
+    ConnectionTypeId: number;
+    StatusName?: string | null;
+    StatusHighlightColor?: string | null;
+    IsStatusCritical: boolean;
+    ActivityCount: number;
+    LastActivityDate?: string | null;
+    DateOpened?: string | null;
+    GroupName?: string | null;
+    LastActivityTypeName?: string | null;
+    LastActivityTypeId?: number | null;
+    Order: number;
+    ConnectionState: ConnectionState;
+    IsAssignedToYou: boolean;
+    IsCritical: boolean;
+    IsIdle: boolean;
+    IsUnassigned: boolean;
+    FollowupDate?: string | null;
+    StatusIconsHtml?: string | null;
+    CanConnect: boolean;
+    CanCurrentUserEdit: boolean;
+    RequestAttributes?: string | null;
+    StateLabel?: string | null;
+    StatusLabelClass?: string | null;
+    ActivityCountText?: string | null;
+    LastActivityText?: string | null;
+    ConnectorPersonFullname?: string | null;
+    PersonFullname?: string | null;
+    PersonPhotoUrl?: string | null;
+    ConnectorPhotoUrl?: string | null;
+    CampusHtml?: string | null;
+    DaysSinceOpening?: number | null;
+    DaysSinceOpeningShortText?: string | null;
+    DaysOrWeeksSinceOpeningText?: string | null;
+    DaysSinceOpeningLongText?: string | null;
+    DaysSinceLastActivity?: number | null;
+    DaysSinceLastActivityShortText?: string | null;
+    DaysSinceLastActivityLongText?: string | null;
+    GroupNameWithRoleAndStatus?: string | null;
 }
 
 /**
@@ -129,12 +133,17 @@ export interface IConnectionRequestViewModel {
  * Representation of: https://github.com/SparkDevNetwork/Rock/blob/1e1558e2d222df7a3f7bcf36ff4e419a7e9b7a64/Rock/Model/Connection/ConnectionRequest/ConnectionRequestViewModel.cs#L607
  */
 export interface IPhoneViewModel {
-    phoneType?: string | null;
-    formattedPhoneNumber?: string | null;
-    isMessagingEnabled: boolean;
+    PhoneType?: string | null;
+    FormattedPhoneNumber?: string | null;
+    IsMessagingEnabled: boolean;
 }
 
 // #endregion v1 API Response View Models
+
+/**
+ * An injection key to provide whether request security is enabled.
+ */
+export const IsRequestSecurityEnabled: InjectionKey<Ref<boolean>> = Symbol("is-request-security-enabled");
 
 /**
  * Keys for page parameters.

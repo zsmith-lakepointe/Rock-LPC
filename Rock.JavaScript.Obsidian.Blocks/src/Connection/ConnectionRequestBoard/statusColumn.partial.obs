@@ -3,14 +3,16 @@
     <div class="board-column">
         <div class="board-heading">
             <div class="board-heading-details">
-                <span class="board-column-title">[{{ title }}]</span>
-                <span class="board-count">[3]</span>
+                <span class="board-column-title">{{ connectionStatus?.Name }}</span>
+                <span class="board-count">{{ connectionRequests.length }}</span>
             </div>
-            <div class="board-heading-pill" style="background: #ddd;"></div>
+            <div class="board-heading-pill" :style="boardHeadingPillStyle"></div>
         </div>
         <div class="board-cards">
 
-            <RequestCard v-for="n in 8" :name="`Person #${n}`"></RequestCard>
+            <RequestCard v-for="connectionRequest in connectionRequests"
+                         :key="connectionRequest.Id"
+                         :connectionRequest="connectionRequest" />
 
             <div v-if="showSentry" class="board-card-base board-column-sentry small">
                 <p class="mb-2"><strong>More requests exist</strong></p>
@@ -24,18 +26,33 @@
 <script setup lang="ts">
     import { computed, PropType } from "vue";
     import RequestCard from "./requestCard.partial.obs";
+    import { IConnectionRequestViewModel, IConnectionStatusViewModel } from "./types.partial";
 
     const props = defineProps({
-        title: {
-            type: String as PropType<string>,
-            isRequired: true
+        connectionStatus: {
+            type: Object as PropType<IConnectionStatusViewModel>,
+            required: true
         }
     });
 
     // #region Computed Values
 
+    const boardHeadingPillStyle = computed((): Record<string, string> => {
+        const style = {};
+
+        if (props.connectionStatus?.HighlightColor) {
+            style["background"] = props.connectionStatus.HighlightColor;
+        }
+
+        return style;
+    });
+
+    const connectionRequests = computed((): IConnectionRequestViewModel[] => {
+        return props.connectionStatus?.Requests ?? [];
+    });
+
     const showSentry = computed((): boolean => {
-        return true;
+        return (props.connectionStatus?.RequestCount ?? 0) > connectionRequests.value.length;
     });
 
     // #endregion

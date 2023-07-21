@@ -1076,7 +1076,8 @@ namespace Rock.Blocks.Connection
                 ConnectionOpportunity = boardData.ConnectionOpportunityBag,
                 ConnectionRequestId = boardData.ConnectionRequestId,
                 FilterOptions = boardData.FilterOptions,
-                Filters = boardData.Filters
+                Filters = boardData.Filters,
+                IsRequestSecurityEnabled = boardData.GetIsRequestSecurityEnabled( CurrentPerson )
             };
 
             if ( selectedOpportunity.ConnectionOpportunity != null )
@@ -1177,7 +1178,7 @@ namespace Rock.Blocks.Connection
 
             // This call will preload the [available] filter options, against which we can validate the provided filter selections.
             var boardData = GetConnectionRequestBoardData( rockContext, config );
-            if ( boardData.ConnectionOpportunity?.Id !=  saveFilters.ConnectionOpportunityId )
+            if ( boardData.ConnectionOpportunity?.Id != saveFilters.ConnectionOpportunityId )
             {
                 // The specified connection opportunity wasn't successfully loaded; it may not be allowed, Etc.
                 // We'll just return an empty filters object.
@@ -1385,6 +1386,19 @@ namespace Rock.Blocks.Connection
                 }
 
                 return $"{this.ConnectionOpportunity.ConnectionTypeId}-{subkey}";
+            }
+
+            /// <summary>
+            /// Gets whether security is enabled for the current connection request and person combination.
+            /// </summary>
+            /// <param name="currentPerson">The current person viewing this block.</param>
+            /// <returns>Whether security is enabled for the current connection request and person combination.</returns>
+            public bool GetIsRequestSecurityEnabled( Person currentPerson )
+            {
+                var isSecurityEnabledForType = this.ConnectionOpportunity?.ConnectionType?.EnableRequestSecurity ?? false;
+                var isPersonAuthorized = this.ConnectionOpportunity?.IsAuthorized( Authorization.ADMINISTRATE, currentPerson ) ?? false;
+
+                return isSecurityEnabledForType && isPersonAuthorized;
             }
         }
 

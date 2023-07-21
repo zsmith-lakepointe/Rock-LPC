@@ -95,7 +95,7 @@
                     </button>
                     <ul class="dropdown-menu">
                         <li>
-                            <a href="#" @click.prevent="onConnectorChanged(undefined)">All Connectors</a>
+                            <a href="#" @click.prevent="onConnectorChanged(null)">All Connectors</a>
                         </li>
                         <li v-if="currentPersonAliasId > 0">
                             <a href="#" @click.prevent="onConnectorChanged(currentPersonAliasId)">My Connections</a>
@@ -124,7 +124,7 @@
                     </button>
                     <ul class="dropdown-menu">
                         <li>
-                            <a href="#" @click.prevent="onCampusChanged(undefined)">&nbsp;</a>
+                            <a href="#" @click.prevent="onCampusChanged(null)">&nbsp;</a>
                         </li>
                         <li v-for="campus in filterOptions?.campuses ?? []">
                             <a href="#" @click.prevent="onCampusChanged(Number(campus.value))">
@@ -255,6 +255,7 @@
     const sortProperty = ref<number>(props.filters?.sortProperty ?? sortPropertyDefault);
 
     const isFiltersOpen = ref(false);
+    const filtersJSONOnOpen = ref("");
     const filtersText = ref(getFiltersText());
 
     // #endregion
@@ -423,6 +424,13 @@
     }
 
     /**
+     * Gets the current filters as a JSON string.
+     */
+    function getFiltersJSON(): string {
+        return JSON.stringify(getFilters());
+    }
+
+    /**
      * Sets the internal values using the provided filters.
      *
      * @param filters The filters value from which to set the internal values.
@@ -465,7 +473,7 @@
      *
      * @param newValue The identifier of the selected connector.
      */
-    function onConnectorChanged(newValue?: number): void {
+    function onConnectorChanged(newValue?: number | null): void {
         if (connectorPersonAliasId.value === newValue) {
             return;
         }
@@ -479,7 +487,7 @@
      *
      * @param newValue The identifier of the selected campus.
      */
-    function onCampusChanged(newValue?: number): void {
+    function onCampusChanged(newValue?: number | null): void {
         if (campusId.value === newValue) {
             return;
         }
@@ -514,7 +522,15 @@
     });
 
     watch(isFiltersOpen, () => {
-        if (!isFiltersOpen.value) {
+        if (isFiltersOpen.value) {
+            filtersJSONOnOpen.value = getFiltersJSON();
+        }
+        else {
+            if (getFiltersJSON() === filtersJSONOnOpen.value) {
+                // Filters didn't change; no need to reload.
+                return;
+            }
+
             emit("filtersChanged", getFilters());
         }
     });

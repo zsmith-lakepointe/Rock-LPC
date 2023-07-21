@@ -4,37 +4,28 @@
         <div class="board-card-content">
 
             <div ref="headerElement" class="board-card-header">
-                <!-- StatusIconsHtml (will be dynamic) -->
-                <div class="board-card-pills">
-                    <span class="board-card-pill badge-warning" data-toggle="tooltip" data-original-title="Unassigned">
-                        <span class="sr-only">Unassigned</span>
-                    </span>
-                    <span class="board-card-pill badge-danger" data-toggle="tooltip" data-original-title="Idle (no activity in 14 days)">
-                        <span class="sr-only">Idle (no activity in 14 days)</span>
-                    </span>
-                </div>
-
-                <!-- CampusHtml (will be dynamic) -->
-                <span class="badge badge-info font-weight-normal" title="[Campus Name]">[CODE]</span>
+                <span v-html="statusIconsHtml"></span>
+                <span v-if="connectionRequest.CampusHtml"
+                      v-html="connectionRequest.CampusHtml"
+                      class="campus-html-container"></span>
             </div>
 
             <div class="board-card-main">
                 <div class="flex-grow-1 mb-2">
-                    <div class="board-card-photo" style="background-image: url('/GetImage.ashx?id=102')" title="[Person Full Name]"></div>
-                    <div class="board-card-name">
-                        [{{ name }}]
+                    <div class="board-card-photo" :style="boardCardPhotoStyle" :title="`${connectionRequest?.PersonFullname} Profile Photo`"></div>
+                    <div v-if="connectionRequest?.PersonFullname" class="board-card-name">
+                        {{ connectionRequest?.PersonFullname }}
                     </div>
-                    <div class="board-card-attributes">
-                        <strong>[Attr 1]:</strong> [Value]
-                        <br>
-                        <strong>[Attr 2]:</strong> [Value]
+                    <div v-if="connectionRequest.RequestAttributes"
+                         v-html="connectionRequest.RequestAttributes"
+                         class="board-card-attributes">
                     </div>
-                    <span class="board-card-assigned">
-                        [Connector Person Full Name]
+                    <span v-if="connectionRequest.ConnectorPersonFullname" class="board-card-assigned">
+                        {{ connectionRequest.ConnectorPersonFullname }}
                     </span>
                 </div>
 
-                <!-- This div is needed to properly-position the following drop-down menu. -->
+                <!-- This outer div is needed to properly-position the following drop-down menu. -->
                 <div>
                     <div class="btn-group dropdown-right">
                         <button type="button" class="btn btn-sm text-muted bg-white dropdown-toggle pr-0" data-toggle="dropdown">
@@ -44,13 +35,13 @@
                             <li>
                                 <a>View Details</a>
                             </li>
-                            <li v-if="canConnect">
+                            <li v-if="connectionRequest.CanConnect">
                                 <a>Connect</a>
                             </li>
-                            <li v-if="showSecurityButton">
+                            <li v-if="isRequestSecurityEnabled">
                                 <a>Security</a>
                             </li>
-                            <template v-if="canEdit">
+                            <template v-if="connectionRequest.CanCurrentUserEdit">
                                 <li role="separator" class="divider"></li>
                                 <li>
                                     <a class="dropdown-item-danger">Delete</a>
@@ -62,13 +53,13 @@
             </div>
 
             <div class="board-card-meta">
-                <span title="[Activity Count] - [Days Since (long)...]">
+                <span :title="metaTitle">
                     <i class="fa fa-list"></i>
-                    [5] - [No Activity]
+                    {{ metaSummary }}
                 </span>
-                <span title="[DaysSinceOpeningLongText]">
+                <span :title="connectionRequest?.DaysSinceOpeningLongText ?? undefined">
                     <i class="fa fa-calendar"></i>
-                    [123]d
+                    {{ connectionRequest?.DaysSinceOpeningShortText }}
                 </span>
             </div>
 
@@ -77,14 +68,15 @@
 </template>
 
 <script setup lang="ts">
-    import { computed, onMounted, PropType, ref } from "vue";
+    import { computed, inject, PropType, ref, watch } from "vue";
     import { NoDragScroll as vNoDragScroll } from "@Obsidian/Directives/dragScroll";
     import { tooltip } from "@Obsidian/Utility/tooltip";
+    import { IConnectionRequestViewModel, IsRequestSecurityEnabled } from "./types.partial";
 
     const props = defineProps({
-        name: {
-            type: String as PropType<string>,
-            isRequired: true
+        connectionRequest: {
+            type: Object as PropType<IConnectionRequestViewModel>,
+            required: true
         }
     });
 
@@ -92,20 +84,32 @@
 
     const headerElement = ref<HTMLElement | null>(null);
 
+    const isRequestSecurityEnabled = inject(IsRequestSecurityEnabled, ref(false));
+
     // #endregion
 
     // #region Computed Values
 
-    const canConnect = computed((): boolean => {
-        return true;
+    const statusIconsHtml = computed((): string => {
+        return props.connectionRequest?.StatusIconsHtml || "&nbsp;";
     });
 
-    const canEdit = computed((): boolean => {
-        return true;
+    const boardCardPhotoStyle = computed((): Record<string, string> => {
+        const style = {};
+
+        if (props.connectionRequest?.PersonPhotoUrl) {
+            style["background-image"] = `url('${props.connectionRequest.PersonPhotoUrl}')`;
+        }
+
+        return style;
     });
 
-    const showSecurityButton = computed((): boolean => {
-        return true;
+    const metaTitle = computed((): string => {
+        return `${props.connectionRequest?.ActivityCountText} - ${props.connectionRequest?.DaysSinceLastActivityLongText}`;
+    });
+
+    const metaSummary = computed((): string => {
+        return `${props.connectionRequest?.ActivityCount} - ${props.connectionRequest?.DaysSinceLastActivityShortText}`;
     });
 
     // #endregion
@@ -120,11 +124,14 @@
             return;
         }
 
-        headerElement.value.querySelectorAll('span[data-toggle="tooltip"]')
+        headerElement.value
+            .querySelectorAll('span[data-toggle="tooltip"]')
             .forEach((t: Element) => tooltip(t));
     }
 
     // #endregion
 
-    onMounted(() => configureTooltips());
+    watch(headerElement, () => {
+        configureTooltips();
+    });
 </script>
