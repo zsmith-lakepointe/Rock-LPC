@@ -181,7 +181,7 @@ namespace Rock.Field.Types
                 templatesQuery = templatesQuery.Where( a => !a.ProviderEntityTypeId.HasValue );
             };
 
-            var templates = templatesQuery.OrderBy( t => t.Name ).Select( a => new
+            var templates = templatesQuery.OrderBy( t => t.Name ).Where( d => d.IsActive ).Select( a => new
             {
                 a.Guid,
                 a.Name
