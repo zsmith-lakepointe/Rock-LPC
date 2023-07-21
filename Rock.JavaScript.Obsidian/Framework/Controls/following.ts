@@ -49,7 +49,11 @@ export default defineComponent({
         }
     },
 
-    setup(props) {
+    emits: {
+        followedStateUpdated: (_value: boolean) => true
+    },
+
+    setup(props, { emit }) {
         // #region Values
 
         const http = useHttp();
@@ -138,6 +142,7 @@ export default defineComponent({
             // If we got a 200 OK response then we can toggle our internal state.
             if (response.isSuccess) {
                 isEntityFollowed.value = !isEntityFollowed.value;
+                emit("followedStateUpdated", isEntityFollowed.value);
             }
             else {
                 await alert("Unable to update followed state.");

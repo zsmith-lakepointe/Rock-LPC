@@ -369,7 +369,11 @@ namespace Rock.Blocks.Connection
 
             GetAllowedConnectionTypes( rockContext, boardData );
             GetConnectionAndCampusSelections( rockContext, boardData, config.IdOverrides );
-            GetFilterOptions( rockContext, boardData );
+
+            if ( !config.IsFilterOptionsLoadingDisabled )
+            {
+                GetFilterOptions( rockContext, boardData );
+            }
 
             if ( !config.IsPersonPreferenceFilterLoadingDisabled )
             {
@@ -1108,6 +1112,44 @@ namespace Rock.Blocks.Connection
         }
 
         /// <summary>
+        /// Tries to save the specified person preference.
+        /// </summary>
+        /// <param name="rockContext">The rock context.</param>
+        /// <param name="connectionOpportunityId">The identifier of the connection opportunity to which this preference relates.</param>
+        /// <param name="personPreferenceSubkey">The person preference subkey (most preferences within this block are connection type-specific).</param>
+        /// <param name="value">The person preference value to save.</param>
+        private void TrySavePersonPreference( RockContext rockContext, int connectionOpportunityId, string personPreferenceSubkey, string value )
+        {
+            // Get the minimum required board data to ensure this individual is allowed to save the specified person preference.
+            var config = new GetConnectionRequestBoardDataConfig
+            {
+                IsFilterOptionsLoadingDisabled = true,
+                IsPersonPreferenceFilterLoadingDisabled = true,
+                IsPersonPreferenceSavingDisabled = true,
+                IdOverrides = new Dictionary<string, int?>
+                {
+                    { PageParameterKey.CampusId, null },
+                    { PageParameterKey.ConnectionOpportunityId, connectionOpportunityId },
+                    { PageParameterKey.ConnectionRequestId, null }
+                }
+            };
+
+            var boardData = GetConnectionRequestBoardData( rockContext, config );
+            if ( boardData.ConnectionOpportunity?.Id != connectionOpportunityId )
+            {
+                // The specified connection opportunity wasn't successfully loaded; it may not be allowed, Etc.
+                return;
+            }
+
+            var personPrefKey = boardData.GetPersonPreferenceKey( personPreferenceSubkey );
+            if ( personPrefKey.IsNotNullOrWhiteSpace() )
+            {
+                this.PersonPreferences.SetValue( personPrefKey, value );
+                this.PersonPreferences.Save();
+            }
+        }
+
+        /// <summary>
         /// Saves filters to person preferences.
         /// </summary>
         /// <param name="rockContext">The rock context.</param>
@@ -1124,17 +1166,23 @@ namespace Rock.Blocks.Connection
             // Also, we'll manually save person preferences after applying the provided filters selections.
             var config = new GetConnectionRequestBoardDataConfig
             {
+                IsPersonPreferenceFilterLoadingDisabled = true,
+                IsPersonPreferenceSavingDisabled = true,
                 IdOverrides = new Dictionary<string, int?>
                 {
                     { PageParameterKey.ConnectionOpportunityId, saveFilters.ConnectionOpportunityId },
                     { PageParameterKey.CampusId, saveFilters.Filters.CampusId }
-                },
-                IsPersonPreferenceFilterLoadingDisabled = true,
-                IsPersonPreferenceSavingDisabled = true
+                }
             };
 
             // This call will preload the [available] filter options, against which we can validate the provided filter selections.
             var boardData = GetConnectionRequestBoardData( rockContext, config );
+            if ( boardData.ConnectionOpportunity?.Id !=  saveFilters.ConnectionOpportunityId )
+            {
+                // The specified connection opportunity wasn't successfully loaded; it may not be allowed, Etc.
+                // We'll just return an empty filters object.
+                return new ConnectionRequestBoardFiltersBag();
+            }
 
             ValidateAndApplySelectedFilters( rockContext, boardData, saveFilters.Filters );
 
@@ -1204,6 +1252,42 @@ namespace Rock.Blocks.Connection
                 var selectedOpportunity = ValidateAndSelectConnectionOpportunity( rockContext, connectionOpportunityId );
 
                 return ActionOk( selectedOpportunity );
+            }
+        }
+
+        /// <summary>
+        /// Gets the allowed connection types and their respective connection opportunities.
+        /// </summary>
+        /// <returns>The allowed connection types and their respective connection opportunities.</returns>
+        [BlockAction]
+        public BlockActionResult GetConnectionTypes()
+        {
+            using ( var rockContext = new RockContext() )
+            {
+                var boardData = new ConnectionRequestBoardData();
+
+                GetAllowedConnectionTypes( rockContext, boardData );
+
+                return ActionOk( boardData.AllowedConnectionTypeBags );
+            }
+        }
+
+        /// <summary>
+        /// Saves the provided view mode to person preferences.
+        /// </summary>
+        /// <param name="saveViewMode">The view mode preference to save.</param>
+        /// <returns>200-OK response with no content.</returns>
+        [BlockAction]
+        public BlockActionResult SaveViewMode( ConnectionRequestBoardSaveViewModeBag saveViewMode )
+        {
+            using ( var rockContext = new RockContext() )
+            {
+                if ( saveViewMode != null )
+                {
+                    TrySavePersonPreference( rockContext, saveViewMode.ConnectionOpportunityId, PersonPreferenceKey.ViewMode, saveViewMode.IsCardViewMode.ToString() );
+                }
+
+                return ActionOk();
             }
         }
 
@@ -1310,9 +1394,9 @@ namespace Rock.Blocks.Connection
         private class GetConnectionRequestBoardDataConfig
         {
             /// <summary>
-            /// Gets or sets optional entity identifiers to override page parameters and person preferences.
+            /// Gets or sets whether to disable the loading of filter options.
             /// </summary>
-            public Dictionary<string, int?> IdOverrides { get; set; }
+            public bool IsFilterOptionsLoadingDisabled { get; set; }
 
             /// <summary>
             /// Gets or sets whether to disable the loading of current filter selections from person preferences.
@@ -1323,6 +1407,11 @@ namespace Rock.Blocks.Connection
             /// Gets or sets whether to disable the saving of any person preferences changes, as a final step of loading connection request board data.
             /// </summary>
             public bool IsPersonPreferenceSavingDisabled { get; set; }
+
+            /// <summary>
+            /// Gets or sets optional entity identifiers to override page parameters and person preferences.
+            /// </summary>
+            public Dictionary<string, int?> IdOverrides { get; set; }
         }
 
         #endregion

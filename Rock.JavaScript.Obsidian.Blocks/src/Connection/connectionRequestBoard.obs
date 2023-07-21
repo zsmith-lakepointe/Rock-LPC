@@ -13,11 +13,14 @@
 
         <template #headerActions>
             <span class="action">
-                <i class="fa fa-star-o"></i>
+                <Following :entityTypeGuid="EntityType.ConnectionOpportunity"
+                           :entityKey="connectionOpportunityId?.toString()"
+                           @followedStateUpdated="onFollowedStateUpdated" />
             </span>
 
-            <span class="action">
-                <i class="fa fa-list"></i>
+            <span :class="viewModeActionCssClass"
+                  @click="onViewModeChanged()">
+                <i :class="viewModeCssClass"></i>
             </span>
 
             <span class="action">
@@ -46,9 +49,18 @@
                 {{ blockActionErrorMessage }}
             </NotificationBox>
 
+            <NotificationBox v-if="loadConnectionStatusesWarningMessage" :alertType="AlertType.Warning">
+                {{ loadConnectionStatusesWarningMessage }}
+            </NotificationBox>
+
         </div>
 
-        <CardView />
+        <CardView v-if="isCardViewMode"
+                  :connectionStatuses="connectionStatuses"
+                  :disabled="isBoardDisabled" />
+
+        <GridView v-else :connectionRequests="connectionRequests"
+                  :disabled="isBoardDisabled" />
 
     </Panel>
 </template>
@@ -58,22 +70,29 @@
     import CardView from "./ConnectionRequestBoard/cardView.partial.obs";
     import GridView from "./ConnectionRequestBoard/gridView.partial.obs";
     import Toolbar from "./ConnectionRequestBoard/toolbar.partial.obs";
-    import { PageParameterKey } from "./ConnectionRequestBoard/types.partial";
+    import { IConnectionRequestViewModel, IConnectionStatusViewModel, IConnectionStatusViewModelsRequest, PageParameterKey } from "./ConnectionRequestBoard/types.partial";
+    import Following from "@Obsidian/Controls/following";
     import NotificationBox from "@Obsidian/Controls/notificationBox.obs";
     import Panel from "@Obsidian/Controls/panel.obs";
     import { AlertType } from "@Obsidian/Enums/Controls/alertType";
+    import { EntityType } from "@Obsidian/SystemGuids/entityType";
     import { PanelAction } from "@Obsidian/Types/Controls/panelAction";
-    import { onConfigurationValuesChanged, useConfigurationValues, useInvokeBlockAction, useReloadBlock } from "@Obsidian/Utility/block";
+    import { getSecurityGrant, onConfigurationValuesChanged, provideSecurityGrant, useConfigurationValues, useInvokeBlockAction, useReloadBlock } from "@Obsidian/Utility/block";
+    import { useHttp } from "@Obsidian/Utility/http";
     import { ConnectionRequestBoardConnectionOpportunityBag } from "@Obsidian/ViewModels/Blocks/Connection/ConnectionRequestBoard/connectionRequestBoardConnectionOpportunityBag";
     import { ConnectionRequestBoardConnectionTypeBag } from "@Obsidian/ViewModels/Blocks/Connection/ConnectionRequestBoard/connectionRequestBoardConnectionTypeBag";
     import { ConnectionRequestBoardFilterOptionsBag } from "@Obsidian/ViewModels/Blocks/Connection/ConnectionRequestBoard/connectionRequestBoardFilterOptionsBag";
     import { ConnectionRequestBoardFiltersBag } from "@Obsidian/ViewModels/Blocks/Connection/ConnectionRequestBoard/connectionRequestBoardFiltersBag";
     import { ConnectionRequestBoardInitializationBox } from "@Obsidian/ViewModels/Blocks/Connection/ConnectionRequestBoard/connectionRequestBoardInitializationBox";
     import { ConnectionRequestBoardSaveFiltersBag } from "@Obsidian/ViewModels/Blocks/Connection/ConnectionRequestBoard/connectionRequestBoardSaveFiltersBag";
+    import { ConnectionRequestBoardSaveViewModeBag } from "@Obsidian/ViewModels/Blocks/Connection/ConnectionRequestBoard/connectionRequestBoardSaveViewModeBag";
     import { ConnectionRequestBoardSelectedOpportunityBag } from "@Obsidian/ViewModels/Blocks/Connection/ConnectionRequestBoard/connectionRequestBoardSelectedOpportunityBag";
 
     const config = useConfigurationValues<ConnectionRequestBoardInitializationBox>();
+    const http = useHttp();
     const invokeBlockAction = useInvokeBlockAction();
+
+    const securityGrant = getSecurityGrant(config.securityGrantToken);
     const reloadBlock = useReloadBlock();
 
     const secondaryActions: PanelAction[] = [
@@ -85,16 +104,25 @@
         }
     ];
 
+    const defaultDelimiter = "|";
+
     // #region Values
 
     const connectionTypes = ref<ConnectionRequestBoardConnectionTypeBag[] | null | undefined>(config.connectionTypes);
     const selectedOpportunity = ref<ConnectionRequestBoardSelectedOpportunityBag | null | undefined>(config.selectedOpportunity);
+    const isCardViewMode = ref(config.selectedOpportunity?.isCardViewMode ?? true);
     const filters = ref<ConnectionRequestBoardFiltersBag | null | undefined>(config.selectedOpportunity?.filters);
     const currentPersonAliasId = ref<number>(config.currentPersonAliasId);
+    const maxRequestsPerStatus = ref<number>(config.maxCardsPerColumn);
 
     const blockActionErrorMessage = ref("");
     const isSelectingOpportunity = ref(false);
+    const isSavingViewMode = ref(false);
     const isSavingFilters = ref(false);
+
+    const connectionStatuses = ref<IConnectionStatusViewModel[]>([]);
+    const isLoadingConnectionStatuses = ref(false);
+    const loadConnectionStatusesWarningMessage = ref("");
 
     // #endregion
 
@@ -130,6 +158,14 @@
         return connectionOpportunity.value?.publicName ?? "";
     });
 
+    const viewModeActionCssClass = computed((): string => {
+        return `action${isBoardDisabled.value ? "" : " clickable"}`;
+    });
+
+    const viewModeCssClass = computed((): string => {
+        return isCardViewMode.value ? "fa fa-list" : "fa fa-th-large";
+    });
+
     const filterOptions = computed((): ConnectionRequestBoardFilterOptionsBag | null | undefined => {
         return selectedOpportunity.value?.filterOptions;
     });
@@ -140,13 +176,30 @@
 
     const showPanelBodyAlert = computed((): boolean => {
         return !connectionOpportunity.value
-            || !!blockActionErrorMessage.value;
+            || !!blockActionErrorMessage.value
+            || !!loadConnectionStatusesWarningMessage.value;
+    });
+
+    const connectionRequests = computed((): IConnectionRequestViewModel[] => {
+        const requests: IConnectionRequestViewModel[] = [];
+
+        connectionStatuses.value
+            .filter((status: IConnectionStatusViewModel) => status?.requests?.length)
+            .forEach((status: IConnectionStatusViewModel) => {
+                status.requests?.forEach((request: IConnectionRequestViewModel) => requests.push(request));
+            });
+
+        // TODO (Jason): Need to sort the combined array.
+
+        return requests;
     });
 
     const isBoardDisabled = computed((): boolean => {
         return !connectionOpportunity.value
             || isSelectingOpportunity.value
-            || isSavingFilters.value;
+            || isSavingViewMode.value
+            || isSavingFilters.value
+            || isLoadingConnectionStatuses.value;
     });
 
     // #endregion
@@ -192,6 +245,48 @@
         }
     }
 
+    /**
+     * Gets the connection statuses and their respective connection requests for the board.
+     */
+    async function getConnectionStatuses(): Promise<void> {
+        if (isBoardDisabled.value) {
+            return;
+        }
+
+        isLoadingConnectionStatuses.value = true;
+        loadConnectionStatusesWarningMessage.value = "";
+
+        connectionStatuses.value = [];
+
+        // Note that we're assiging this value AFTER clearing out any previously-loaded connection statuses and requests
+        // to prevent a jarring experience as the block transitions from one view mode to the other.
+        isCardViewMode.value = selectedOpportunity.value?.isCardViewMode ?? true;
+
+        const params: Partial<IConnectionStatusViewModelsRequest> = {
+            campusId: filters.value?.campusId,
+            connectorPersonAliasId: filters.value?.connectorPersonAliasId,
+            requesterPersonAliasId: filters.value?.requesterPersonAliasId,
+            minDate: filters.value?.minDate,
+            maxDate: filters.value?.maxDate,
+            delimitedStatusIds: filters.value?.connectionStatuses?.join(defaultDelimiter),
+            delimitedConnectionStates: filters.value?.connectionStates?.join(defaultDelimiter),
+            delimitedLastActivityTypeIds: filters.value?.connectionActivityTypes?.join(defaultDelimiter),
+            sortProperty: filters.value?.sortProperty,
+            maxRequestsPerStatus: isCardViewMode.value ? maxRequestsPerStatus.value : null,
+            pastDueOnly: filters.value?.pastDueOnly
+        };
+
+        const result = await http.get<IConnectionStatusViewModel[]>(`/api/ConnectionRequests/ConnectionBoardStatusViewModels/${connectionOpportunityId.value}`, params);
+        isLoadingConnectionStatuses.value = false;
+
+        if (!result.isSuccess) {
+            loadConnectionStatusesWarningMessage.value = result.errorMessage || "Unknown error while trying to load connection statuses and requests.";
+            return;
+        }
+
+        connectionStatuses.value = result.data ?? [];
+    }
+
     // #endregion
 
     // #region Event Handlers
@@ -202,6 +297,10 @@
      * @param connectionOpportunityId The identifier of the selected connection opportunity.
      */
     async function onOpportunityChanged(connectionOpportunityId: number): Promise<void> {
+        if (isBoardDisabled.value) {
+            return;
+        }
+
         isSelectingOpportunity.value = true;
         blockActionErrorMessage.value = "";
 
@@ -215,6 +314,59 @@
 
         selectedOpportunity.value = result.data;
         filters.value = result.data?.filters;
+
+        getConnectionStatuses();
+    }
+
+    /**
+     * Handles the `followedStatedUpdated` event of the Following component.
+     *
+     * @param _isFollowed Whether the entity is currently followed.
+     */
+    async function onFollowedStateUpdated(_isFollowed: boolean): Promise<void> {
+        // Get an updated list of connection types and opportunities to reflect the latest followed/unfollowed opportunity.
+        var result = await invokeBlockAction<ConnectionRequestBoardConnectionTypeBag[]>("GetConnectionTypes");
+        if (!result.isSuccess) {
+            return;
+        }
+
+        connectionTypes.value = result.data;
+    }
+
+    /**
+     * Handles the `click` event of the view mode toggle action.
+     */
+    async function onViewModeChanged(): Promise<void> {
+        if (isBoardDisabled.value) {
+            return;
+        }
+
+        isSavingViewMode.value = true;
+        blockActionErrorMessage.value = "";
+
+        const newValue = !isCardViewMode.value;
+        const saveViewMode: ConnectionRequestBoardSaveViewModeBag = {
+            connectionOpportunityId: connectionOpportunityId.value ?? 0,
+            isCardViewMode: newValue
+        };
+
+        const result = await invokeBlockAction("SaveViewMode", { saveViewMode });
+        isSavingViewMode.value = false;
+
+        if (!result.isSuccess) {
+            blockActionErrorMessage.value = result.errorMessage || "Unknown error while trying to save board view mode.";
+            return;
+        }
+
+        // Note that we're not actually displaying the new view mode just yet; this will be done in the `getConnectionStatuses()`
+        // method call below, to prevent a jarring experience as the block transitions from one view mode to the other.
+        if (selectedOpportunity.value) {
+            selectedOpportunity.value.isCardViewMode = newValue;
+        }
+
+        // Reload connection statuses since we limit the results based on board view mode
+        // (limited for card view mode / unlimited for grid view mode).
+        getConnectionStatuses();
     }
 
     /**
@@ -223,7 +375,7 @@
      * @param selectedFilters The selected filters.
      */
     async function onFiltersChanged(selectedFilters: ConnectionRequestBoardFiltersBag): Promise<void> {
-        if (!connectionOpportunityId.value) {
+        if (isBoardDisabled.value) {
             return;
         }
 
@@ -231,7 +383,7 @@
         blockActionErrorMessage.value = "";
 
         const saveFilters: ConnectionRequestBoardSaveFiltersBag = {
-            connectionOpportunityId: connectionOpportunityId.value,
+            connectionOpportunityId: connectionOpportunityId.value ?? 0,
             filters: selectedFilters
         };
 
@@ -244,13 +396,18 @@
         }
 
         filters.value = result.data;
+
+        getConnectionStatuses();
     }
 
     // #endregion
 
+    provideSecurityGrant(securityGrant);
     onConfigurationValuesChanged(reloadBlock);
 
     updateUrl();
+
+    getConnectionStatuses();
 
     watch([
         connectionOpportunityId,

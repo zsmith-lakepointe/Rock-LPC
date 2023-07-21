@@ -5,4 +5,13 @@
 
 <script setup lang="ts">
     import { PropType } from "vue";
+    import { IConnectionRequestViewModel } from "./types.partial";
+    import Grid from "@Obsidian/Controls/grid";
+
+    const props = defineProps({
+        connectionRequests: {
+            type: Array as PropType<IConnectionRequestViewModel[]>,
+            required: true
+        }
+    });
 </script>

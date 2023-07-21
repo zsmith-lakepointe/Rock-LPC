@@ -49,6 +49,7 @@
     </Compile>
     <Compile Include="Blocks\Cms\SiteList\SiteListOptionsBag.cs" />
     <Compile Include="Blocks\Connection\ConnectionRequestBoard\ConnectionRequestBoardSaveFiltersBag.cs" />
+    <Compile Include="Blocks\Connection\ConnectionRequestBoard\ConnectionRequestBoardSaveViewModeBag.cs" />
     <Compile Include="Blocks\Core\ScheduleDetail\ScheduleExclusionBag.cs" />
     <Compile Include="Blocks\Core\SuggestionDetail\SuggestionDetailBag.cs" />
     <Compile Include="Blocks\Core\SuggestionDetail\SuggestionDetailBox.cs" />

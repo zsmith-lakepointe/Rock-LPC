@@ -10,7 +10,16 @@
 </template>
 
 <script setup lang="ts">
+    import { PropType } from "vue";
     import StatusColumn from "./statusColumn.partial.obs";
+    import { IConnectionStatusViewModel } from "./types.partial";
     import { DragScroll as vDragScroll } from "@Obsidian/Directives/dragScroll";
     import { newGuid } from "@Obsidian/Utility/guid";
+
+    const props = defineProps({
+        connectionStatuses: {
+            type: Array as PropType<IConnectionStatusViewModel[]>,
+            required: true
+        }
+    });
 </script>
