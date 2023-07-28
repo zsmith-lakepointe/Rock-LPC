@@ -1140,11 +1140,16 @@ function onTaskCompleted( resultData )
                     .Select( p => new IndividualRecipientListInfo
                     {
                         Id = p.Id,
+                        NickName = p.NickName,
+                        LastName = p.LastName,
                         FullName = ( p.NickName + " " + p.LastName ).Trim(),
                         Email = p.Email,
                         EmailNote = p.EmailNote,
                         IsEmailActive = p.IsEmailActive,
-                        SmsPhoneNumber = p.PhoneNumbers.Select( pn => pn.NumberFormatted ).FirstOrDefault(),
+                        SmsPhoneNumber = p.PhoneNumbers
+                            .Where( a => a.IsMessagingEnabled )
+                            .Select( pn => pn.NumberFormatted )
+                            .FirstOrDefault(),
                         IsDeceased = p.IsDeceased,
                         EmailPreference = p.EmailPreference
                     } );
@@ -1155,7 +1160,7 @@ function onTaskCompleted( resultData )
                 }
                 else
                 {
-                    qryPersons = qryPersons.OrderBy( a => a.FullName );
+                    qryPersons = qryPersons.OrderBy( a => a.LastName ).ThenBy( r => r.NickName );
                 }
 
                 // Bind the list items to the grid.
@@ -3493,6 +3498,8 @@ function onTaskCompleted( resultData )
         private class IndividualRecipientListInfo
         {
             public int Id { get; set; }
+            public string NickName { get; set; }
+            public string LastName { get; set; }
             public string FullName { get; set; }
             public string Email { get; set; }
             public string EmailNote { get; set; }

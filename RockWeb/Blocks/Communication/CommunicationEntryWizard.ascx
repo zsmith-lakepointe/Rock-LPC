@@ -140,7 +140,7 @@
                             <Rock:NotificationBox ID="nbListWarning" runat="server" NotificationBoxType="Info" />
                             <Rock:Grid ID="gRecipientList" runat="server" OnRowDataBound="gRecipientList_RowDataBound">
                                 <Columns>
-                                    <asp:BoundField DataField="NickName" HeaderText="First Name" SortExpression="NickName"  />
+                                    <asp:BoundField DataField="NickName" HeaderText="First Name" SortExpression="NickName" />
                                     <asp:BoundField DataField="LastName" HeaderText="Last Name" SortExpression="LastName" />
                                     <Rock:RockLiteralField ID="lRecipientListAlert" HeaderText="Notes" />
                                     <Rock:RockLiteralField ID="lRecipientListAlertEmail" HeaderText="Email" />
