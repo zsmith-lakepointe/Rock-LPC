@@ -23,11 +23,11 @@
 
 import { ConnectionRequestBoardFiltersBag } from "@Obsidian/ViewModels/Blocks/Connection/ConnectionRequestBoard/connectionRequestBoardFiltersBag";
 
-/** A bag that contains information to save filters for the connection request board. */
-export type ConnectionRequestBoardSaveFiltersBag = {
+/** A bag that contains information about the selected filters for the connection request board. */
+export type ConnectionRequestBoardSelectedFiltersBag = {
     /** Gets or sets the identifier of the connection opportunity to which these filters relate. */
     connectionOpportunityId: number;
 
-    /** Gets or sets the filters to save. */
+    /** Gets or sets the selected filters. */
     filters?: ConnectionRequestBoardFiltersBag | null;
 };

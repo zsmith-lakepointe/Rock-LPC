@@ -739,8 +739,8 @@
     <TypeScriptCompile Include="Framework\ViewModels\Blocks\Cms\PersonalLinkSectionDetail\personalLinkSectionDetailOptionsBag.d.ts" />
     <TypeScriptCompile Include="Framework\ViewModels\Blocks\Cms\SiteDetail\siteBag.d.ts" />
     <TypeScriptCompile Include="Framework\ViewModels\Blocks\Cms\SiteDetail\siteDetailOptionsBag.d.ts" />
-    <TypeScriptCompile Include="Framework\ViewModels\Blocks\Connection\ConnectionRequestBoard\connectionRequestBoardSaveFiltersBag.d.ts" />
     <TypeScriptCompile Include="Framework\ViewModels\Blocks\Connection\ConnectionRequestBoard\connectionRequestBoardSaveViewModeBag.d.ts" />
+    <TypeScriptCompile Include="Framework\ViewModels\Blocks\Connection\ConnectionRequestBoard\connectionRequestBoardSelectedFiltersBag.d.ts" />
     <TypeScriptCompile Include="Framework\ViewModels\Blocks\Core\AssetStorageProviderDetail\assetStorageProviderBag.d.ts" />
     <TypeScriptCompile Include="Framework\ViewModels\Blocks\Core\AssetStorageProviderDetail\assetStorageProviderDetailOptionsBag.d.ts" />
     <TypeScriptCompile Include="Framework\ViewModels\Blocks\Communication\SnippetDetail\snippetBag.d.ts" />

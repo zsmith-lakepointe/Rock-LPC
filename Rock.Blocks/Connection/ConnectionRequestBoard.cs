@@ -1154,11 +1154,11 @@ namespace Rock.Blocks.Connection
         /// Saves filters to person preferences.
         /// </summary>
         /// <param name="rockContext">The rock context.</param>
-        /// <param name="saveFilters">The filters to save.</param>
+        /// <param name="selectedFilters">The selected filters.</param>
         /// <returns>An object containing the validated and saved filters.</returns>
-        private ConnectionRequestBoardFiltersBag SaveFilters( RockContext rockContext, ConnectionRequestBoardSaveFiltersBag saveFilters )
+        private ConnectionRequestBoardFiltersBag SaveFilters( RockContext rockContext, ConnectionRequestBoardSelectedFiltersBag selectedFilters )
         {
-            saveFilters = saveFilters ?? new ConnectionRequestBoardSaveFiltersBag
+            selectedFilters = selectedFilters ?? new ConnectionRequestBoardSelectedFiltersBag
             {
                 Filters = new ConnectionRequestBoardFiltersBag()
             };
@@ -1171,21 +1171,21 @@ namespace Rock.Blocks.Connection
                 IsPersonPreferenceSavingDisabled = true,
                 IdOverrides = new Dictionary<string, int?>
                 {
-                    { PageParameterKey.ConnectionOpportunityId, saveFilters.ConnectionOpportunityId },
-                    { PageParameterKey.CampusId, saveFilters.Filters.CampusId }
+                    { PageParameterKey.ConnectionOpportunityId, selectedFilters.ConnectionOpportunityId },
+                    { PageParameterKey.CampusId, selectedFilters.Filters.CampusId }
                 }
             };
 
             // This call will preload the [available] filter options, against which we can validate the provided filter selections.
             var boardData = GetConnectionRequestBoardData( rockContext, config );
-            if ( boardData.ConnectionOpportunity?.Id != saveFilters.ConnectionOpportunityId )
+            if ( boardData.ConnectionOpportunity?.Id != selectedFilters.ConnectionOpportunityId )
             {
                 // The specified connection opportunity wasn't successfully loaded; it may not be allowed, Etc.
                 // We'll just return an empty filters object.
                 return new ConnectionRequestBoardFiltersBag();
             }
 
-            ValidateAndApplySelectedFilters( rockContext, boardData, saveFilters.Filters );
+            ValidateAndApplySelectedFilters( rockContext, boardData, selectedFilters.Filters );
 
             this.PersonPreferences.Save();
 
@@ -1295,14 +1295,14 @@ namespace Rock.Blocks.Connection
         /// <summary>
         /// Saves the provided filters to person preferences.
         /// </summary>
-        /// <param name="saveFilters">The filters to save.</param>
+        /// <param name="selectedFilters">The selected filters.</param>
         /// <returns>An object containing the validated and saved filters.</returns>
         [BlockAction]
-        public BlockActionResult SaveFilters( ConnectionRequestBoardSaveFiltersBag saveFilters )
+        public BlockActionResult SaveFilters( ConnectionRequestBoardSelectedFiltersBag selectedFilters )
         {
             using ( var rockContext = new RockContext() )
             {
-                var savedFilters = SaveFilters( rockContext, saveFilters );
+                var savedFilters = SaveFilters( rockContext, selectedFilters );
 
                 return ActionOk( savedFilters );
             }

@@ -18,9 +18,9 @@
 namespace Rock.ViewModels.Blocks.Connection.ConnectionRequestBoard
 {
     /// <summary>
-    /// A bag that contains information to save filters for the connection request board.
+    /// A bag that contains information about the selected filters for the connection request board.
     /// </summary>
-    public class ConnectionRequestBoardSaveFiltersBag
+    public class ConnectionRequestBoardSelectedFiltersBag
     {
         /// <summary>
         /// Gets or sets the identifier of the connection opportunity to which these filters relate.
@@ -28,7 +28,7 @@ namespace Rock.ViewModels.Blocks.Connection.ConnectionRequestBoard
         public int ConnectionOpportunityId { get; set; }
 
         /// <summary>
-        /// Gets or sets the filters to save.
+        /// Gets or sets the selected filters.
         /// </summary>
         public ConnectionRequestBoardFiltersBag Filters { get; set; }
     }

@@ -39,7 +39,7 @@ export type GridDefinitionBag = {
     actionUrls?: Record<string, string> | null;
 
     /**
-     * Gets or sets the attribute fields that hav ebeen defined on the
+     * Gets or sets the attribute fields that hav been defined on the
      * grid. Each attribute field has a corresponding entry in the row
      * data object.
      */

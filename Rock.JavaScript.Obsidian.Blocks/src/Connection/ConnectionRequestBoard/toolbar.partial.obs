@@ -236,7 +236,7 @@
 
     const emit = defineEmits<{
         (e: "opportunityChanged", opportunityId: number): void,
-        (e: "filtersChanged", filters: ConnectionRequestBoardFiltersBag): void
+        (e: "filtersChanged", currentFilters: ConnectionRequestBoardFiltersBag): void
     }>();
 
     const sortPropertyDefault = 8; // This is the default value of "Order".
@@ -404,7 +404,7 @@
     /**
      * Gets the current filters according to the controls' selected values.
      */
-    function getFilters(): ConnectionRequestBoardFiltersBag {
+    function getCurrentFilters(): ConnectionRequestBoardFiltersBag {
         var selectedDateRange: SlidingDateRange | null = dateRange.value
             ? dateRange.value as SlidingDateRange
             : null;
@@ -426,8 +426,8 @@
     /**
      * Gets the current filters as a JSON string.
      */
-    function getFiltersJSON(): string {
-        return JSON.stringify(getFilters());
+    function getCurrentFiltersJSON(): string {
+        return JSON.stringify(getCurrentFilters());
     }
 
     /**
@@ -465,7 +465,7 @@
         }
 
         sortProperty.value = newValue;
-        emit("filtersChanged", getFilters());
+        emit("filtersChanged", getCurrentFilters());
     }
 
     /**
@@ -479,7 +479,7 @@
         }
 
         connectorPersonAliasId.value = newValue;
-        emit("filtersChanged", getFilters());
+        emit("filtersChanged", getCurrentFilters());
     }
 
     /**
@@ -493,7 +493,7 @@
         }
 
         campusId.value = newValue;
-        emit("filtersChanged", getFilters());
+        emit("filtersChanged", getCurrentFilters());
     }
 
     /**
@@ -523,15 +523,15 @@
 
     watch(isFiltersOpen, () => {
         if (isFiltersOpen.value) {
-            filtersJSONOnOpen.value = getFiltersJSON();
+            filtersJSONOnOpen.value = getCurrentFiltersJSON();
         }
         else {
-            if (getFiltersJSON() === filtersJSONOnOpen.value) {
+            if (getCurrentFiltersJSON() === filtersJSONOnOpen.value) {
                 // Filters didn't change; no need to reload.
                 return;
             }
 
-            emit("filtersChanged", getFilters());
+            emit("filtersChanged", getCurrentFilters());
         }
     });
 </script>

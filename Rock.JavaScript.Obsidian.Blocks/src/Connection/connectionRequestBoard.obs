@@ -60,7 +60,7 @@
                   :connectionStatuses="connectionStatuses"
                   :disabled="isBoardDisabled" />
 
-        <GridView v-else :connectionRequests="connectionRequests"
+        <GridView v-else :connectionRequests="gridViewConnectionRequests"
                   :disabled="isBoardDisabled" />
 
     </Panel>
@@ -98,8 +98,8 @@
     import { ConnectionRequestBoardFilterOptionsBag } from "@Obsidian/ViewModels/Blocks/Connection/ConnectionRequestBoard/connectionRequestBoardFilterOptionsBag";
     import { ConnectionRequestBoardFiltersBag } from "@Obsidian/ViewModels/Blocks/Connection/ConnectionRequestBoard/connectionRequestBoardFiltersBag";
     import { ConnectionRequestBoardInitializationBox } from "@Obsidian/ViewModels/Blocks/Connection/ConnectionRequestBoard/connectionRequestBoardInitializationBox";
-    import { ConnectionRequestBoardSaveFiltersBag } from "@Obsidian/ViewModels/Blocks/Connection/ConnectionRequestBoard/connectionRequestBoardSaveFiltersBag";
     import { ConnectionRequestBoardSaveViewModeBag } from "@Obsidian/ViewModels/Blocks/Connection/ConnectionRequestBoard/connectionRequestBoardSaveViewModeBag";
+    import { ConnectionRequestBoardSelectedFiltersBag } from "@Obsidian/ViewModels/Blocks/Connection/ConnectionRequestBoard/connectionRequestBoardSelectedFiltersBag";
     import { ConnectionRequestBoardSelectedOpportunityBag } from "@Obsidian/ViewModels/Blocks/Connection/ConnectionRequestBoard/connectionRequestBoardSelectedOpportunityBag";
 
     const config = useConfigurationValues<ConnectionRequestBoardInitializationBox>();
@@ -138,6 +138,9 @@
     const connectionStatuses = ref<IConnectionStatusViewModel[]>([]);
     const isLoadingConnectionStatuses = ref(false);
     const loadConnectionStatusesWarningMessage = ref("");
+
+    const gridViewConnectionRequests = ref<IConnectionRequestViewModel[]>([]);
+    const isLoadingGridViewConnectionRequests = ref(false);
 
     // #endregion
 
@@ -199,26 +202,13 @@
             || !!loadConnectionStatusesWarningMessage.value;
     });
 
-    const connectionRequests = computed((): IConnectionRequestViewModel[] => {
-        const requests: IConnectionRequestViewModel[] = [];
-
-        connectionStatuses.value
-            .filter((status: IConnectionStatusViewModel) => status?.Requests?.length)
-            .forEach((status: IConnectionStatusViewModel) => {
-                status.Requests?.forEach((request: IConnectionRequestViewModel) => requests.push(request));
-            });
-
-        // TODO (Jason): Need to sort the combined array.
-
-        return requests;
-    });
-
     const isBoardDisabled = computed((): boolean => {
         return !connectionOpportunity.value
             || isSelectingOpportunity.value
             || isSavingViewMode.value
             || isSavingFilters.value
-            || isLoadingConnectionStatuses.value;
+            || isLoadingConnectionStatuses.value
+            || isLoadingGridViewConnectionRequests.value;
     });
 
     // #endregion
@@ -313,6 +303,20 @@
         connectionStatuses.value = result.data ?? [];
     }
 
+    /**
+     * Gets the grid view connection requests for the board.
+     */
+    async function getGridViewConnectionRequests(): Promise<void> {
+        if (isBoardDisabled.value) {
+            return;
+        }
+
+        isLoadingGridViewConnectionRequests.value = true;
+        blockActionErrorMessage.value = "";
+
+
+    }
+
     // #endregion
 
     // #region Event Handlers
@@ -395,9 +399,9 @@
     /**
      * Handles the `filtersChanged` event of the Toolbar component.
      *
-     * @param selectedFilters The selected filters.
+     * @param currentFilters The current filters.
      */
-    async function onFiltersChanged(selectedFilters: ConnectionRequestBoardFiltersBag): Promise<void> {
+    async function onFiltersChanged(currentFilters: ConnectionRequestBoardFiltersBag): Promise<void> {
         if (isBoardDisabled.value) {
             return;
         }
@@ -405,12 +409,12 @@
         isSavingFilters.value = true;
         blockActionErrorMessage.value = "";
 
-        const saveFilters: ConnectionRequestBoardSaveFiltersBag = {
+        const selectedFilters: ConnectionRequestBoardSelectedFiltersBag = {
             connectionOpportunityId: connectionOpportunityId.value ?? 0,
-            filters: selectedFilters
+            filters: currentFilters
         };
 
-        const result = await invokeBlockAction<ConnectionRequestBoardFiltersBag>("SaveFilters", { saveFilters });
+        const result = await invokeBlockAction<ConnectionRequestBoardFiltersBag>("SaveFilters", { selectedFilters });
         isSavingFilters.value = false;
 
         if (!result.isSuccess) {
