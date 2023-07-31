@@ -368,6 +368,7 @@
     <TypeScriptCompile Include="src\Cms\SiteDetail\editPanel.partial.ts" />
     <TypeScriptCompile Include="src\Cms\SiteDetail\types.partial.ts" />
     <TypeScriptCompile Include="src\Cms\SiteDetail\viewPanel.partial.ts" />
+    <TypeScriptCompile Include="src\Connection\ConnectionRequestBoard\types.partial.ts" />
     <TypeScriptCompile Include="src\Core\assetStorageProviderDetail.ts" />
     <TypeScriptCompile Include="src\Core\AssetStorageProviderDetail\editPanel.partial.ts" />
     <TypeScriptCompile Include="src\Core\AssetStorageProviderDetail\types.partial.ts" />

@@ -39,7 +39,7 @@ export type GridDefinitionBag = {
     actionUrls?: Record<string, string> | null;
 
     /**
-     * Gets or sets the attribute fields that hav been defined on the
+     * Gets or sets the attribute fields that have been defined on the
      * grid. Each attribute field has a corresponding entry in the row
      * data object.
      */
@@ -56,14 +56,14 @@ export type GridDefinitionBag = {
 
     /**
      * Gets or sets a value indicating whether the launch workflow action
-     * should be included. This is additive, if the developer has explicitely
+     * should be included. This is additive, if the developer has explicitly
      * turned off launch workflows then they will not be enabled by this.
      */
     enableLaunchWorkflow: boolean;
 
     /**
      * Gets or sets a value indicating whether the sticky header should
-     * be enabled. This is additive, if the developer has explicitely turned
+     * be enabled. This is additive, if the developer has explicitly turned
      * off sticky headers then they will not be enabled by this.
      */
     enableStickyHeader: boolean;

@@ -60,7 +60,8 @@
                   :connectionStatuses="connectionStatuses"
                   :disabled="isBoardDisabled" />
 
-        <GridView v-else :connectionRequests="gridViewConnectionRequests"
+        <GridView v-else
+                  :gridBag="gridBag"
                   :disabled="isBoardDisabled" />
 
     </Panel>
@@ -72,7 +73,6 @@
     import GridView from "./ConnectionRequestBoard/gridView.partial.obs";
     import Toolbar from "./ConnectionRequestBoard/toolbar.partial.obs";
     import {
-        IConnectionRequestViewModel,
         IConnectionStatusViewModel,
         IConnectionStatusViewModelsRequest,
         IsRequestSecurityEnabled,
@@ -97,6 +97,7 @@
     import { ConnectionRequestBoardConnectionTypeBag } from "@Obsidian/ViewModels/Blocks/Connection/ConnectionRequestBoard/connectionRequestBoardConnectionTypeBag";
     import { ConnectionRequestBoardFilterOptionsBag } from "@Obsidian/ViewModels/Blocks/Connection/ConnectionRequestBoard/connectionRequestBoardFilterOptionsBag";
     import { ConnectionRequestBoardFiltersBag } from "@Obsidian/ViewModels/Blocks/Connection/ConnectionRequestBoard/connectionRequestBoardFiltersBag";
+    import { ConnectionRequestBoardGridBag } from "@Obsidian/ViewModels/Blocks/Connection/ConnectionRequestBoard/connectionRequestBoardGridBag";
     import { ConnectionRequestBoardInitializationBox } from "@Obsidian/ViewModels/Blocks/Connection/ConnectionRequestBoard/connectionRequestBoardInitializationBox";
     import { ConnectionRequestBoardSaveViewModeBag } from "@Obsidian/ViewModels/Blocks/Connection/ConnectionRequestBoard/connectionRequestBoardSaveViewModeBag";
     import { ConnectionRequestBoardSelectedFiltersBag } from "@Obsidian/ViewModels/Blocks/Connection/ConnectionRequestBoard/connectionRequestBoardSelectedFiltersBag";
@@ -139,8 +140,8 @@
     const isLoadingConnectionStatuses = ref(false);
     const loadConnectionStatusesWarningMessage = ref("");
 
-    const gridViewConnectionRequests = ref<IConnectionRequestViewModel[]>([]);
-    const isLoadingGridViewConnectionRequests = ref(false);
+    const gridBag = ref<ConnectionRequestBoardGridBag | null | undefined>();
+    const isLoadingGridBag = ref(false);
 
     // #endregion
 
@@ -208,7 +209,7 @@
             || isSavingViewMode.value
             || isSavingFilters.value
             || isLoadingConnectionStatuses.value
-            || isLoadingGridViewConnectionRequests.value;
+            || isLoadingGridBag.value;
     });
 
     // #endregion
@@ -255,7 +256,7 @@
     }
 
     /**
-     * Gets the connection statuses and their respective connection requests for the board.
+     * Gets the connection statuses and their respective connection requests for diplaying the board in card view mode.
      */
     async function getConnectionStatuses(): Promise<void> {
         if (isBoardDisabled.value) {
@@ -304,17 +305,50 @@
     }
 
     /**
-     * Gets the grid view connection requests for the board.
+     * Gets the grid data and definition for displaying the board in grid view mode.
+     *
+     * @param currentFilters Optional filters representing the latest, "current" selected filters.
      */
-    async function getGridViewConnectionRequests(): Promise<void> {
+    async function getGridData(currentFilters?: ConnectionRequestBoardFiltersBag): Promise<void> {
         if (isBoardDisabled.value) {
             return;
         }
 
-        isLoadingGridViewConnectionRequests.value = true;
+        isLoadingGridBag.value = true;
         blockActionErrorMessage.value = "";
 
+        const selectedFilters: ConnectionRequestBoardSelectedFiltersBag = {
+            connectionOpportunityId: connectionOpportunityId.value ?? 0,
+            filters: currentFilters ?? filters.value
+        };
 
+        const result = await invokeBlockAction<ConnectionRequestBoardGridBag>("SaveFiltersAndGetGridData", { selectedFilters });
+        isLoadingGridBag.value = false;
+
+        if (!result.isSuccess) {
+            blockActionErrorMessage.value = result.errorMessage || "Unknown error while trying to load grid data.";
+            return;
+        }
+
+        gridBag.value = result.data;
+        filters.value = result.data?.filters;
+    }
+
+    /**
+     * Gets the data needed for the selected view mode: card or grid.
+     */
+    async function getDataForSelectedViewMode(): Promise<void> {
+        if (isCardViewMode.value) {
+            if (gridBag.value) {
+                gridBag.value.data = null;
+            }
+
+            await getConnectionStatuses();
+        }
+        else {
+            connectionStatuses.value = [];
+            await getGridData();
+        }
     }
 
     // #endregion
@@ -346,7 +380,7 @@
         filters.value = result.data?.filters;
         isCardViewMode.value = result.data?.isCardViewMode ?? true;
 
-        getConnectionStatuses();
+        await getDataForSelectedViewMode();
     }
 
     /**
@@ -391,9 +425,7 @@
 
         isCardViewMode.value = newValue;
 
-        // Reload connection statuses since we limit the results based on board view mode
-        // (limited for card view mode / unlimited for grid view mode).
-        getConnectionStatuses();
+        await getDataForSelectedViewMode();
     }
 
     /**
@@ -406,25 +438,31 @@
             return;
         }
 
-        isSavingFilters.value = true;
         blockActionErrorMessage.value = "";
 
-        const selectedFilters: ConnectionRequestBoardSelectedFiltersBag = {
-            connectionOpportunityId: connectionOpportunityId.value ?? 0,
-            filters: currentFilters
-        };
+        if (isCardViewMode.value) {
+            isSavingFilters.value = true;
 
-        const result = await invokeBlockAction<ConnectionRequestBoardFiltersBag>("SaveFilters", { selectedFilters });
-        isSavingFilters.value = false;
+            const selectedFilters: ConnectionRequestBoardSelectedFiltersBag = {
+                connectionOpportunityId: connectionOpportunityId.value ?? 0,
+                filters: currentFilters
+            };
 
-        if (!result.isSuccess) {
-            blockActionErrorMessage.value = result.errorMessage || "Unkown error while trying to save filters.";
-            return;
+            const result = await invokeBlockAction<ConnectionRequestBoardFiltersBag>("SaveFilters", { selectedFilters });
+            isSavingFilters.value = false;
+
+            if (!result.isSuccess) {
+                blockActionErrorMessage.value = result.errorMessage || "Unkown error while trying to save filters.";
+                return;
+            }
+
+            filters.value = result.data;
+
+            await getConnectionStatuses();
         }
-
-        filters.value = result.data;
-
-        getConnectionStatuses();
+        else {
+            await getGridData(currentFilters);
+        }
     }
 
     // #endregion
@@ -434,8 +472,7 @@
     onConfigurationValuesChanged(reloadBlock);
 
     updateUrl();
-
-    getConnectionStatuses();
+    getDataForSelectedViewMode();
 
     watch([
         connectionOpportunityId,

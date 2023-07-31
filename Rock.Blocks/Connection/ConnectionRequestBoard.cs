@@ -322,7 +322,7 @@ namespace Rock.Blocks.Connection
             {
                 var box = new ConnectionRequestBoardInitializationBox();
 
-                SetBoxInitialState( box, rockContext );
+                SetBoxInitialState( rockContext, box );
 
                 return box;
             }
@@ -331,9 +331,9 @@ namespace Rock.Blocks.Connection
         /// <summary>
         /// Sets the initial state of the box.
         /// </summary>
-        /// <param name="box">The box.</param>
         /// <param name="rockContext">The rock context.</param>
-        private void SetBoxInitialState( ConnectionRequestBoardInitializationBox box, RockContext rockContext )
+        /// <param name="box">The box.</param>
+        private void SetBoxInitialState( RockContext rockContext, ConnectionRequestBoardInitializationBox box )
         {
             var boardData = GetConnectionRequestBoardData( rockContext );
 
@@ -1067,7 +1067,7 @@ namespace Rock.Blocks.Connection
         /// Gets the selected connection opportunity and supporting information from the supplied <see cref="ConnectionRequestBoardData"/> instance
         /// and person preferences.
         /// </summary>
-        /// <param name="boardData"></param>
+        /// <param name="boardData">The board data.</param>
         /// <returns>The selected connection opportunity and supporting information.</returns>
         private ConnectionRequestBoardSelectedOpportunityBag GetSelectedConnectionOpportunity( ConnectionRequestBoardData boardData )
         {
@@ -1151,12 +1151,12 @@ namespace Rock.Blocks.Connection
         }
 
         /// <summary>
-        /// Saves filters to person preferences.
+        /// Validates and saves filters to person preferences.
         /// </summary>
         /// <param name="rockContext">The rock context.</param>
         /// <param name="selectedFilters">The selected filters.</param>
         /// <returns>An object containing the validated and saved filters.</returns>
-        private ConnectionRequestBoardFiltersBag SaveFilters( RockContext rockContext, ConnectionRequestBoardSelectedFiltersBag selectedFilters )
+        private ConnectionRequestBoardFiltersBag ValidateAndSaveFilters( RockContext rockContext, ConnectionRequestBoardSelectedFiltersBag selectedFilters )
         {
             selectedFilters = selectedFilters ?? new ConnectionRequestBoardSelectedFiltersBag
             {
@@ -1190,6 +1190,26 @@ namespace Rock.Blocks.Connection
             this.PersonPreferences.Save();
 
             return boardData.Filters;
+        }
+
+        /// <summary>
+        /// [Validates and] Saves filters to person preferences and gets the grid data for the connection request board to operate in grid view mode.
+        /// </summary>
+        /// <param name="rockContext">The rock context.</param>
+        /// <param name="selectedFilters">The selected filters.</param>
+        /// <returns>The grid data and definition, Etc. for the connection request board to operate in grid view mode.</returns>
+        private ConnectionRequestBoardGridBag SaveFiltersAndGetGridData( RockContext rockContext, ConnectionRequestBoardSelectedFiltersBag selectedFilters )
+        {
+            var gridBag = new ConnectionRequestBoardGridBag
+            {
+                Filters = ValidateAndSaveFilters( rockContext, selectedFilters )
+            };
+
+            var connectionRequestService = new ConnectionRequestService( rockContext );
+
+            // TODO (Jason): build grid data and definition objects.
+
+            return gridBag;
         }
 
         /// <summary>
@@ -1302,9 +1322,25 @@ namespace Rock.Blocks.Connection
         {
             using ( var rockContext = new RockContext() )
             {
-                var savedFilters = SaveFilters( rockContext, selectedFilters );
+                var savedFilters = ValidateAndSaveFilters( rockContext, selectedFilters );
 
                 return ActionOk( savedFilters );
+            }
+        }
+
+        /// <summary>
+        /// Saves the provided filters to person preferences and gets the data for displaying the connection request board in grid view mode.
+        /// </summary>
+        /// <param name="selectedFilters">The selected filters.</param>
+        /// <returns>An object containing the data for displaying the connection request board in grid view mode.</returns>
+        [BlockAction]
+        public BlockActionResult SaveFiltersAndGetGridData( ConnectionRequestBoardSelectedFiltersBag selectedFilters )
+        {
+            using ( var rockContext = new RockContext() )
+            {
+                var gridData = SaveFiltersAndGetGridData( rockContext, selectedFilters );
+
+                return ActionOk( gridData );
             }
         }
 
