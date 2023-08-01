@@ -180,8 +180,9 @@ namespace Rock.Field.Types
             {
                 templatesQuery = templatesQuery.Where( a => !a.ProviderEntityTypeId.HasValue );
             };
-
-            var templates = templatesQuery.OrderBy( t => t.Name ).Where( d => d.IsActive ).Select( a => new
+            //.Where( d => d.IsActive )
+            //Need to find the selected value so that the dropdown is populated correctly
+            var templates = templatesQuery.OrderBy( t => t.Name ).Select( a => new
             {
                 a.Guid,
                 a.Name

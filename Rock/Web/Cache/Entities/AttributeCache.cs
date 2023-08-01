@@ -781,6 +781,28 @@ namespace Rock.Web.Cache
             {
                 FieldType.Field.SetEditValue( attributeControl, QualifierValues, options.Value );
             }
+            
+            if ( attributeControl is RockDropDownList )
+            {
+                if ( ( ( RockDropDownList ) attributeControl ).Label.Equals( "Signature Document Template" ) )
+                {
+                    //Query Database
+                    var templatesQuery = new SignatureDocumentTemplateService( new RockContext() ).Queryable();
+                    var inactiveTemplates = templatesQuery.OrderBy( t => t.Name ).Where( d => !d.IsActive ).Select( a => new
+                    {
+                        a.Guid,
+                        a.Name
+                    } );
+
+                    foreach ( var template in inactiveTemplates )
+                    {
+                        if ( !template.Name.Equals( ( ( RockDropDownList ) attributeControl ).SelectedValue ) )
+                        {
+                            ( ( RockDropDownList ) attributeControl ).Items.Remove( template.Name );
+                        }
+                    }
+                }
+            }
 
             return attributeControl;
         }
