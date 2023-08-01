@@ -58,11 +58,15 @@
 
         <CardView v-if="isCardViewMode"
                   :connectionStatuses="connectionStatuses"
-                  :disabled="isBoardDisabled" />
+                  :disabled="isBoardDisabled"
+                  @selectConnectionRequest="onSelectConnectionRequest" />
 
         <GridView v-else
                   :gridBag="gridBag"
-                  :disabled="isBoardDisabled" />
+                  :disabled="isBoardDisabled"
+                  @selectConnectionRequest="onSelectConnectionRequest" />
+
+        <RequestModal v-model:connectionRequestId="connectionRequestId" />
 
     </Panel>
 </template>
@@ -71,6 +75,7 @@
     import { computed, provide, ref, watch } from "vue";
     import CardView from "./ConnectionRequestBoard/cardView.partial.obs";
     import GridView from "./ConnectionRequestBoard/gridView.partial.obs";
+    import RequestModal from "./ConnectionRequestBoard/requestModal.partial.obs";
     import Toolbar from "./ConnectionRequestBoard/toolbar.partial.obs";
     import {
         IConnectionStatusViewModel,
@@ -125,6 +130,7 @@
 
     const connectionTypes = ref<ConnectionRequestBoardConnectionTypeBag[] | null | undefined>(config.connectionTypes);
     const selectedOpportunity = ref<ConnectionRequestBoardSelectedOpportunityBag | null | undefined>(config.selectedOpportunity);
+    const connectionRequestId = ref<number | null | undefined>(config.selectedOpportunity?.connectionRequestId);
     const filters = ref<ConnectionRequestBoardFiltersBag | null | undefined>(config.selectedOpportunity?.filters);
     const isCardViewMode = ref(config.selectedOpportunity?.isCardViewMode ?? true);
     const maxRequestsPerStatus = ref(config.maxCardsPerColumn);
@@ -159,10 +165,6 @@
         // }
 
         return cssClass;
-    });
-
-    const connectionRequestId = computed((): number | null | undefined => {
-        return selectedOpportunity.value?.connectionRequestId;
     });
 
     const connectionOpportunity = computed((): ConnectionRequestBoardConnectionOpportunityBag | null | undefined => {
@@ -463,6 +465,15 @@
         else {
             await getGridData(currentFilters);
         }
+    }
+
+    /**
+     * Handles the `selectConnectionRequest` event of the CardView and GridView components.
+     *
+     * @param requestId The identifier for the selected connection request.
+     */
+    function onSelectConnectionRequest(requestId: number): void {
+        connectionRequestId.value = requestId;
     }
 
     // #endregion

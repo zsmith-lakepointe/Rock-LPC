@@ -7,10 +7,14 @@
     import { PropType } from "vue";
     import { ConnectionRequestBoardGridBag } from "@Obsidian/ViewModels/Blocks/Connection/ConnectionRequestBoard/connectionRequestBoardGridBag";
 
-    const props = defineProps({
+    defineProps({
         gridBag: {
             type: Object as PropType<ConnectionRequestBoardGridBag | null | undefined>,
             required: true
         }
     });
+
+    defineEmits<{
+        (e: "selectConnectionRequest", value: number): void
+    }>();
 </script>

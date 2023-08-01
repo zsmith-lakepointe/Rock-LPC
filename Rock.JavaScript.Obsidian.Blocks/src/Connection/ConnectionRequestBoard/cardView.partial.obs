@@ -5,7 +5,8 @@
             <div class="board-column-container">
                 <StatusColumn v-for="connectionStatus in connectionStatuses"
                               :key="connectionStatus.Id"
-                              :connectionStatus="connectionStatus" />
+                              :connectionStatus="connectionStatus"
+                              @selectConnectionRequest="$emit('selectConnectionRequest', $event)" />
             </div>
         </div>
     </div>
@@ -24,4 +25,8 @@
             required: true
         }
     });
+
+    defineEmits<{
+        (e: "selectConnectionRequest", value: number): void
+    }>();
 </script>

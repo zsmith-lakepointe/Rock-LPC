@@ -1,0 +1,58 @@
+<!-- Copyright by the Spark Development Network; Licensed under the Rock Community License -->
+<template>
+    <Modal v-model="isVisible"
+           modalWrapperClasses="connection-request-board"
+           title="Connection Request"
+           :isFooterHidden="true"
+           :clickBackdropToClose="true">
+        I'm a connection request!
+    </Modal>
+</template>
+
+<script setup lang="ts">
+    import { computed, PropType, watch } from "vue";
+    import Modal from "@Obsidian/Controls/modal";
+    import { useVModelPassthrough } from "@Obsidian/Utility/component";
+
+    const props = defineProps({
+        connectionRequestId: {
+            type: Number as PropType<number | null | undefined>,
+            required: true
+        }
+    });
+
+    const emit = defineEmits<{
+        (e: "update:connectionRequestId", value: number | null | undefined): void
+    }>();
+
+    // #region Values
+
+    const connectionRequestId = useVModelPassthrough(props, "connectionRequestId", emit);
+
+    // #endregion
+
+    // #region Computed Values
+
+    const isVisible = computed<boolean>({
+        get() {
+            return (connectionRequestId.value ?? 0) > 0;
+        },
+        set(newValue: boolean) {
+            if (!newValue) {
+                connectionRequestId.value = 0;
+            }
+        }
+    });
+
+    // #endregion
+
+    // #region Functions
+
+
+
+    // #endregion
+
+    watch(connectionRequestId, () => {
+        // do something...
+    });
+</script>
