@@ -350,29 +350,7 @@ namespace Rock.Field.Types
                     Guid guid;
                     Guid.TryParse( value, out guid );
                     var location = new LocationService( new RockContext() ).Get( guid );
-                    if ( location != null )
-                    {
-                        /* 22-Sep-2020 - SK
-                          Always Set Country first as it loads all the related state in the dropdown before it's being set.
-                        */
-                        addressControl.Country = location.Country;
-                        addressControl.Street1 = location.Street1;
-                        addressControl.Street2 = location.Street2;
-                        addressControl.City = location.City;
-                        addressControl.State = location.State;
-                        addressControl.PostalCode = location.PostalCode;
-                        addressControl.County = location.County;
-                    }
-                    else
-                    {
-                        addressControl.Country = addressControl.GetDefaultCountry();
-                        addressControl.Street1 = string.Empty;
-                        addressControl.Street2 = string.Empty;
-                        addressControl.City = string.Empty;
-                        addressControl.County = string.Empty;
-                        addressControl.State = addressControl.GetDefaultState();
-                        addressControl.PostalCode = string.Empty;
-                    }
+                    addressControl.SetValues( location );
                 }
             }
         }

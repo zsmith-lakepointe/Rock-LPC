@@ -223,6 +223,33 @@ namespace Rock.Web.UI.Controls
         }
 
         /// <summary>
+        /// Validates the current control content.
+        /// </summary>
+        /// <param name="messages">If the validation is unsuccessful, contains the list of validation messages.</param>
+        /// <returns>
+        /// <c>true</c> if the content is valid; otherwise, <c>false</c>.
+        /// </returns>
+        internal bool Validate( out List<string> messages )
+        {
+            messages = new List<string>();
+
+            if ( CustomValidator != null )
+            {
+                CustomValidator.Validate();
+                if ( !CustomValidator.IsValid )
+                {
+                    messages.Add( CustomValidator.ErrorMessage );
+                }
+            }
+            if ( RequiredFieldValidator != null && !RequiredFieldValidator.IsValid )
+            {
+                messages.Add( RequiredFieldValidator.ErrorMessage );
+            }
+
+            return !messages.Any();
+        }
+
+        /// <summary>
         /// Gets or sets the help block.
         /// </summary>
         /// <value>
@@ -506,13 +533,13 @@ namespace Rock.Web.UI.Controls
 
             set
             {
-                if ( ( ViewState["UseStateAbbreviation"] as bool? ?? false ) != value )
+                var oldValue = this.UseStateAbbreviation;
+                ViewState["UseStateAbbreviation"] = value;
+                if ( oldValue != value )
                 {
                     EnsureChildControls();
                     BindStates( _ddlCountry.SelectedValue );
                 }
-
-                ViewState["UseStateAbbreviation"] = value;
             }
         }
 
@@ -618,6 +645,27 @@ namespace Rock.Web.UI.Controls
             }
         }
 
+        /// <summary>
+        /// Gets or sets a value indicating if the control is configured to input filter values.
+        /// In this mode, the control allows partial and invalid addresses.
+        /// </summary>
+        /// <value>
+        ///   <c>true</c> if partial and invalid addresses should be allowed; otherwise, <c>false</c>.
+        /// </value>
+        public bool FilterInputIsEnabled
+        {
+            get
+            {
+                return ViewState["FilterInputIsEnabled"] as bool? ?? false;
+            }
+
+            set
+            {
+                ViewState["FilterInputIsEnabled"] = value;
+                RecreateChildControls();
+            }
+        }
+
         #endregion
 
         #region Constructors
@@ -652,8 +700,6 @@ namespace Rock.Web.UI.Controls
             EnsureChildControls();
             base.OnInit( e );
 
-            _ShowCountrySelection = GlobalAttributesCache.Get().GetValue( "SupportInternationalAddresses" ).AsBooleanOrNull() ?? false;
-
             BindCountries();
         }
 
@@ -687,7 +733,7 @@ namespace Rock.Web.UI.Controls
                 selectedCountry = GetDefaultCountry();
             }
             if ( string.IsNullOrWhiteSpace( selectedState ) )
-            { 
+            {
                 selectedState = GetDefaultState();
             }
 
@@ -759,10 +805,12 @@ namespace Rock.Web.UI.Controls
             CustomValidator.ID = this.ID + "_cfv";
             CustomValidator.ClientValidationFunction = "Rock.controls.addressControl.clientValidate";
             CustomValidator.CssClass = "validation-error help-inline";
-            CustomValidator.Enabled = true;
             CustomValidator.Display = ValidatorDisplay.Dynamic;
-
             CustomValidator.ServerValidate += _CustomValidator_ServerValidate;
+
+            // Enable the validator, unless filter input mode is enabled.
+            CustomValidator.Enabled = !this.FilterInputIsEnabled;
+
             Controls.Add( CustomValidator );
         }
 
@@ -784,9 +832,11 @@ namespace Rock.Web.UI.Controls
 
             if ( !isValid )
             {
-                var _addressRequirementsValidator = source as CustomValidator;
-
-                _addressRequirementsValidator.ErrorMessage = validationMessage;
+                var addressRequirementsValidator = source as CustomValidator;
+                if ( addressRequirementsValidator != null )
+                {
+                    addressRequirementsValidator.ErrorMessage = validationMessage;
+                }
 
                 args.IsValid = false;
 
@@ -812,6 +862,16 @@ namespace Rock.Web.UI.Controls
         /// <param name="countryCode"></param>
         private void LoadCountryConfiguration( string countryCode )
         {
+            if ( this.FilterInputIsEnabled )
+            {
+                // Always show the country selector in filter mode.
+                _ShowCountrySelection = true;
+            }
+            else
+            {
+                _ShowCountrySelection = GlobalAttributesCache.Get().GetValue( "SupportInternationalAddresses" ).AsBooleanOrNull() ?? false;
+            }
+
             var countryValue = DefinedTypeCache.Get( new Guid( SystemGuid.DefinedType.LOCATION_COUNTRIES ) )
                 .DefinedValues
                 .Where( v => v.Value.Equals( countryCode, StringComparison.OrdinalIgnoreCase ) )
@@ -831,14 +891,18 @@ namespace Rock.Web.UI.Controls
                 _StateLabel = countryValue.GetAttributeValue( SystemKey.CountryAttributeKey.AddressStateLabel );
                 _PostalCodeLabel = countryValue.GetAttributeValue( SystemKey.CountryAttributeKey.AddressPostalCodeLabel );
 
-                var requirementField = new DataEntryRequirementLevelFieldType();
+                if ( !this.FilterInputIsEnabled )
+                {
+                    // Set the field requirements for valid data entry.
+                    var requirementField = new DataEntryRequirementLevelFieldType();
 
-                _AddressLine1Requirement = requirementField.GetDeserializedValue( countryValue.GetAttributeValue( SystemKey.CountryAttributeKey.AddressLine1Requirement ), DataEntryRequirementLevelSpecifier.Optional );
-                _AddressLine2Requirement = requirementField.GetDeserializedValue( countryValue.GetAttributeValue( SystemKey.CountryAttributeKey.AddressLine2Requirement ), DataEntryRequirementLevelSpecifier.Optional );
-                _CityRequirement = requirementField.GetDeserializedValue( countryValue.GetAttributeValue( SystemKey.CountryAttributeKey.AddressCityRequirement ), DataEntryRequirementLevelSpecifier.Optional );
-                _LocalityRequirement = requirementField.GetDeserializedValue( countryValue.GetAttributeValue( SystemKey.CountryAttributeKey.AddressLocalityRequirement ), DataEntryRequirementLevelSpecifier.Optional );
-                _StateRequirement = requirementField.GetDeserializedValue( countryValue.GetAttributeValue( SystemKey.CountryAttributeKey.AddressStateRequirement ), DataEntryRequirementLevelSpecifier.Optional );
-                _PostalCodeRequirement = requirementField.GetDeserializedValue( countryValue.GetAttributeValue( SystemKey.CountryAttributeKey.AddressPostalCodeRequirement ), DataEntryRequirementLevelSpecifier.Optional );
+                    _AddressLine1Requirement = requirementField.GetDeserializedValue( countryValue.GetAttributeValue( SystemKey.CountryAttributeKey.AddressLine1Requirement ), DataEntryRequirementLevelSpecifier.Optional );
+                    _AddressLine2Requirement = requirementField.GetDeserializedValue( countryValue.GetAttributeValue( SystemKey.CountryAttributeKey.AddressLine2Requirement ), DataEntryRequirementLevelSpecifier.Optional );
+                    _CityRequirement = requirementField.GetDeserializedValue( countryValue.GetAttributeValue( SystemKey.CountryAttributeKey.AddressCityRequirement ), DataEntryRequirementLevelSpecifier.Optional );
+                    _LocalityRequirement = requirementField.GetDeserializedValue( countryValue.GetAttributeValue( SystemKey.CountryAttributeKey.AddressLocalityRequirement ), DataEntryRequirementLevelSpecifier.Optional );
+                    _StateRequirement = requirementField.GetDeserializedValue( countryValue.GetAttributeValue( SystemKey.CountryAttributeKey.AddressStateRequirement ), DataEntryRequirementLevelSpecifier.Optional );
+                    _PostalCodeRequirement = requirementField.GetDeserializedValue( countryValue.GetAttributeValue( SystemKey.CountryAttributeKey.AddressPostalCodeRequirement ), DataEntryRequirementLevelSpecifier.Optional );
+                }
             }
 
             _CityLabel = _CityLabel.ToStringOrDefault( "City" );
@@ -846,17 +910,22 @@ namespace Rock.Web.UI.Controls
             _StateLabel = _StateLabel.ToStringOrDefault( "State" );
             _PostalCodeLabel = _PostalCodeLabel.ToStringOrDefault( "Postal Code" );
 
-            // Hide Address Line 2 if it is not required, and not specified to show in the control settings.
-            if ( _AddressLine2Requirement == DataEntryRequirementLevelSpecifier.Optional && !this.ShowAddressLine2 )
+            if ( !this.FilterInputIsEnabled )
             {
-                _AddressLine2Requirement = DataEntryRequirementLevelSpecifier.Unavailable;
-            }
+                // Hide Address Line 2 if it is not required, and not specified to show in the control settings.
+                if ( _AddressLine2Requirement == DataEntryRequirementLevelSpecifier.Optional
+                     && !this.ShowAddressLine2 )
+                {
+                    _AddressLine2Requirement = DataEntryRequirementLevelSpecifier.Unavailable;
+                }
 
-            // Hide Locality if specified in the control settings and it is not required.
-            // The ShowCounty property is probably not necessary now because this setting can be specified per-country.
-            if ( _LocalityRequirement == DataEntryRequirementLevelSpecifier.Optional && !this.ShowCounty )
-            {
-                _LocalityRequirement = DataEntryRequirementLevelSpecifier.Unavailable;
+                // Hide Locality if specified in the control settings and it is not required.
+                // The ShowCounty property is probably not necessary now because this setting can be specified per-country.
+                if ( _LocalityRequirement == DataEntryRequirementLevelSpecifier.Optional
+                     && !this.ShowCounty )
+                {
+                    _LocalityRequirement = DataEntryRequirementLevelSpecifier.Unavailable;
+                }
             }
         }
 
@@ -916,30 +985,35 @@ namespace Rock.Web.UI.Controls
 
             this.ApplyRequiredFieldConfiguration();
 
-            // Country
-            if ( _ShowCountrySelection )
-            {
-                writer.AddAttribute( "class", "form-row" );
-                writer.RenderBeginTag( HtmlTextWriterTag.Div );
-
-                writer.AddAttribute( "class", "form-group col-sm-6" );
-                writer.RenderBeginTag( HtmlTextWriterTag.Div );
-                _ddlCountry.RenderControl( writer );
-                writer.RenderEndTag();  // div.form-group
-
-                writer.AddAttribute( "class", "form-group col-sm-6" );
-                writer.RenderBeginTag( HtmlTextWriterTag.Div );
-                writer.RenderEndTag();  // div.form-group
-
-                writer.RenderEndTag();  // div.row
-            }
-
             // Address Fields
             writer.AddAttribute( "class", "address-control js-addressControl " + this.CssClass );
             writer.AddAttribute( "data-required", this.Required.ToTrueFalse().ToLower() );
             writer.AddAttribute( "data-itemlabel", this.Label != string.Empty ? this.Label : "Address" );
             writer.AddAttribute( "id", this.ClientID );
             writer.RenderBeginTag( HtmlTextWriterTag.Div );
+
+            // Country
+            if ( _ShowCountrySelection )
+            {
+                writer.AddAttribute( "class", "form-group" );
+                writer.RenderBeginTag( HtmlTextWriterTag.Div );
+
+                writer.AddAttribute( "class", "form-row" );
+                writer.RenderBeginTag( HtmlTextWriterTag.Div );
+
+                writer.AddAttribute( "class", "col-sm-6" );
+                writer.RenderBeginTag( HtmlTextWriterTag.Div );
+                _ddlCountry.RenderControl( writer );
+                writer.RenderEndTag();  // div.form-group
+
+                writer.AddAttribute( "class", "col-sm-6" );
+                writer.RenderBeginTag( HtmlTextWriterTag.Div );
+                writer.RenderEndTag();  // div.form-group
+
+                writer.RenderEndTag();  // div.form-row
+
+                writer.RenderEndTag();  // div.form-group
+            }
 
             // Address Line 1
             if ( _AddressLine1Requirement != DataEntryRequirementLevelSpecifier.Unavailable )
@@ -1047,6 +1121,9 @@ namespace Rock.Web.UI.Controls
         {
             if ( location != null )
             {
+                /* 22-Sep-2020 - SK
+                   Always set the Country first as it determines the related list of State values.
+                */
                 Country = location.Country;
                 Street1 = location.Street1;
                 Street2 = location.Street2;
@@ -1058,11 +1135,11 @@ namespace Rock.Web.UI.Controls
             else
             {
                 Country = GetDefaultCountry();
+                State = GetDefaultState();
                 Street1 = string.Empty;
                 Street2 = string.Empty;
                 City = string.Empty;
                 County = string.Empty;
-                State = GetDefaultState();
                 PostalCode = string.Empty;
             }
         }
@@ -1210,6 +1287,12 @@ namespace Rock.Web.UI.Controls
             {
                 _ddlCountry.Items.Add( new ListItem( UseCountryAbbreviation ? country.Value : country.Description, country.Value ) );
             }
+
+            if ( this.FilterInputIsEnabled )
+            {
+                // Country is optional in filter mode.
+                _ddlCountry.Items.Insert( 0, new ListItem( string.Empty, string.Empty ) );
+            }
         }
 
         /// <summary>
@@ -1241,14 +1324,15 @@ namespace Rock.Web.UI.Controls
         /// <param name="country">The currently selected country.</param>
         private void BindStates( string country )
         {
-            string countryGuid = DefinedTypeCache.Get( new Guid( SystemGuid.DefinedType.LOCATION_COUNTRIES ) )
+            List<StateListSelectionItem> stateList = null;
+            var showStateList = false;
+
+            var countryGuid = DefinedTypeCache.Get( new Guid( SystemGuid.DefinedType.LOCATION_COUNTRIES ) )
                 .DefinedValues
                 .Where( v => v.Value.Equals( country, StringComparison.OrdinalIgnoreCase ) )
                 .Select( v => v.Guid )
                 .FirstOrDefault()
                 .ToString();
-
-            List<StateListSelectionItem> stateList = null;
 
             if ( countryGuid.IsNotNullOrWhiteSpace() )
             {
@@ -1272,16 +1356,18 @@ namespace Rock.Web.UI.Controls
                     .Select( v => new StateListSelectionItem { Id = v.Value, Value = v.Description } )
                     .ToList();
 
-                this.HasStateList = stateList.Any();
-            }
-            else
-            {
-                this.HasStateList = false;
+                showStateList = stateList.Any();
+
+                if ( showStateList && this.FilterInputIsEnabled )
+                {
+                    // If filter mode is active, add an empty entry to the state list.
+                    stateList.Insert( 0, new StateListSelectionItem { Id = string.Empty, Value = string.Empty } );
+                }
             }
 
-            if ( this.HasStateList )
+            this.HasStateList = showStateList;
+            if ( showStateList )
             {
-
                 _ddlState.Visible = true;
                 _tbState.Visible = false;
 
@@ -1309,10 +1395,16 @@ namespace Rock.Web.UI.Controls
         {
             SetOrganizationAddressDefaults();
 
+            // If filter input mode is enabled, the default value is empty.
+            if ( this.FilterInputIsEnabled )
+            {
+                return string.Empty;
+            }
+
             // Return the default state for the Organization if no Country is selected
             // or the selected Country matches the Organization Address.
             if ( string.IsNullOrWhiteSpace( this.Country )
-                 || this.Country == _orgCountry )
+                || this.Country == _orgCountry )
             {
                 return _orgState;
             }
@@ -1329,6 +1421,13 @@ namespace Rock.Web.UI.Controls
         public string GetDefaultCountry()
         {
             SetOrganizationAddressDefaults();
+
+            // If filter input mode is enabled, the default value is empty.
+            if ( this.FilterInputIsEnabled )
+            {
+                return string.Empty;
+            }
+
             return string.IsNullOrWhiteSpace( _orgCountry ) ? "US" : _orgCountry;
         }
 
@@ -1347,7 +1446,7 @@ namespace Rock.Web.UI.Controls
 
             if ( selectedState == null )
             {
-                selectedState = _ddlState.SelectedValue;
+                 selectedState = this.HasStateList ? _ddlState.SelectedValue : _tbState.Text;
             }
 
             LoadCountryConfiguration( selectedCountry );
@@ -1362,15 +1461,18 @@ namespace Rock.Web.UI.Controls
                 _ddlCountry.SetValue( selectedCountry );
             }
 
-            // Set the State
-            if ( string.IsNullOrEmpty( selectedCountry ) )
+            // Set the State to align with the selected Country, unless filter mode is active.
+            if ( !this.FilterInputIsEnabled )
             {
-                // If no country is selected, reset the State field.
-                selectedState = null;
-            }
-            else if ( string.IsNullOrEmpty( selectedState ) )
-            {
-                selectedState = GetDefaultState();
+                if ( string.IsNullOrEmpty( selectedCountry ) )
+                {
+                    // If no country is selected, reset the State field.
+                    selectedState = null;
+                }
+                else if ( string.IsNullOrEmpty( selectedState ) )
+                {
+                    selectedState = GetDefaultState();
+                }
             }
 
             if ( this.HasStateList )
