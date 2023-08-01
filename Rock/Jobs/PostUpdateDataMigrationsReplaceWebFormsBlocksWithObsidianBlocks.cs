@@ -153,7 +153,7 @@ namespace Rock.Jobs
                 throw new RockJobWarningException( String.Join( ",\n", ErrorMessage ) );
             }
 
-            // DeleteJob();
+            DeleteJob();
         }
 
         /// <summary>
@@ -241,29 +241,32 @@ namespace Rock.Jobs
 
         private void CopyPersonPreferenceFromOldBlocksToNewBlocks( RockContext rockContext, Dictionary<Block, Block> copiedBlockMappings )
         {
+            var blockEntityType = EntityTypeCache.Get( typeof( Block ) );
             PersonPreferenceService personPreferenceService = new PersonPreferenceService( rockContext );
             var oldBlockIds = copiedBlockMappings.Keys
                 .Select( b => b.Id )
-                .ToHashSet();
+                .ToList();
             var blockIdMap = copiedBlockMappings
                 .ToDictionary( c => c.Key.Id, c => c.Value.Id );
             var oldBlocksPreferences = personPreferenceService
                 .Queryable()
                 .AsNoTracking()
-                .Where( p => oldBlockIds.Contains( p.EntityId.Value ) )
+                .Where( p => p.EntityTypeId == blockEntityType.Id && oldBlockIds.Contains( p.EntityId.Value ) )
                 .ToList();
 
             var newBlockPreferences = new List<PersonPreference>();
-            foreach ( var personPreference in oldBlocksPreferences )
+            foreach ( var oldBlockPersonPreference in oldBlocksPreferences )
             {
-                var newPersonPreference = personPreference.CloneWithoutIdentity();
-                newPersonPreference.Key = personPreference.Key.Replace( newPersonPreference.EntityId.ToString(), blockIdMap[newPersonPreference.EntityId.Value].ToString() );
-                newPersonPreference.EntityId = blockIdMap[newPersonPreference.EntityId.Value];
-                newBlockPreferences.Add( newPersonPreference );
+                var newBlockPersonPreference = oldBlockPersonPreference.CloneWithoutIdentity();
+                newBlockPersonPreference.EntityId = blockIdMap[newBlockPersonPreference.EntityId.Value];
+                newBlockPreferences.Add( newBlockPersonPreference );
+                var newBlockPersonPreferenceKeyPrefix = PersonPreferenceService.GetPreferencePrefix( blockEntityType.GetEntityType(), newBlockPersonPreference.EntityId.ToIntSafe() );
+                var oldBlockPersonPreferenceKeyPrefix = PersonPreferenceService.GetPreferencePrefix( blockEntityType.GetEntityType(), oldBlockPersonPreference.EntityId.ToIntSafe() );
+                newBlockPersonPreference.Key = $"{newBlockPersonPreferenceKeyPrefix}{oldBlockPersonPreference.Key.Substring( oldBlockPersonPreferenceKeyPrefix.Length )}";
             }
 
             personPreferenceService.AddRange( newBlockPreferences );
-            rockContext.SaveChanges( );
+            rockContext.SaveChanges();
         }
 
         private void ChopBlock( Guid oldBlockTypeGuid, RockContext rockContext )
