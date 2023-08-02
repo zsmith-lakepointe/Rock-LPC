@@ -781,11 +781,16 @@ namespace Rock.Web.Cache
             {
                 FieldType.Field.SetEditValue( attributeControl, QualifierValues, options.Value );
             }
-            
-            if ( attributeControl is RockDropDownList )
+            /*
+            if ( attributeControl is RockDropDownList)
             {
                 if ( ( ( RockDropDownList ) attributeControl ).Label.Equals( "Signature Document Template" ) )
                 {
+                    foreach(var item in ( ( RockDropDownList ) attributeControl ).Items )
+                    {
+                        ( ( RockDropDownList ) attributeControl ).Items.Remove( ( ListItem ) item );
+                    }
+                    /*
                     //Query Database
                     var templatesQuery = new SignatureDocumentTemplateService( new RockContext() ).Queryable();
                     var inactiveTemplates = templatesQuery.OrderBy( t => t.Name ).Where( d => !d.IsActive ).Select( a => new
@@ -796,13 +801,14 @@ namespace Rock.Web.Cache
 
                     foreach ( var template in inactiveTemplates )
                     {
-                        if ( !template.Name.Equals( ( ( RockDropDownList ) attributeControl ).SelectedValue ) )
+                        if ( !template.Name.Equals( ( ( RockDropDownList ) attributeControl ).SelectedItem.Text ) )
                         {
                             ( ( RockDropDownList ) attributeControl ).Items.Remove( template.Name );
                         }
                     }
+                    
                 }
-            }
+            }*/
 
             return attributeControl;
         }

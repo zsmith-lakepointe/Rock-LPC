@@ -180,13 +180,23 @@ namespace Rock.Field.Types
             {
                 templatesQuery = templatesQuery.Where( a => !a.ProviderEntityTypeId.HasValue );
             };
-            //.Where( d => d.IsActive )
-            //Need to find the selected value so that the dropdown is populated correctly
+            
             var templates = templatesQuery.OrderBy( t => t.Name ).Select( a => new
             {
                 a.Guid,
                 a.Name
             } );
+
+            //add parameter for a function call that sends in the value; setValue
+            var functionparam = "";
+            if ( functionparam.IsNotNullOrWhiteSpace() )
+            {
+                templates = templatesQuery.OrderBy( t => t.Name ).Where( d => d.IsActive || d.Name == functionparam ).Select( a => new
+                {
+                    a.Guid,
+                    a.Name
+                } );
+            }
 
             foreach ( var template in templates )
             {
