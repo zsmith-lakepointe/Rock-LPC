@@ -15,28 +15,33 @@
 // </copyright>
 //
 
-using Rock.ViewModels.Core.Grid;
+using Rock.ViewModels.Utility;
 
 namespace Rock.ViewModels.Blocks.Connection.ConnectionRequestBoard
 {
     /// <summary>
-    /// A bag that contains grid information for the connection request board.
+    /// A bag that contains information about a connection request that should be transferred.
     /// </summary>
-    public class ConnectionRequestBoardGridBag
+    public class ConnectionRequestBoardTransferRequestBag
     {
         /// <summary>
-        /// Gets or sets the data for the grid.
+        /// Gets or sets the selected connection request identifier.
         /// </summary>
-        public GridDataBag Data { get; set; }
+        public int ConnectionRequestId { get; set; }
 
         /// <summary>
-        /// Gets or sets the definition for the grid.
+        /// Gets or sets the connection opportunity to which this connection request should be transferred.
         /// </summary>
-        public GridDefinitionBag Definition { get; set; }
+        public ListItemBag ConnectionOpportunity { get; set; }
 
         /// <summary>
-        /// Gets or sets the filters that were used to source and build the grid information.
+        /// Gets or sets the connection status to which this connection request should be transferred.
         /// </summary>
-        public ConnectionRequestBoardFiltersBag Filters { get; set; }
+        public ListItemBag ConnectionStatus { get; set; }
+
+        /// <summary>
+        /// Gets or sets the "connector" person to whom this connection request should be transferred.
+        /// </summary>
+        public ListItemBag Connector { get; set; }
     }
 }

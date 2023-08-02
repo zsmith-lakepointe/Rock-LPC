@@ -5,11 +5,11 @@
 
 <script setup lang="ts">
     import { PropType } from "vue";
-    import { ConnectionRequestBoardGridBag } from "@Obsidian/ViewModels/Blocks/Connection/ConnectionRequestBoard/connectionRequestBoardGridBag";
+    import { ConnectionRequestBoardGridDataBag } from "@Obsidian/ViewModels/Blocks/Connection/ConnectionRequestBoard/connectionRequestBoardGridDataBag";
 
     defineProps({
-        gridBag: {
-            type: Object as PropType<ConnectionRequestBoardGridBag | null | undefined>,
+        gridData: {
+            type: Object as PropType<ConnectionRequestBoardGridDataBag | null | undefined>,
             required: true
         }
     });

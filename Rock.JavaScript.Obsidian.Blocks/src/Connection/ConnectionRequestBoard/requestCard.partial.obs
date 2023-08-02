@@ -1,6 +1,6 @@
 <!-- Copyright by the Spark Development Network; Licensed under the Rock Community License -->
 <template>
-    <div v-no-drag-scroll class="board-card">
+    <div v-no-drag-scroll class="board-card" @click="trySelectConnectionRequest($event)">
         <div class="board-card-content">
 
             <div ref="headerElement" class="board-card-header">
@@ -80,6 +80,10 @@
         }
     });
 
+    const emit = defineEmits<{
+        (e: "select", value: number): void
+    }>();
+
     // #region Values
 
     const headerElement = ref<HTMLElement | null>(null);
@@ -89,6 +93,10 @@
     // #endregion
 
     // #region Computed Values
+
+    const connectionRequestId = computed((): number | undefined => {
+        return props.connectionRequest?.Id;
+    });
 
     const statusIconsHtml = computed((): string => {
         return props.connectionRequest?.StatusIconsHtml || "&nbsp;";
@@ -127,6 +135,31 @@
         headerElement.value
             .querySelectorAll('span[data-toggle="tooltip"]')
             .forEach((t: Element) => tooltip(t));
+    }
+
+    // #endregion
+
+    // #region Event Handlers
+
+    /**
+     * Tries to emit the `select` event, if the target of the click doesn't represent
+     * the action dropdown menu.
+     *
+     * @param event The event representing the click that triggered this handler.
+     */
+    function trySelectConnectionRequest(event: MouseEvent): void {
+        if (!connectionRequestId.value || !(event.target instanceof Element)) {
+            return;
+        }
+
+        const dropDownElement = (event.target as Element)
+            ?.closest(".dropdown-toggle, .dropdown-menu");
+
+        // Only "select" this connection request if the action dropdown menu wasn't the
+        // target of this click event.
+        if (!dropDownElement) {
+            emit("select", connectionRequestId.value);
+        }
     }
 
     // #endregion

@@ -21,26 +21,16 @@
 // </copyright>
 //
 
-import { ConnectionRequestBoardSortPropertyBag } from "@Obsidian/ViewModels/Blocks/Connection/ConnectionRequestBoard/connectionRequestBoardSortPropertyBag";
 import { ListItemBag } from "@Obsidian/ViewModels/Utility/listItemBag";
 
-/** A bag that contains filter options information for the connection request board. */
-export type ConnectionRequestBoardFilterOptionsBag = {
-    /** Gets or sets the campuses that may be used to filter connection requests. */
-    campuses?: ListItemBag[] | null;
+/** A bag that contains connection request transfer options for the connection request board. */
+export type ConnectionRequestBoardTransferOptionsBag = {
+    /** Gets or sets the connection opportunities to which a connection request may be transferred. */
+    connectionOpportunities?: ListItemBag[] | null;
 
-    /** Gets or sets the connection activity types that may be used to filter connection requests. */
-    connectionActivityTypes?: ListItemBag[] | null;
-
-    /** Gets or sets the connection states that may be used to filter connection requests. */
-    connectionStates?: ListItemBag[] | null;
-
-    /** Gets or sets the connection statuses that may be used to filter connection requests. */
+    /** Gets or sets the connection statuses to which a connection request may be transferred. */
     connectionStatuses?: ListItemBag[] | null;
 
-    /** Gets or sets the "connector" people that may be used to filter connection requests. */
+    /** Gets or sets the "connector" people to which a connection request may be transferred. */
     connectors?: ListItemBag[] | null;
-
-    /** Gets or sets the properties that may be used to sort connection requests. */
-    sortProperties?: ConnectionRequestBoardSortPropertyBag[] | null;
 };

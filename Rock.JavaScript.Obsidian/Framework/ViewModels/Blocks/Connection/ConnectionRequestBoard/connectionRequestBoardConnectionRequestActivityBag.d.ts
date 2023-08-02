@@ -21,18 +21,31 @@
 // </copyright>
 //
 
-import { ConnectionRequestBoardFiltersBag } from "@Obsidian/ViewModels/Blocks/Connection/ConnectionRequestBoard/connectionRequestBoardFiltersBag";
-import { GridDataBag } from "@Obsidian/ViewModels/Core/Grid/gridDataBag";
-import { GridDefinitionBag } from "@Obsidian/ViewModels/Core/Grid/gridDefinitionBag";
+import { ListItemBag } from "@Obsidian/ViewModels/Utility/listItemBag";
 
-/** A bag that contains grid information for the connection request board. */
-export type ConnectionRequestBoardGridBag = {
-    /** Gets or sets the data for the grid. */
-    data?: GridDataBag | null;
+/** A bag that contains connection request activity information for the connection request board. */
+export type ConnectionRequestBoardConnectionRequestActivityBag = {
+    /** Gets or sets the connection activity type. */
+    activityType?: ListItemBag | null;
 
-    /** Gets or sets the definition for the grid. */
-    definition?: GridDefinitionBag | null;
+    /** Get or sets the connection activity type name. */
+    activityTypeName?: string | null;
 
-    /** Gets or sets the filters that were used to source and build the grid information. */
-    filters?: ConnectionRequestBoardFiltersBag | null;
+    /** Gets or sets the "connector" person. */
+    connector?: ListItemBag | null;
+
+    /** Gets or sets the "connector" person's full name. */
+    connectorPersonFullName?: string | null;
+
+    /** Gets or sets the date this connection request activity was added. */
+    date?: string | null;
+
+    /** Gets or sets the identifier. */
+    id: number;
+
+    /** Gets or sets the note. */
+    note?: string | null;
+
+    /** Gets or sets the connection opportunity name. */
+    opportunityName?: string | null;
 };

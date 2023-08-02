@@ -21,38 +21,33 @@ using System.Collections.Generic;
 namespace Rock.ViewModels.Blocks.Connection.ConnectionRequestBoard
 {
     /// <summary>
-    /// A bag that contains filter options information for the connection request board.
+    /// A bag that contains connection request options information for the connection request board.
     /// </summary>
-    public class ConnectionRequestBoardFilterOptionsBag
+    public class ConnectionRequestBoardRequestOptionsBag
     {
         /// <summary>
-        /// Gets or sets the "connector" people that may be used to filter connection requests.
+        /// Gets or sets the "connector" people that can be assigned to a connection request.
         /// </summary>
         public List<ListItemBag> Connectors { get; set; }
 
         /// <summary>
-        /// Gets or sets the campuses that may be used to filter connection requests.
-        /// </summary>
-        public List<ListItemBag> Campuses { get; set; }
-
-        /// <summary>
-        /// Gets or sets the connection statuses that may be used to filter connection requests.
+        /// Gets or sets the connection statuses that can be assigned to a connection request.
         /// </summary>
         public List<ListItemBag> ConnectionStatuses { get; set; }
 
         /// <summary>
-        /// Gets or sets the connection states that may be used to filter connection requests.
+        /// Gets or sets the connection states that can be assigned to a connection request.
         /// </summary>
         public List<ListItemBag> ConnectionStates { get; set; }
 
         /// <summary>
-        /// Gets or sets the connection activity types that may be used to filter connection requests.
+        /// Gets or sets the placement groups that can be assigned to a connection request.
         /// </summary>
-        public List<ListItemBag> ConnectionActivityTypes { get; set; }
+        public List<ListItemBag> PlacementGroups { get; set; }
 
         /// <summary>
-        /// Gets or sets the properties that may be used to sort connection requests.
+        /// Gets or sets the manual workflows that can be launched against a connection request.
         /// </summary>
-        public List<ConnectionRequestBoardSortPropertyBag> SortProperties { get; set; }
+        public List<ListItemBag> ManualWorkflows { get; set; }
     }
 }

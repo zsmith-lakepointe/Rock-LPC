@@ -21,13 +21,22 @@
 // </copyright>
 //
 
-import { ConnectionRequestBoardFiltersBag } from "@Obsidian/ViewModels/Blocks/Connection/ConnectionRequestBoard/connectionRequestBoardFiltersBag";
+import { ListItemBag } from "@Obsidian/ViewModels/Utility/listItemBag";
 
-/** A bag that contains information about the selected filters for the connection request board. */
-export type ConnectionRequestBoardSelectedFiltersBag = {
-    /** Gets or sets the identifier of the connection opportunity to which these filters relate. */
-    connectionOpportunityId: number;
+/** A bag that contains connection request options information for the connection request board. */
+export type ConnectionRequestBoardRequestOptionsBag = {
+    /** Gets or sets the connection states that can be assigned to a connection request. */
+    connectionStates?: ListItemBag[] | null;
 
-    /** Gets or sets the selected filters. */
-    filters?: ConnectionRequestBoardFiltersBag | null;
+    /** Gets or sets the connection statuses that can be assigned to a connection request. */
+    connectionStatuses?: ListItemBag[] | null;
+
+    /** Gets or sets the "connector" people that can be assigned to a connection request. */
+    connectors?: ListItemBag[] | null;
+
+    /** Gets or sets the manual workflows that can be launched against a connection request. */
+    manualWorkflows?: ListItemBag[] | null;
+
+    /** Gets or sets the placement groups that can be assigned to a connection request. */
+    placementGroups?: ListItemBag[] | null;
 };

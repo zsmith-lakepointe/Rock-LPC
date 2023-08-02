@@ -533,9 +533,7 @@ namespace Rock.Blocks.Connection
 
                     // This means we'll be auto-opening a specific connection request modal immediately.
                     boardData.ConnectionRequestId = selectedConnectionRequestId;
-                    boardData.Filters.CampusId = result.CampusId;
-
-                    boardData.IsCampusFilterFromConnectionRequest = result.CampusId.HasValue;
+                    boardData.CampusIdFromConnectionRequest = result.CampusId;
                 }
             }
 
@@ -867,12 +865,12 @@ namespace Rock.Blocks.Connection
         /// </summary>
         /// <param name="rockContext">The rock context.</param>
         /// <param name="boardData">The board data onto which to apply the selected filters.</param>
-        /// <param name="selectedFilters">The filters to validate and apply.</param>
-        private void ValidateAndApplySelectedFilters( RockContext rockContext, ConnectionRequestBoardData boardData, ConnectionRequestBoardFiltersBag selectedFilters )
+        /// <param name="filters">The filters to validate and apply.</param>
+        private void ValidateAndApplySelectedFilters( RockContext rockContext, ConnectionRequestBoardData boardData, ConnectionRequestBoardFiltersBag filters )
         {
             // Connector person alias ID.
             // Ensure the selected value exists in the list of [available] connectors (or matches the current person alias ID).
-            var connectorPersonAliasIdString = selectedFilters.ConnectorPersonAliasId.ToString();
+            var connectorPersonAliasIdString = filters.ConnectorPersonAliasId.ToString();
             if ( connectorPersonAliasIdString.IsNotNullOrWhiteSpace()
                 && (
                         connectorPersonAliasIdString == CurrentPersonAliasId.ToString()
@@ -880,7 +878,7 @@ namespace Rock.Blocks.Connection
                     )
                 )
             {
-                boardData.Filters.ConnectorPersonAliasId = selectedFilters.ConnectorPersonAliasId;
+                boardData.Filters.ConnectorPersonAliasId = filters.ConnectorPersonAliasId;
             }
             else
             {
@@ -921,9 +919,9 @@ namespace Rock.Blocks.Connection
             PersonAlias requesterPersonAlias = null;
             var personAliasService = new PersonAliasService( rockContext );
             personPrefKey = boardData.GetPersonPreferenceKey( PersonPreferenceKey.Requester );
-            if ( !string.IsNullOrWhiteSpace( selectedFilters.Requester?.Value ) )
+            if ( !string.IsNullOrWhiteSpace( filters.Requester?.Value ) )
             {
-                requesterPersonAlias = personAliasService.GetNoTracking( selectedFilters.Requester.Value );
+                requesterPersonAlias = personAliasService.GetNoTracking( filters.Requester.Value );
                 if ( requesterPersonAlias != null )
                 {
                     if ( personPrefKey.IsNotNullOrWhiteSpace() )
@@ -932,9 +930,9 @@ namespace Rock.Blocks.Connection
                     }
                 }
             }
-            else if ( selectedFilters.RequesterPersonId.HasValue )
+            else if ( filters.RequesterPersonId.HasValue )
             {
-                requesterPersonAlias = personAliasService.GetPrimaryAlias( selectedFilters.RequesterPersonId.Value );
+                requesterPersonAlias = personAliasService.GetPrimaryAlias( filters.RequesterPersonId.Value );
             }
 
             if ( requesterPersonAlias != null )
@@ -958,32 +956,28 @@ namespace Rock.Blocks.Connection
 
             // Campus ID.
             // Ensure the selected value exists in the list of [available] campuses AND we have 2 or more campuses.
-            var campusIdString = selectedFilters.CampusId.ToString();
+            var campusIdString = filters.CampusId.ToString();
             if ( campusIdString.IsNotNullOrWhiteSpace()
                 && boardData.FilterOptions.Campuses.Count > 1
                 && boardData.FilterOptions.Campuses.Any( c => c.Value == campusIdString ) )
             {
-                boardData.Filters.CampusId = selectedFilters.CampusId;
+                boardData.Filters.CampusId = filters.CampusId;
             }
             else
             {
                 boardData.Filters.CampusId = null;
             }
 
-            // Only save the campus filter to person preferences if it didn't come from a specific connection request.
-            if ( !boardData.IsCampusFilterFromConnectionRequest )
+            personPrefKey = boardData.GetPersonPreferenceKey( PersonPreferenceKey.CampusFilter );
+            if ( personPrefKey.IsNotNullOrWhiteSpace() )
             {
-                personPrefKey = boardData.GetPersonPreferenceKey( PersonPreferenceKey.CampusFilter );
-                if ( personPrefKey.IsNotNullOrWhiteSpace() )
-                {
-                    this.PersonPreferences.SetValue( personPrefKey, boardData.Filters.CampusId.ToString() );
-                }
+                this.PersonPreferences.SetValue( personPrefKey, boardData.Filters.CampusId.ToString() );
             }
 
             // Date range.
-            boardData.Filters.DateRange = selectedFilters.DateRange;
+            boardData.Filters.DateRange = filters.DateRange;
 
-            var delimitedDateRangeValues = RockDateTimeHelper.GetDelimitedValues( selectedFilters.DateRange );
+            var delimitedDateRangeValues = RockDateTimeHelper.GetDelimitedValues( filters.DateRange );
             if ( delimitedDateRangeValues.IsNotNullOrWhiteSpace() )
             {
                 var dateRange = RockDateTimeHelper.CalculateDateRangeFromDelimitedValues( delimitedDateRangeValues );
@@ -998,7 +992,7 @@ namespace Rock.Blocks.Connection
             }
 
             // Past due only.
-            boardData.Filters.PastDueOnly = selectedFilters.PastDueOnly;
+            boardData.Filters.PastDueOnly = filters.PastDueOnly;
 
             personPrefKey = boardData.GetPersonPreferenceKey( PersonPreferenceKey.PastDueOnly );
             if ( personPrefKey.IsNotNullOrWhiteSpace() )
@@ -1008,7 +1002,7 @@ namespace Rock.Blocks.Connection
 
             // Connection statuses.
             // Ensure the selected values exist in the list of [available] statuses.
-            var statuses = ( selectedFilters.ConnectionStatuses ?? new List<string>() )
+            var statuses = ( filters.ConnectionStatuses ?? new List<string>() )
                 .Where( status => boardData.FilterOptions.ConnectionStatuses.Any( s => s.Value == status ) )
                 .ToList();
 
@@ -1022,7 +1016,7 @@ namespace Rock.Blocks.Connection
 
             // Connection states.
             // Ensure the selected values exist in the list of [available] states.
-            var states = ( selectedFilters.ConnectionStates ?? new List<string>() )
+            var states = ( filters.ConnectionStates ?? new List<string>() )
                 .Where( state => boardData.FilterOptions.ConnectionStates.Any( s => s.Value == state ) )
                 .ToList();
 
@@ -1036,7 +1030,7 @@ namespace Rock.Blocks.Connection
 
             // Connection activity types.
             // Ensure the selected values exist in the list if [available] activity types.
-            var activityTypes = ( selectedFilters.ConnectionActivityTypes ?? new List<string>() )
+            var activityTypes = ( filters.ConnectionActivityTypes ?? new List<string>() )
                 .Where( activityType => boardData.FilterOptions.ConnectionActivityTypes.Any( a => a.Value == activityType ) )
                 .ToList();
 
@@ -1050,8 +1044,8 @@ namespace Rock.Blocks.Connection
 
             // Sort property.
             // Ensure the selected value exists in the list of [allowed] sort properties.
-            var sortProperty = _allowedSortProperties.Contains( selectedFilters.SortProperty )
-                ? selectedFilters.SortProperty
+            var sortProperty = _allowedSortProperties.Contains( filters.SortProperty )
+                ? filters.SortProperty
                 : DefaultSortProperty;
 
             boardData.Filters.SortProperty = sortProperty;
@@ -1154,11 +1148,11 @@ namespace Rock.Blocks.Connection
         /// Validates and saves filters to person preferences.
         /// </summary>
         /// <param name="rockContext">The rock context.</param>
-        /// <param name="selectedFilters">The selected filters.</param>
+        /// <param name="applyFilters">The filters to validate and save.</param>
         /// <returns>An object containing the validated and saved filters.</returns>
-        private ConnectionRequestBoardFiltersBag ValidateAndSaveFilters( RockContext rockContext, ConnectionRequestBoardSelectedFiltersBag selectedFilters )
+        private ConnectionRequestBoardFiltersBag ValidateAndSaveFilters( RockContext rockContext, ConnectionRequestBoardApplyFiltersBag applyFilters )
         {
-            selectedFilters = selectedFilters ?? new ConnectionRequestBoardSelectedFiltersBag
+            applyFilters = applyFilters ?? new ConnectionRequestBoardApplyFiltersBag
             {
                 Filters = new ConnectionRequestBoardFiltersBag()
             };
@@ -1171,21 +1165,21 @@ namespace Rock.Blocks.Connection
                 IsPersonPreferenceSavingDisabled = true,
                 IdOverrides = new Dictionary<string, int?>
                 {
-                    { PageParameterKey.ConnectionOpportunityId, selectedFilters.ConnectionOpportunityId },
-                    { PageParameterKey.CampusId, selectedFilters.Filters.CampusId }
+                    { PageParameterKey.ConnectionOpportunityId, applyFilters.ConnectionOpportunityId },
+                    { PageParameterKey.CampusId, applyFilters.Filters.CampusId }
                 }
             };
 
             // This call will preload the [available] filter options, against which we can validate the provided filter selections.
             var boardData = GetConnectionRequestBoardData( rockContext, config );
-            if ( boardData.ConnectionOpportunity?.Id != selectedFilters.ConnectionOpportunityId )
+            if ( boardData.ConnectionOpportunity?.Id != applyFilters.ConnectionOpportunityId )
             {
                 // The specified connection opportunity wasn't successfully loaded; it may not be allowed, Etc.
                 // We'll just return an empty filters object.
                 return new ConnectionRequestBoardFiltersBag();
             }
 
-            ValidateAndApplySelectedFilters( rockContext, boardData, selectedFilters.Filters );
+            ValidateAndApplySelectedFilters( rockContext, boardData, applyFilters.Filters );
 
             this.PersonPreferences.Save();
 
@@ -1193,23 +1187,27 @@ namespace Rock.Blocks.Connection
         }
 
         /// <summary>
-        /// [Validates and] Saves filters to person preferences and gets the grid data for the connection request board to operate in grid view mode.
+        /// Gets the grid data and definition for displaying the connection request board in grid view mode.
+        /// <para>
+        /// The provided filters will be validated and saved before being used to get grid data.
+        /// </para>
         /// </summary>
         /// <param name="rockContext">The rock context.</param>
-        /// <param name="selectedFilters">The selected filters.</param>
-        /// <returns>The grid data and definition, Etc. for the connection request board to operate in grid view mode.</returns>
-        private ConnectionRequestBoardGridBag SaveFiltersAndGetGridData( RockContext rockContext, ConnectionRequestBoardSelectedFiltersBag selectedFilters )
+        /// <param name="applyFilters">The filters that should be used when getting grid data.</param>
+        /// <returns>An object containing the grid data and definition as well as the validated and saved filters for the connection request board
+        /// to operate in grid view mode.</returns>
+        private ConnectionRequestBoardGridDataBag GetGridData( RockContext rockContext, ConnectionRequestBoardApplyFiltersBag applyFilters )
         {
-            var gridBag = new ConnectionRequestBoardGridBag
+            var gridDataBag = new ConnectionRequestBoardGridDataBag
             {
-                Filters = ValidateAndSaveFilters( rockContext, selectedFilters )
+                Filters = ValidateAndSaveFilters( rockContext, applyFilters )
             };
 
             var connectionRequestService = new ConnectionRequestService( rockContext );
 
             // TODO (Jason): build grid data and definition objects.
 
-            return gridBag;
+            return gridDataBag;
         }
 
         /// <summary>
@@ -1296,16 +1294,16 @@ namespace Rock.Blocks.Connection
         /// <summary>
         /// Saves the provided view mode to person preferences.
         /// </summary>
-        /// <param name="saveViewMode">The view mode preference to save.</param>
+        /// <param name="bag">The view mode preference to save.</param>
         /// <returns>200-OK response with no content.</returns>
         [BlockAction]
-        public BlockActionResult SaveViewMode( ConnectionRequestBoardSaveViewModeBag saveViewMode )
+        public BlockActionResult SaveViewMode( ConnectionRequestBoardApplyViewModeBag bag )
         {
             using ( var rockContext = new RockContext() )
             {
-                if ( saveViewMode != null )
+                if ( bag != null )
                 {
-                    TrySavePersonPreference( rockContext, saveViewMode.ConnectionOpportunityId, PersonPreferenceKey.ViewMode, saveViewMode.IsCardViewMode.ToString() );
+                    TrySavePersonPreference( rockContext, bag.ConnectionOpportunityId, PersonPreferenceKey.ViewMode, bag.IsCardViewMode.ToString() );
                 }
 
                 return ActionOk();
@@ -1315,32 +1313,47 @@ namespace Rock.Blocks.Connection
         /// <summary>
         /// Saves the provided filters to person preferences.
         /// </summary>
-        /// <param name="selectedFilters">The selected filters.</param>
+        /// <param name="bag">The filters to save.</param>
         /// <returns>An object containing the validated and saved filters.</returns>
         [BlockAction]
-        public BlockActionResult SaveFilters( ConnectionRequestBoardSelectedFiltersBag selectedFilters )
+        public BlockActionResult SaveFilters( ConnectionRequestBoardApplyFiltersBag bag )
         {
             using ( var rockContext = new RockContext() )
             {
-                var savedFilters = ValidateAndSaveFilters( rockContext, selectedFilters );
+                var savedFilters = ValidateAndSaveFilters( rockContext, bag );
 
                 return ActionOk( savedFilters );
             }
         }
 
         /// <summary>
-        /// Saves the provided filters to person preferences and gets the data for displaying the connection request board in grid view mode.
+        /// Gets the grid data and definition for displaying the connection request board in grid view mode.
         /// </summary>
-        /// <param name="selectedFilters">The selected filters.</param>
-        /// <returns>An object containing the data for displaying the connection request board in grid view mode.</returns>
+        /// <param name="bag">The filters that should be used when getting grid data.</param>
+        /// <returns>An object containing the grid data and definition as well as the validated and saved filters for the connection request board
+        /// to operate in grid view mode.</returns>
         [BlockAction]
-        public BlockActionResult SaveFiltersAndGetGridData( ConnectionRequestBoardSelectedFiltersBag selectedFilters )
+        public BlockActionResult GetGridData( ConnectionRequestBoardApplyFiltersBag bag )
         {
             using ( var rockContext = new RockContext() )
             {
-                var gridData = SaveFiltersAndGetGridData( rockContext, selectedFilters );
+                var gridData = GetGridData( rockContext, bag );
 
                 return ActionOk( gridData );
+            }
+        }
+
+        /// <summary>
+        /// Gets the specified connection request.
+        /// </summary>
+        /// <param name="connectionRequestId">The identifier of the connection request to get.</param>
+        /// <returns>An object containing the specified connection request and supporting information.</returns>
+        [BlockAction]
+        public BlockActionResult GetConnectionRequest( int connectionRequestId )
+        {
+            using ( var rockContext = new RockContext() )
+            {
+                return ActionOk();
             }
         }
 
@@ -1398,9 +1411,9 @@ namespace Rock.Blocks.Connection
             public ConnectionRequestBoardFiltersBag Filters { get; } = new ConnectionRequestBoardFiltersBag();
 
             /// <summary>
-            /// Gets or sets whether the currently-selected campus filter came from a specific connection request.
+            /// Gets or sets the campus identifier that relates to the selected connection request, if any.
             /// </summary>
-            public bool IsCampusFilterFromConnectionRequest { get; set; }
+            public int? CampusIdFromConnectionRequest { get; set; }
 
             /// <summary>
             /// Gets the appropriate person preference key for the specified subkey. Most keys will be connection type-specific.

@@ -14,22 +14,26 @@
 // limitations under the License.
 // </copyright>
 //
-
 namespace Rock.ViewModels.Blocks.Connection.ConnectionRequestBoard
 {
     /// <summary>
-    /// A bag that contains information to save the view mode preference for the connection request board.
+    /// A bag that contains group requirement information for the connection request board.
     /// </summary>
-    public class ConnectionRequestBoardSaveViewModeBag
+    public class ConnectionRequestBoardGroupRequirementBag
     {
         /// <summary>
-        /// Gets or sets the identifier of the connection opportunity to which this preference relates.
+        /// Gets or sets the label.
         /// </summary>
-        public int ConnectionOpportunityId { get; set; }
+        public string Label { get; set; }
 
         /// <summary>
-        /// Gets or sets whether card view mode is currently selected.
+        /// Gets or sets the label type.
         /// </summary>
-        public bool IsCardViewMode { get; set; }
+        public string LabelType { get; set; }
+
+        /// <summary>
+        /// Gets or sets the tooltip.
+        /// </summary>
+        public string Tooltip { get; set; }
     }
 }

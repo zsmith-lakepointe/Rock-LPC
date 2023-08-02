@@ -15,21 +15,29 @@
 // </copyright>
 //
 
+using Rock.ViewModels.Utility;
+using System.Collections.Generic;
+
 namespace Rock.ViewModels.Blocks.Connection.ConnectionRequestBoard
 {
     /// <summary>
-    /// A bag that contains information about the selected filters for the connection request board.
+    /// A bag that contains connection request transfer options for the connection request board.
     /// </summary>
-    public class ConnectionRequestBoardSelectedFiltersBag
+    public class ConnectionRequestBoardTransferOptionsBag
     {
         /// <summary>
-        /// Gets or sets the identifier of the connection opportunity to which these filters relate.
+        /// Gets or sets the connection opportunities to which a connection request may be transferred.
         /// </summary>
-        public int ConnectionOpportunityId { get; set; }
+        public List<ListItemBag> ConnectionOpportunities { get; set; }
 
         /// <summary>
-        /// Gets or sets the selected filters.
+        /// Gets or sets the connection statuses to which a connection request may be transferred.
         /// </summary>
-        public ConnectionRequestBoardFiltersBag Filters { get; set; }
+        public List<ListItemBag> ConnectionStatuses { get; set; }
+
+        /// <summary>
+        /// Gets or sets the "connector" people to which a connection request may be transferred.
+        /// </summary>
+        public List<ListItemBag> Connectors { get; set; }
     }
 }

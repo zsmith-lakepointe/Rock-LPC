@@ -33,7 +33,7 @@ export type ConnectionRequestBoardSelectedOpportunityBag = {
     /** Gets or sets the selected connection request identifier, if a specific request should be opened. */
     connectionRequestId?: number | null;
 
-    /** Gets or sets the filter options that can be used to filter connection requests. */
+    /** Gets or sets the filter options that may be used to filter connection requests. */
     filterOptions?: ConnectionRequestBoardFilterOptionsBag | null;
 
     /** Gets or sets the selected filters to be used to initialize the connection request board. */

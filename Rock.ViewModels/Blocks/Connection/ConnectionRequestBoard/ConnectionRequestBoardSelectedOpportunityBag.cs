@@ -22,7 +22,6 @@ namespace Rock.ViewModels.Blocks.Connection.ConnectionRequestBoard
     /// </summary>
     public class ConnectionRequestBoardSelectedOpportunityBag
     {
-
         /// <summary>
         /// Gets or sets the selected connection opportunity.
         /// </summary>
@@ -34,7 +33,7 @@ namespace Rock.ViewModels.Blocks.Connection.ConnectionRequestBoard
         public int? ConnectionRequestId { get; set; }
 
         /// <summary>
-        /// Gets or sets the filter options that can be used to filter connection requests.
+        /// Gets or sets the filter options that may be used to filter connection requests.
         /// </summary>
         public ConnectionRequestBoardFilterOptionsBag FilterOptions { get; set; }
 

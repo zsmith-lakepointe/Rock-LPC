@@ -13,7 +13,7 @@
             <RequestCard v-for="connectionRequest in connectionRequests"
                          :key="connectionRequest.Id"
                          :connectionRequest="connectionRequest"
-                         @click="$emit('selectConnectionRequest', connectionRequest.Id)" />
+                         @select="$emit('selectConnectionRequest', connectionRequest.Id)" />
 
             <div v-if="showSentry" class="board-card-base board-column-sentry small">
                 <p class="mb-2"><strong>More requests exist</strong></p>

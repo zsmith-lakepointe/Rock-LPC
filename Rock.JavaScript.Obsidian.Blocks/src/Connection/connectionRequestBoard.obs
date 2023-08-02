@@ -62,7 +62,7 @@
                   @selectConnectionRequest="onSelectConnectionRequest" />
 
         <GridView v-else
-                  :gridBag="gridBag"
+                  :gridData="gridDataBag"
                   :disabled="isBoardDisabled"
                   @selectConnectionRequest="onSelectConnectionRequest" />
 
@@ -98,14 +98,14 @@
         useReloadBlock
     } from "@Obsidian/Utility/block";
     import { useHttp } from "@Obsidian/Utility/http";
+    import { ConnectionRequestBoardApplyFiltersBag } from "@Obsidian/ViewModels/Blocks/Connection/ConnectionRequestBoard/connectionRequestBoardApplyFiltersBag";
+    import { ConnectionRequestBoardApplyViewModeBag } from "@Obsidian/ViewModels/Blocks/Connection/ConnectionRequestBoard/connectionRequestBoardApplyViewModeBag";
     import { ConnectionRequestBoardConnectionOpportunityBag } from "@Obsidian/ViewModels/Blocks/Connection/ConnectionRequestBoard/connectionRequestBoardConnectionOpportunityBag";
     import { ConnectionRequestBoardConnectionTypeBag } from "@Obsidian/ViewModels/Blocks/Connection/ConnectionRequestBoard/connectionRequestBoardConnectionTypeBag";
     import { ConnectionRequestBoardFilterOptionsBag } from "@Obsidian/ViewModels/Blocks/Connection/ConnectionRequestBoard/connectionRequestBoardFilterOptionsBag";
     import { ConnectionRequestBoardFiltersBag } from "@Obsidian/ViewModels/Blocks/Connection/ConnectionRequestBoard/connectionRequestBoardFiltersBag";
-    import { ConnectionRequestBoardGridBag } from "@Obsidian/ViewModels/Blocks/Connection/ConnectionRequestBoard/connectionRequestBoardGridBag";
+    import { ConnectionRequestBoardGridDataBag } from "@Obsidian/ViewModels/Blocks/Connection/ConnectionRequestBoard/connectionRequestBoardGridDataBag";
     import { ConnectionRequestBoardInitializationBox } from "@Obsidian/ViewModels/Blocks/Connection/ConnectionRequestBoard/connectionRequestBoardInitializationBox";
-    import { ConnectionRequestBoardSaveViewModeBag } from "@Obsidian/ViewModels/Blocks/Connection/ConnectionRequestBoard/connectionRequestBoardSaveViewModeBag";
-    import { ConnectionRequestBoardSelectedFiltersBag } from "@Obsidian/ViewModels/Blocks/Connection/ConnectionRequestBoard/connectionRequestBoardSelectedFiltersBag";
     import { ConnectionRequestBoardSelectedOpportunityBag } from "@Obsidian/ViewModels/Blocks/Connection/ConnectionRequestBoard/connectionRequestBoardSelectedOpportunityBag";
 
     const config = useConfigurationValues<ConnectionRequestBoardInitializationBox>();
@@ -146,7 +146,7 @@
     const isLoadingConnectionStatuses = ref(false);
     const loadConnectionStatusesWarningMessage = ref("");
 
-    const gridBag = ref<ConnectionRequestBoardGridBag | null | undefined>();
+    const gridDataBag = ref<ConnectionRequestBoardGridDataBag | null | undefined>();
     const isLoadingGridBag = ref(false);
 
     // #endregion
@@ -319,12 +319,12 @@
         isLoadingGridBag.value = true;
         blockActionErrorMessage.value = "";
 
-        const selectedFilters: ConnectionRequestBoardSelectedFiltersBag = {
+        const bag: ConnectionRequestBoardApplyFiltersBag = {
             connectionOpportunityId: connectionOpportunityId.value ?? 0,
             filters: currentFilters ?? filters.value
         };
 
-        const result = await invokeBlockAction<ConnectionRequestBoardGridBag>("SaveFiltersAndGetGridData", { selectedFilters });
+        const result = await invokeBlockAction<ConnectionRequestBoardGridDataBag>("GetGridData", { bag });
         isLoadingGridBag.value = false;
 
         if (!result.isSuccess) {
@@ -332,7 +332,7 @@
             return;
         }
 
-        gridBag.value = result.data;
+        gridDataBag.value = result.data;
         filters.value = result.data?.filters;
     }
 
@@ -341,8 +341,8 @@
      */
     async function getDataForSelectedViewMode(): Promise<void> {
         if (isCardViewMode.value) {
-            if (gridBag.value) {
-                gridBag.value.data = null;
+            if (gridDataBag.value) {
+                gridDataBag.value.data = null;
             }
 
             await getConnectionStatuses();
@@ -412,12 +412,12 @@
         blockActionErrorMessage.value = "";
 
         const newValue = !isCardViewMode.value;
-        const saveViewMode: ConnectionRequestBoardSaveViewModeBag = {
+        const bag: ConnectionRequestBoardApplyViewModeBag = {
             connectionOpportunityId: connectionOpportunityId.value ?? 0,
             isCardViewMode: newValue
         };
 
-        const result = await invokeBlockAction("SaveViewMode", { saveViewMode });
+        const result = await invokeBlockAction("SaveViewMode", { bag });
         isSavingViewMode.value = false;
 
         if (!result.isSuccess) {
@@ -445,12 +445,12 @@
         if (isCardViewMode.value) {
             isSavingFilters.value = true;
 
-            const selectedFilters: ConnectionRequestBoardSelectedFiltersBag = {
+            const bag: ConnectionRequestBoardApplyFiltersBag = {
                 connectionOpportunityId: connectionOpportunityId.value ?? 0,
                 filters: currentFilters
             };
 
-            const result = await invokeBlockAction<ConnectionRequestBoardFiltersBag>("SaveFilters", { selectedFilters });
+            const result = await invokeBlockAction<ConnectionRequestBoardFiltersBag>("SaveFilters", { bag });
             isSavingFilters.value = false;
 
             if (!result.isSuccess) {

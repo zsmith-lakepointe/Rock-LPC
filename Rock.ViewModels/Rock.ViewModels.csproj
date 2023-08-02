@@ -48,9 +48,20 @@
       <Link>AssemblySharedInfo.cs</Link>
     </Compile>
     <Compile Include="Blocks\Cms\SiteList\SiteListOptionsBag.cs" />
-    <Compile Include="Blocks\Connection\ConnectionRequestBoard\ConnectionRequestBoardGridBag.cs" />
-    <Compile Include="Blocks\Connection\ConnectionRequestBoard\ConnectionRequestBoardSelectedFiltersBag.cs" />
-    <Compile Include="Blocks\Connection\ConnectionRequestBoard\ConnectionRequestBoardSaveViewModeBag.cs" />
+    <Compile Include="Blocks\Connection\ConnectionRequestBoard\ConnectionRequestBoardEditActivityBag.cs" />
+    <Compile Include="Blocks\Connection\ConnectionRequestBoard\ConnectionRequestBoardActivityOptionsBag.cs" />
+    <Compile Include="Blocks\Connection\ConnectionRequestBoard\ConnectionRequestBoardConnectionRequestActivityBag.cs" />
+    <Compile Include="Blocks\Connection\ConnectionRequestBoard\ConnectionRequestBoardGridDataBag.cs" />
+    <Compile Include="Blocks\Connection\ConnectionRequestBoard\ConnectionRequestBoardGroupRequirementBag.cs" />
+    <Compile Include="Blocks\Connection\ConnectionRequestBoard\ConnectionRequestBoardPhoneBag.cs" />
+    <Compile Include="Blocks\Connection\ConnectionRequestBoard\ConnectionRequestBoardConnectionRequestBag.cs" />
+    <Compile Include="Blocks\Connection\ConnectionRequestBoard\ConnectionRequestBoardRequestOptionsBag.cs" />
+    <Compile Include="Blocks\Connection\ConnectionRequestBoard\ConnectionRequestBoardApplyFiltersBag.cs" />
+    <Compile Include="Blocks\Connection\ConnectionRequestBoard\ConnectionRequestBoardApplyViewModeBag.cs" />
+    <Compile Include="Blocks\Connection\ConnectionRequestBoard\ConnectionRequestBoardSelectedRequestBag.cs" />
+    <Compile Include="Blocks\Connection\ConnectionRequestBoard\ConnectionRequestBoardTransferOptionsBag.cs" />
+    <Compile Include="Blocks\Connection\ConnectionRequestBoard\ConnectionRequestBoardTransferRequestBag.cs" />
+    <Compile Include="Blocks\Connection\ConnectionRequestBoard\ConnectionRequestBoardWorkflowBag.cs" />
     <Compile Include="Blocks\Core\ScheduleDetail\ScheduleExclusionBag.cs" />
     <Compile Include="Blocks\Core\SuggestionDetail\SuggestionDetailBag.cs" />
     <Compile Include="Blocks\Core\SuggestionDetail\SuggestionDetailBox.cs" />

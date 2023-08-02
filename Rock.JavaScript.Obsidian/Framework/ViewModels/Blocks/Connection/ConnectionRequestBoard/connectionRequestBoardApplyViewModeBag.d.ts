@@ -21,8 +21,8 @@
 // </copyright>
 //
 
-/** A bag that contains information to save the view mode preference for the connection request board. */
-export type ConnectionRequestBoardSaveViewModeBag = {
+/** A bag that contains information about the view mode preference to apply for the connection request board. */
+export type ConnectionRequestBoardApplyViewModeBag = {
     /** Gets or sets the identifier of the connection opportunity to which this preference relates. */
     connectionOpportunityId: number;
 
