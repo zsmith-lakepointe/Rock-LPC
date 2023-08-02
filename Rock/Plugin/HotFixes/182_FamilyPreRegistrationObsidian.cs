@@ -65,7 +65,7 @@ namespace Rock.Plugin.HotFixes
             // Webforms 463A454A-6370-4B4A-BCA1-415F2D9B0CB7
             // Obsidian 1D6794F5-876B-47B9-9C9B-5C2C2CC81074
 
-            var FullyQualifiedJobClassName = "Rock.Jobs.PostV15DataMigrationsReplaceWebFormsBlocksWithObsidianBlocks";
+            var FullyQualifiedJobClassName = "Rock.Jobs.PostUpdateDataMigrationsReplaceWebFormsBlocksWithObsidianBlocks";
 
             // Configure run-once job by modifying these variables.
             var commandTimeout = 14000;
