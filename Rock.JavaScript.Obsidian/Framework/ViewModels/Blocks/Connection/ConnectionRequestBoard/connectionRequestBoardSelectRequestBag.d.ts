@@ -21,17 +21,14 @@
 // </copyright>
 //
 
-/** A bag that contains information about a connection request that should be transferred. */
-export type ConnectionRequestBoardTransferRequestBag = {
-    /** Gets or sets the identifier of the connection opportunity to which this connection request should be transferred. */
-    connectionOpportunityId?: number | null;
+/** A bag that contains information needed to select a connection request. */
+export type ConnectionRequestBoardSelectRequestBag = {
+    /**
+     * Gets or sets the connection opportunity identifier, which will be used if the connection request
+     * identifier is 0; this indicates the individual is attempting to add a new connection request.
+     */
+    connectionOpportunityId: number;
 
-    /** Gets or sets the selected connection request identifier. */
+    /** Gets or sets the connection request identifier. */
     connectionRequestId: number;
-
-    /** Gets or sets the identifier of the connection status to which this connection request should be transferred. */
-    connectionStatusId?: number | null;
-
-    /** Gets or sets the identifier of the "connector" person alias to whom this connection request should be transferred. */
-    connectorPersonAliasId?: number | null;
 };

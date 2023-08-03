@@ -17,6 +17,12 @@
   min-height: 0;
 }
 
+.panel-header-actions {
+  .action.disabled {
+    opacity: .5;
+  }
+}
+
 .panel-collapsible {
   // Put toolbar shadow in front of grid.
   z-index: 10; // Set to 10 so the toolbar is in front of the panel-body and active pagination button.
@@ -127,9 +133,13 @@
 
 .board-card {
   &:extend(.board-card-base);
-  cursor: pointer;
+  cursor: default;
   box-shadow: 0 1px 3px 0 rgba(0, 0, 0, .1), 0 1px 2px 0 rgba(0, 0, 0, .06);
   transition: box-shadow 100ms, transform 100ms, background-color 100ms, border-color 100ms;
+
+  &:not(.disabled) {
+    cursor: pointer;
+  }
 
   &:hover {
     box-shadow: 0 3px 5px 0 rgba(0, 0, 0, .1);

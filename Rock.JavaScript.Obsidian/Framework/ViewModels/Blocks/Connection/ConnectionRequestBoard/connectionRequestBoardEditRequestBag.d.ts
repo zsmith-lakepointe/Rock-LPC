@@ -21,17 +21,16 @@
 // </copyright>
 //
 
-/** A bag that contains information about a connection request that should be transferred. */
-export type ConnectionRequestBoardTransferRequestBag = {
-    /** Gets or sets the identifier of the connection opportunity to which this connection request should be transferred. */
-    connectionOpportunityId?: number | null;
+import { ConnectionRequestBoardConnectionRequestBag } from "@Obsidian/ViewModels/Blocks/Connection/ConnectionRequestBoard/connectionRequestBoardConnectionRequestBag";
 
-    /** Gets or sets the selected connection request identifier. */
-    connectionRequestId: number;
+/** A bag that contains information about a connection request that should be added, edited or deleted. */
+export type ConnectionRequestBoardEditRequestBag = {
+    /** Gets or sets the connection opportunity identifier. */
+    connectionOpportunityId: number;
 
-    /** Gets or sets the identifier of the connection status to which this connection request should be transferred. */
-    connectionStatusId?: number | null;
+    /** Gets or sets the connection request that should be added, edited or deleted. */
+    connectionRequest?: ConnectionRequestBoardConnectionRequestBag | null;
 
-    /** Gets or sets the identifier of the "connector" person alias to whom this connection request should be transferred. */
-    connectorPersonAliasId?: number | null;
+    /** Gets or sets whether this request represents a delete operation. */
+    isDelete: boolean;
 };

@@ -46,6 +46,17 @@ namespace Rock.ViewModels.Blocks.Connection.ConnectionRequestBoard
         public List<ListItemBag> PlacementGroups { get; set; }
 
         /// <summary>
+        /// Gets or sets the placement group member roles (by group ID) that can be assigned to a connection request.
+        /// </summary>
+        public Dictionary<string, List<ListItemBag>> PlacementGroupMemberRoles { get; set; }
+
+        /// <summary>
+        /// Gets or sets the placement group member statuses (by group ID and group member role ID) that can be
+        /// assigned to a connection request.
+        /// </summary>
+        public Dictionary<string, List<ListItemBag>> PlacementGroupMemberStatuses { get; set; }
+
+        /// <summary>
         /// Gets or sets the manual workflows that can be launched against a connection request.
         /// </summary>
         public List<ListItemBag> ManualWorkflows { get; set; }

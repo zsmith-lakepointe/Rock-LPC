@@ -153,3 +153,27 @@ export const enum PageParameterKey {
     ConnectionOpportunityId = "ConnectionOpportunityId",
     ConnectionRequestId = "ConnectionRequestId"
 }
+
+/**
+ * The request modal mode options available in the Connection Request Board block.
+ */
+export const enum RequestModalMode {
+    /** An existing connection request is being viewed. */
+    View = 0,
+    /** A connection request is being added or edited. */
+    AddEdit = 1
+}
+
+/**
+ * The request modal "view" sub-mode options available in the Connection Request Board block.
+ */
+export const enum RequestModalViewSubMode {
+    /** An existing connection request is being viewed. */
+    View = 0,
+    /** A existing connection request's connection request activity is being added or edited. */
+    AddEditActivity = 1,
+    /** An existing connection request is being transferred. */
+    Transfer = 2,
+    /** The individual is searching for an alternative connection opportunity to which an existing connection request can be transferred. */
+    TransferSearch = 3
+}

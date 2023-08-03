@@ -38,14 +38,14 @@ export type ConnectionRequestBoardConnectionRequestBag = {
     /** Gets or sets the comments. */
     comments?: string | null;
 
-    /** Gets or sets the connection state. */
-    connectionState?: ListItemBag | null;
+    /** Gets or sets the connection state identifier. */
+    connectionStateId: number;
 
-    /** Gets or sets the connection status. */
-    connectionStatus?: ListItemBag | null;
+    /** Gets or sets the connection status identifier. */
+    connectionStatusId: number;
 
-    /** Gets or sets the "connector" person. */
-    connector?: ListItemBag | null;
+    /** Gets or sets the "connector" person alias identifier. */
+    connectorPersonAliasId?: number | null;
 
     /** Gets or sets the follow-up date. */
     followUpDate?: string | null;
@@ -53,8 +53,14 @@ export type ConnectionRequestBoardConnectionRequestBag = {
     /** Gets or sets the identifier. */
     id: number;
 
-    /** Gets or sets the placement group. */
-    placementGroup?: ListItemBag | null;
+    /** Gets or sets the placement group identifier. */
+    placementGroupId?: number | null;
+
+    /** Gets or sets the placement group member role identifier. */
+    placementGroupMemberRoleId?: number | null;
+
+    /** Gets or sets the placement group member status identifier. */
+    placementGroupMemberStatusId?: number | null;
 
     /** Gets or sets the "requester" person. */
     requester?: ListItemBag | null;

@@ -25,7 +25,7 @@ import { ConnectionRequestBoardConnectionRequestActivityBag } from "@Obsidian/Vi
 
 /** A bag that contains information about a connection request activity that should be added, edited or deleted. */
 export type ConnectionRequestBoardEditActivityBag = {
-    /** Gets or sets the connection request activity that should be edited. */
+    /** Gets or sets the connection request activity that should be added, edited or deleted. */
     activity?: ConnectionRequestBoardConnectionRequestActivityBag | null;
 
     /** Gets or sets the selected connection request identifier. */

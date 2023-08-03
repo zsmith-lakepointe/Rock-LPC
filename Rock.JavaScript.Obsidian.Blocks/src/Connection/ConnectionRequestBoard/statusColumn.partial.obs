@@ -13,6 +13,7 @@
             <RequestCard v-for="connectionRequest in connectionRequests"
                          :key="connectionRequest.Id"
                          :connectionRequest="connectionRequest"
+                         :disabled="disabled"
                          @select="$emit('selectConnectionRequest', connectionRequest.Id)" />
 
             <div v-if="showSentry" class="board-card-base board-column-sentry small">
@@ -33,6 +34,11 @@
         connectionStatus: {
             type: Object as PropType<IConnectionStatusViewModel>,
             required: true
+        },
+
+        disabled: {
+            type: Boolean as PropType<boolean>,
+            default: false
         }
     });
 

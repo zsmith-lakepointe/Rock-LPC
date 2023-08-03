@@ -51,6 +51,7 @@
     <Compile Include="Blocks\Connection\ConnectionRequestBoard\ConnectionRequestBoardEditActivityBag.cs" />
     <Compile Include="Blocks\Connection\ConnectionRequestBoard\ConnectionRequestBoardActivityOptionsBag.cs" />
     <Compile Include="Blocks\Connection\ConnectionRequestBoard\ConnectionRequestBoardConnectionRequestActivityBag.cs" />
+    <Compile Include="Blocks\Connection\ConnectionRequestBoard\ConnectionRequestBoardEditRequestBag.cs" />
     <Compile Include="Blocks\Connection\ConnectionRequestBoard\ConnectionRequestBoardGridDataBag.cs" />
     <Compile Include="Blocks\Connection\ConnectionRequestBoard\ConnectionRequestBoardGroupRequirementBag.cs" />
     <Compile Include="Blocks\Connection\ConnectionRequestBoard\ConnectionRequestBoardPhoneBag.cs" />
@@ -59,6 +60,7 @@
     <Compile Include="Blocks\Connection\ConnectionRequestBoard\ConnectionRequestBoardApplyFiltersBag.cs" />
     <Compile Include="Blocks\Connection\ConnectionRequestBoard\ConnectionRequestBoardApplyViewModeBag.cs" />
     <Compile Include="Blocks\Connection\ConnectionRequestBoard\ConnectionRequestBoardSelectedRequestBag.cs" />
+    <Compile Include="Blocks\Connection\ConnectionRequestBoard\ConnectionRequestBoardSelectRequestBag.cs" />
     <Compile Include="Blocks\Connection\ConnectionRequestBoard\ConnectionRequestBoardTransferOptionsBag.cs" />
     <Compile Include="Blocks\Connection\ConnectionRequestBoard\ConnectionRequestBoardTransferRequestBag.cs" />
     <Compile Include="Blocks\Connection\ConnectionRequestBoard\ConnectionRequestBoardWorkflowBag.cs" />

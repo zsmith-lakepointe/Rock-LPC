@@ -12,19 +12,22 @@
            :headerSecondaryActions="secondaryActions">
 
         <template #headerActions>
-            <span class="action">
+            <span :class="headerActionCssClass">
                 <Following :entityTypeGuid="EntityType.ConnectionOpportunity"
                            :entityKey="connectionOpportunityId?.toString()"
+                           :disabled="isBoardDisabled"
                            @followedStateUpdated="onFollowedStateUpdated" />
             </span>
 
             <span title="Click to change display mode."
-                  :class="viewModeActionCssClass"
+                  :class="headerActionCssClass"
                   @click="onViewModeChanged()">
                 <i :class="viewModeCssClass"></i>
             </span>
 
-            <span class="action">
+            <span title="Click to add a new connection request."
+                  :class="headerActionCssClass"
+                  @click="onSelectConnectionRequest(0)">
                 <i class="fa fa-plus-square"></i>
             </span>
         </template>
@@ -35,6 +38,7 @@
                      :filters="filters"
                      :currentPersonAliasId="currentPersonAliasId"
                      :disabled="isBoardDisabled"
+                     :isOpportunityButtonDisabled="isOpportunityButtonDisabled"
                      @opportunityChanged="onOpportunityChanged"
                      @filtersChanged="onFiltersChanged" />
         </template>
@@ -66,7 +70,8 @@
                   :disabled="isBoardDisabled"
                   @selectConnectionRequest="onSelectConnectionRequest" />
 
-        <RequestModal v-model:connectionRequestId="connectionRequestId" />
+        <RequestModal :connectionOpportunityId="connectionOpportunityId"
+                      v-model:connectionRequestId="connectionRequestId" />
 
     </Panel>
 </template>
@@ -115,15 +120,6 @@
     const securityGrant = getSecurityGrant(config.securityGrantToken);
     const reloadBlock = useReloadBlock();
 
-    const secondaryActions: PanelAction[] = [
-        {
-            title: "Campaign Requests",
-            iconCssClass: "fas fa-user-plus",
-            type: "default",
-            handler: () => alert("Campaign Requests selected.")
-        }
-    ];
-
     const defaultDelimiter = "|";
 
     // #region Values
@@ -167,6 +163,18 @@
         return cssClass;
     });
 
+    const secondaryActions = computed((): PanelAction[] => {
+        return [
+            {
+                title: "Campaign Requests",
+                iconCssClass: "fas fa-user-plus",
+                type: "default",
+                handler: () => alert("Campaign Requests selected."),
+                disabled: isBoardDisabled.value
+            }
+        ];
+    });
+
     const connectionOpportunity = computed((): ConnectionRequestBoardConnectionOpportunityBag | null | undefined => {
         return selectedOpportunity.value?.connectionOpportunity;
     });
@@ -179,8 +187,8 @@
         return connectionOpportunity.value?.publicName ?? "";
     });
 
-    const viewModeActionCssClass = computed((): string => {
-        return `action${isBoardDisabled.value ? "" : " clickable"}`;
+    const headerActionCssClass = computed((): string => {
+        return `action${(isBoardDisabled.value ? " disabled" : " clickable")}`;
     });
 
     const viewModeCssClass = computed((): string => {
@@ -212,6 +220,10 @@
             || isSavingFilters.value
             || isLoadingConnectionStatuses.value
             || isLoadingGridBag.value;
+    });
+
+    const isOpportunityButtonDisabled = computed((): boolean => {
+        return isBoardDisabled.value && !!connectionOpportunity.value;
     });
 
     // #endregion
@@ -473,6 +485,8 @@
      * @param requestId The identifier for the selected connection request.
      */
     function onSelectConnectionRequest(requestId: number): void {
+        // The connectionRequestId ref is bound to the RequestModal component, so simply setting
+        // the value will trigger the modal to open.
         connectionRequestId.value = requestId;
     }
 

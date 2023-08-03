@@ -15,7 +15,6 @@
 // </copyright>
 //
 
-using Rock.ViewModels.Utility;
 using System;
 
 namespace Rock.ViewModels.Blocks.Connection.ConnectionRequestBoard
@@ -33,14 +32,14 @@ namespace Rock.ViewModels.Blocks.Connection.ConnectionRequestBoard
         public int Id { get; set; }
 
         /// <summary>
-        /// Gets or sets the connection activity type.
+        /// Gets or sets the connection activity type identifier.
         /// </summary>
-        public ListItemBag ActivityType { get; set; }
+        public int ActivityTypeId { get; set; }
 
         /// <summary>
-        /// Gets or sets the "connector" person.
+        /// Gets or sets the "connector" person alias identifier.
         /// </summary>
-        public ListItemBag Connector { get; set; }
+        public int? ConnectorPersonAliasId { get; set; }
 
         /// <summary>
         /// Gets or sets the note.

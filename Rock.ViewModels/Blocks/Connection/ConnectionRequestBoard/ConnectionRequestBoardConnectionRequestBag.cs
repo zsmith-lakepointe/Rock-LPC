@@ -37,24 +37,34 @@ namespace Rock.ViewModels.Blocks.Connection.ConnectionRequestBoard
         public ListItemBag Requester { get; set; }
 
         /// <summary>
-        /// Gets or sets the "connector" person.
+        /// Gets or sets the "connector" person alias identifier.
         /// </summary>
-        public ListItemBag Connector { get; set; }
+        public int? ConnectorPersonAliasId { get; set; }
 
         /// <summary>
-        /// Gets or sets the connection state.
+        /// Gets or sets the connection state identifier.
         /// </summary>
-        public ListItemBag ConnectionState { get; set; }
+        public int ConnectionStateId { get; set; }
 
         /// <summary>
-        /// Gets or sets the connection status.
+        /// Gets or sets the connection status identifier.
         /// </summary>
-        public ListItemBag ConnectionStatus { get; set; }
+        public int ConnectionStatusId { get; set; }
 
         /// <summary>
-        /// Gets or sets the placement group.
+        /// Gets or sets the placement group identifier.
         /// </summary>
-        public ListItemBag PlacementGroup { get; set; }
+        public int? PlacementGroupId { get; set; }
+
+        /// <summary>
+        /// Gets or sets the placement group member role identifier.
+        /// </summary>
+        public int? PlacementGroupMemberRoleId { get; set; }
+
+        /// <summary>
+        /// Gets or sets the placement group member status identifier.
+        /// </summary>
+        public int? PlacementGroupMemberStatusId { get; set; }
 
         /// <summary>
         /// Gets or sets the campus.

@@ -37,6 +37,15 @@ export type ConnectionRequestBoardRequestOptionsBag = {
     /** Gets or sets the manual workflows that can be launched against a connection request. */
     manualWorkflows?: ListItemBag[] | null;
 
+    /** Gets or sets the placement group member roles (by group ID) that can be assigned to a connection request. */
+    placementGroupMemberRoles?: Record<string, ListItemBag[]> | null;
+
+    /**
+     * Gets or sets the placement group member statuses (by group ID and group member role ID) that can be
+     * assigned to a connection request.
+     */
+    placementGroupMemberStatuses?: Record<string, ListItemBag[]> | null;
+
     /** Gets or sets the placement groups that can be assigned to a connection request. */
     placementGroups?: ListItemBag[] | null;
 };

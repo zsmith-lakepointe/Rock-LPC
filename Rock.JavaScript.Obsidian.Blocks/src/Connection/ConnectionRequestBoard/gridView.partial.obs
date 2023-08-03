@@ -11,6 +11,11 @@
         gridData: {
             type: Object as PropType<ConnectionRequestBoardGridDataBag | null | undefined>,
             required: true
+        },
+
+        disabled: {
+            type: Boolean as PropType<boolean>,
+            default: false
         }
     });
 

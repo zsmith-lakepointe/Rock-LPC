@@ -3,10 +3,13 @@
     <div class="drag-scroll-zone-container">
         <div v-drag-scroll.left="{ id: newGuid() }" class="board-view-panel-body overflow-scroll">
             <div class="board-column-container">
+
                 <StatusColumn v-for="connectionStatus in connectionStatuses"
                               :key="connectionStatus.Id"
                               :connectionStatus="connectionStatus"
+                              :disabled="disabled"
                               @selectConnectionRequest="$emit('selectConnectionRequest', $event)" />
+
             </div>
         </div>
     </div>
@@ -23,6 +26,11 @@
         connectionStatuses: {
             type: Array as PropType<IConnectionStatusViewModel[]>,
             required: true
+        },
+
+        disabled: {
+            type: Boolean as PropType<boolean>,
+            default: false
         }
     });
 

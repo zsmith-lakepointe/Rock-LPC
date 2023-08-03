@@ -18,23 +18,19 @@
 namespace Rock.ViewModels.Blocks.Connection.ConnectionRequestBoard
 {
     /// <summary>
-    /// A bag that contains information about a connection request activity that should be added, edited or deleted.
+    /// A bag that contains information needed to select a connection request.
     /// </summary>
-    public class ConnectionRequestBoardEditActivityBag
+    public class ConnectionRequestBoardSelectRequestBag
     {
         /// <summary>
-        /// Gets or sets the selected connection request identifier.
+        /// Gets or sets the connection request identifier.
         /// </summary>
         public int ConnectionRequestId { get; set; }
 
         /// <summary>
-        /// Gets or sets the connection request activity that should be added, edited or deleted.
+        /// Gets or sets the connection opportunity identifier, which will be used if the connection request
+        /// identifier is 0; this indicates the individual is attempting to add a new connection request.
         /// </summary>
-        public ConnectionRequestBoardConnectionRequestActivityBag Activity { get; set; }
-
-        /// <summary>
-        /// Gets or sets whether this request represents a delete operation.
-        /// </summary>
-        public bool IsDelete { get; set; }
+        public int ConnectionOpportunityId { get; set; }
     }
 }

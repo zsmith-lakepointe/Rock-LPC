@@ -21,18 +21,16 @@
 // </copyright>
 //
 
-import { ListItemBag } from "@Obsidian/ViewModels/Utility/listItemBag";
-
 /** A bag that contains connection request activity information for the connection request board. */
 export type ConnectionRequestBoardConnectionRequestActivityBag = {
-    /** Gets or sets the connection activity type. */
-    activityType?: ListItemBag | null;
+    /** Gets or sets the connection activity type identifier. */
+    activityTypeId: number;
 
     /** Get or sets the connection activity type name. */
     activityTypeName?: string | null;
 
-    /** Gets or sets the "connector" person. */
-    connector?: ListItemBag | null;
+    /** Gets or sets the "connector" person alias identifier. */
+    connectorPersonAliasId?: number | null;
 
     /** Gets or sets the "connector" person's full name. */
     connectorPersonFullName?: string | null;

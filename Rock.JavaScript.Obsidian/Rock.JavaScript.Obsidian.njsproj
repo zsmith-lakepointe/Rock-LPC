@@ -745,11 +745,13 @@
     <TypeScriptCompile Include="Framework\ViewModels\Blocks\Connection\ConnectionRequestBoard\connectionRequestBoardConnectionRequestActivityBag.d.ts" />
     <TypeScriptCompile Include="Framework\ViewModels\Blocks\Connection\ConnectionRequestBoard\connectionRequestBoardConnectionRequestBag.d.ts" />
     <TypeScriptCompile Include="Framework\ViewModels\Blocks\Connection\ConnectionRequestBoard\connectionRequestBoardEditActivityBag.d.ts" />
+    <TypeScriptCompile Include="Framework\ViewModels\Blocks\Connection\ConnectionRequestBoard\connectionRequestBoardEditRequestBag.d.ts" />
     <TypeScriptCompile Include="Framework\ViewModels\Blocks\Connection\ConnectionRequestBoard\connectionRequestBoardGridDataBag.d.ts" />
     <TypeScriptCompile Include="Framework\ViewModels\Blocks\Connection\ConnectionRequestBoard\connectionRequestBoardGroupRequirementBag.d.ts" />
     <TypeScriptCompile Include="Framework\ViewModels\Blocks\Connection\ConnectionRequestBoard\connectionRequestBoardPhoneBag.d.ts" />
     <TypeScriptCompile Include="Framework\ViewModels\Blocks\Connection\ConnectionRequestBoard\connectionRequestBoardRequestOptionsBag.d.ts" />
     <TypeScriptCompile Include="Framework\ViewModels\Blocks\Connection\ConnectionRequestBoard\connectionRequestBoardSelectedRequestBag.d.ts" />
+    <TypeScriptCompile Include="Framework\ViewModels\Blocks\Connection\ConnectionRequestBoard\connectionRequestBoardSelectRequestBag.d.ts" />
     <TypeScriptCompile Include="Framework\ViewModels\Blocks\Connection\ConnectionRequestBoard\connectionRequestBoardTransferOptionsBag.d.ts" />
     <TypeScriptCompile Include="Framework\ViewModels\Blocks\Connection\ConnectionRequestBoard\connectionRequestBoardTransferRequestBag.d.ts" />
     <TypeScriptCompile Include="Framework\ViewModels\Blocks\Connection\ConnectionRequestBoard\connectionRequestBoardWorkflowBag.d.ts" />

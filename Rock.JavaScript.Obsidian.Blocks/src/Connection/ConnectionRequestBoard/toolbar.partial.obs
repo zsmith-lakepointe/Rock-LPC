@@ -9,7 +9,8 @@
                         class="btn btn-xs btn-tool dropdown-toggle"
                         data-toggle="dropdown"
                         aria-haspopup="true"
-                        aria-expanded="false">
+                        aria-expanded="false"
+                        :disabled="isOpportunityButtonDisabled">
                     <i class="fa fa-plug"></i>
                     Opportunities
                 </button>
@@ -103,7 +104,7 @@
                         <template v-if="filterOptions?.connectors?.length">
                             <li class="divider"></li>
                             <li v-for="connector in filterOptions.connectors">
-                                <a href="#" @click.prevent="onConnectorChanged(Number(connector.value))">
+                                <a href="#" @click.prevent="onConnectorChanged(toNumberOrNull(connector.value))">
                                     {{ connector.text }}
                                 </a>
                             </li>
@@ -112,7 +113,7 @@
                 </div>
 
                 <!-- Campus -->
-                <div v-if="showCampusFilter" class="btn-group">
+                <div v-if="isCampusFilterVisible" class="btn-group">
                     <button type="button"
                             class="btn btn-xs btn-tool dropdown-toggle"
                             data-toggle="dropdown"
@@ -127,7 +128,7 @@
                             <a href="#" @click.prevent="onCampusChanged(null)">&nbsp;</a>
                         </li>
                         <li v-for="campus in filterOptions?.campuses ?? []">
-                            <a href="#" @click.prevent="onCampusChanged(Number(campus.value))">
+                            <a href="#" @click.prevent="onCampusChanged(toNumberOrNull(campus.value))">
                                 {{ campus.text }}
                             </a>
                         </li>
@@ -206,6 +207,7 @@
     import { ConnectionRequestBoardFiltersBag } from "@Obsidian/ViewModels/Blocks/Connection/ConnectionRequestBoard/connectionRequestBoardFiltersBag";
     import { SlidingDateRangeBag } from "@Obsidian/ViewModels/Controls/slidingDateRangeBag";
     import { ListItemBag } from "@Obsidian/ViewModels/Utility/listItemBag";
+    import { toNumberOrNull } from "@Obsidian/Utility/numberUtils";
 
     const props = defineProps({
         connectionTypes: {
@@ -229,6 +231,11 @@
         },
 
         disabled: {
+            type: Boolean as PropType<boolean>,
+            default: false
+        },
+
+        isOpportunityButtonDisabled: {
             type: Boolean as PropType<boolean>,
             default: false
         }
@@ -293,13 +300,13 @@
 
         const connectorName = props.filterOptions
             ?.connectors
-            ?.find(c => Number(c.value) === connectorPersonAliasId.value)
+            ?.find(c => toNumberOrNull(c.value) === connectorPersonAliasId.value)
             ?.text;
 
         return `Connector${connectorName ? `: ${connectorName}` : ""}`;
     });
 
-    const showCampusFilter = computed((): boolean => {
+    const isCampusFilterVisible = computed((): boolean => {
         return (props.filterOptions?.campuses?.length ?? 0) > 1;
     });
 
@@ -310,7 +317,7 @@
 
         const campusName = props.filterOptions
             ?.campuses
-            ?.find(c => Number(c.value) === campusId.value)
+            ?.find(c => toNumberOrNull(c.value) === campusId.value)
             ?.text;
 
         return `Campus${campusName ? `: ${campusName}` : ""}`;

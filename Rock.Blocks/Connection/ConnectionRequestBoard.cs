@@ -1346,10 +1346,10 @@ namespace Rock.Blocks.Connection
         /// <summary>
         /// Gets the specified connection request.
         /// </summary>
-        /// <param name="connectionRequestId">The identifier of the connection request to get.</param>
+        /// <param name="bag">an object containing information needed to select (or add a new) connection request.</param>
         /// <returns>An object containing the specified connection request and supporting information.</returns>
         [BlockAction]
-        public BlockActionResult GetConnectionRequest( int connectionRequestId )
+        public BlockActionResult GetConnectionRequest( ConnectionRequestBoardSelectRequestBag bag )
         {
             using ( var rockContext = new RockContext() )
             {

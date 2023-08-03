@@ -15,8 +15,6 @@
 // </copyright>
 //
 
-using Rock.ViewModels.Utility;
-
 namespace Rock.ViewModels.Blocks.Connection.ConnectionRequestBoard
 {
     /// <summary>
@@ -30,18 +28,18 @@ namespace Rock.ViewModels.Blocks.Connection.ConnectionRequestBoard
         public int ConnectionRequestId { get; set; }
 
         /// <summary>
-        /// Gets or sets the connection opportunity to which this connection request should be transferred.
+        /// Gets or sets the identifier of the connection opportunity to which this connection request should be transferred.
         /// </summary>
-        public ListItemBag ConnectionOpportunity { get; set; }
+        public int? ConnectionOpportunityId { get; set; }
 
         /// <summary>
-        /// Gets or sets the connection status to which this connection request should be transferred.
+        /// Gets or sets the identifier of the connection status to which this connection request should be transferred.
         /// </summary>
-        public ListItemBag ConnectionStatus { get; set; }
+        public int? ConnectionStatusId { get; set; }
 
         /// <summary>
-        /// Gets or sets the "connector" person to whom this connection request should be transferred.
+        /// Gets or sets the identifier of the "connector" person alias to whom this connection request should be transferred.
         /// </summary>
-        public ListItemBag Connector { get; set; }
+        public int? ConnectorPersonAliasId { get; set; }
     }
 }
