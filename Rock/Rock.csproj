@@ -840,7 +840,6 @@
     <Compile Include="Bus\Queue\GivingEventQueue.cs" />
     <Compile Include="Bus\Queue\TransactionAlertQueue.cs" />
     <Compile Include="CheckIn\RosterAttendeeAttendance.cs" />
-    <Compile Include="Communication\Transport\Firebase\FirebaseAppWrapper.cs" />
     <Compile Include="Communication\Transport\SmsTest.cs" />
     <Compile Include="Communication\VideoEmbed\VideoEmbedContainer.cs" />
     <Compile Include="Communication\VideoEmbed\VideoEmbedComponent.cs" />
@@ -1758,7 +1757,7 @@
     <Compile Include="Utility\ExtensionMethods\Image.cs" />
     <Compile Include="Utility\IdHasher.cs" />
     <Compile Include="Utility\MethodRetry.cs" />
-    <Compile Include="Communication\Transport\Firebase\RockMobilePush.cs" />
+    <Compile Include="Communication\Transport\RockMobilePush.cs" />
     <Compile Include="Communication\Transport\SafeSenderResult.cs" />
     <Compile Include="Communication\CommunicationTemplateHelper.cs" />
     <Compile Include="Data\DecimalPrecisionAttribute.cs" />
@@ -2483,7 +2482,7 @@
     <Compile Include="Communication\Transport\SMTPComponent.cs" />
     <Compile Include="Communication\TransportComponent.cs" />
     <Compile Include="Communication\TransportContainer.cs" />
-    <Compile Include="Communication\Transport\Firebase\Firebase.cs" />
+    <Compile Include="Communication\Transport\Firebase.cs" />
     <Compile Include="Communication\Transport\SMTP.cs" />
     <Compile Include="Communication\Transport\Twilio.cs" />
     <Compile Include="Configuration\AttributeValueConfig.cs" />

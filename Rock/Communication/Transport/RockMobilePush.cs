@@ -511,7 +511,7 @@ namespace Rock.Communication.Transport
                     }
                 }
 
-                var instanceName = $"RockFirebase-{Guid.NewGuid()}";
+                var instanceName = $"RockMobilePush-{Guid.NewGuid()}";
 
                 FirebaseApp.Create( new AppOptions
                 {
