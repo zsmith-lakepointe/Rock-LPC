@@ -2336,25 +2336,14 @@ namespace RockWeb.Blocks.Crm
                                 {
                                     var newGroupMembers = new List<GroupMember>();
 
-                                    var existingIds = existingMembersQuery.Select( m => m.PersonId ).Distinct().ToList();
-                                    
-                                    var personKeys = ids.Where( id => !existingIds.Contains( id ) || sameIdDifferentRole( id ) ).ToList();
-
-                                    // Check for a duplicate person that has a different role.
-                                    bool sameIdDifferentRole( int id )
-                                    {
-                                        bool personHasDifferentRole = true;
-                                        var samePersonAsMember = existingMembersQuery.Where( m => m.PersonId == id ).ToList();
-                                        foreach( GroupMember member in samePersonAsMember )
+                                    var existingMembers = existingMembersQuery
+                                        .Select( m => new
                                         {
-                                            if( member.GroupRoleId == UpdateGroupRoleId.Value)
-                                            {
-                                                personHasDifferentRole = false;
-                                            }
-                                        }
+                                            m.PersonId,
+                                            m.GroupRoleId
+                                        } ).ToList();
 
-                                        return personHasDifferentRole;
-                                    }
+                                    var personKeys = ids.Where( id => !existingMembers.Any( m => m.PersonId == id && m.GroupRoleId == UpdateGroupRoleId.Value ) ).ToList();
 
                                     Action<RockContext, List<int>> addAction = ( context, items ) =>
                                     {
