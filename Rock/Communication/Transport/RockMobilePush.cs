@@ -56,6 +56,22 @@ namespace Rock.Communication.Transport
         Order = 1 )]
 
     [Rock.SystemGuid.EntityTypeGuid( "AB86881F-4A9C-4138-A0B4-252B4E00C145" )]
+
+    /*
+     * BC - 8/7/23 
+     * This class can be drastically simplified in June of 2024.
+     * The package we were previously using (FCM.NET) will no longer
+     * work due to the deprecation of the APIs it was targeting.
+     * 
+     * https://firebase.google.com/docs/cloud-messaging/migrate-v1
+     * https://onesignal.com/blog/what-you-should-know-about-the-fcm-depreciation-announcement/
+     * 
+     * Once these APIs are removed (in June of 2024),
+     * the FCM.NET package will no longer work and the legacy
+     * methods can be removed.
+     * 
+     */
+
     public class RockMobilePush : TransportComponent, IRockMobilePush
     {
         #region Fields

@@ -52,6 +52,21 @@ namespace Rock.Communication.Transport
         Key = AttributeKeys.ServiceAccountJson,
         Order = 1 )]
 
+    /*
+     * BC - 8/7/23 
+     * This class can be drastically simplified in June of 2024.
+     * The package we were previously using (FCM.NET) will no longer
+     * work due to the deprecation of the APIs it was targeting.
+     * 
+     * https://firebase.google.com/docs/cloud-messaging/migrate-v1
+     * https://onesignal.com/blog/what-you-should-know-about-the-fcm-depreciation-announcement/
+     * 
+     * Once these APIs are removed (in June of 2024),
+     * the FCM.NET package will no longer work and the legacy
+     * methods can be removed.
+     * 
+     */
+
     [Rock.SystemGuid.EntityTypeGuid( "3D051BA9-1A85-433C-B4B9-9A430348BCBB" )]
     public class Firebase : TransportComponent
     {
