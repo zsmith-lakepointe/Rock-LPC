@@ -101,12 +101,17 @@ namespace Rock.ViewModels.Blocks.Connection.ConnectionRequestBoard
         public List<ConnectionRequestBoardWorkflowBag> Workflows { get; set; }
 
         /// <summary>
-        /// Gets or sets whether editing is enabled.
+        /// Gets or sets whether viewing is enabled for this connection request.
+        /// </summary>
+        public bool IsViewEnabled { get; set; }
+
+        /// <summary>
+        /// Gets or sets whether editing is enabled for this connection request.
         /// </summary>
         public bool IsEditEnabled { get; set; }
 
         /// <summary>
-        /// Gets or sets whether connecting is enabled.
+        /// Gets or sets whether connecting is enabled for this connection request.
         /// </summary>
         public bool IsConnectEnabled { get; set; }
 
@@ -116,7 +121,7 @@ namespace Rock.ViewModels.Blocks.Connection.ConnectionRequestBoard
         public bool IsConnectButtonVisible { get; set; }
 
         /// <summary>
-        /// Gets or sets whether transferring is enabled.
+        /// Gets or sets whether transferring is enabled for this connection request.
         /// </summary>
         public bool IsTransferEnabled { get; set; }
 

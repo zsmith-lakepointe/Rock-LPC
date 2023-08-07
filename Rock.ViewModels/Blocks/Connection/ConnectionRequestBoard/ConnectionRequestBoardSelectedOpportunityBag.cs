@@ -28,11 +28,6 @@ namespace Rock.ViewModels.Blocks.Connection.ConnectionRequestBoard
         public ConnectionRequestBoardConnectionOpportunityBag ConnectionOpportunity { get; set; }
 
         /// <summary>
-        /// Gets or sets the selected connection request identifier, if a specific request should be opened.
-        /// </summary>
-        public int? ConnectionRequestId { get; set; }
-
-        /// <summary>
         /// Gets or sets the filter options that may be used to filter connection requests.
         /// </summary>
         public ConnectionRequestBoardFilterOptionsBag FilterOptions { get; set; }
@@ -43,13 +38,18 @@ namespace Rock.ViewModels.Blocks.Connection.ConnectionRequestBoard
         public ConnectionRequestBoardFiltersBag Filters { get; set; }
 
         /// <summary>
-        /// Gets or sets whether the board is in card view mode.
+        /// Gets or sets whether connection request adding is enabled.
         /// </summary>
-        public bool IsCardViewMode { get; set; } = true;
+        public bool IsRequestAddingEnabled { get; set; }
 
         /// <summary>
         /// Gets or sets whether connection request security is enabled.
         /// </summary>
         public bool IsRequestSecurityEnabled { get; set; }
+
+        /// <summary>
+        /// Gets or sets whether the board is in card view mode.
+        /// </summary>
+        public bool IsCardViewMode { get; set; } = true;
     }
 }

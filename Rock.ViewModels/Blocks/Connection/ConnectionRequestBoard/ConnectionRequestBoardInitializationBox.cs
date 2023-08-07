@@ -35,6 +35,11 @@ namespace Rock.ViewModels.Blocks.Connection.ConnectionRequestBoard
         public ConnectionRequestBoardSelectedOpportunityBag SelectedOpportunity { get; set; }
 
         /// <summary>
+        /// Gets or sets the selected connection request - if any - and supporting information.
+        /// </summary>
+        public ConnectionRequestBoardSelectedRequestBag SelectedRequest { get; set; }
+
+        /// <summary>
         /// Gets or sets the maximum number of cards that should be displayed per column in card view mode.
         /// </summary>
         public int MaxCardsPerColumn { get; set; }
