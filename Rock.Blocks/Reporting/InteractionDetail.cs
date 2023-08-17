@@ -190,7 +190,7 @@ namespace Rock.Blocks.Reporting
             }
             else
             {
-                box.ErrorMessage = "<strong>Missing Component Information</strong> <span> <p> Make sure you have navigated to this page correctly. </p> </span>";
+                box.ErrorMessage = "<strong>Missing Interaction Information</strong> <span> <p> Make sure you have navigated to this page correctly. </p> </span>";
             }
 
             return box;
