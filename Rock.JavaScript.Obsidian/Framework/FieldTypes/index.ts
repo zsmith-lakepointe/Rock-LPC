@@ -26,6 +26,9 @@ export { ConfigurationValues, getFieldEditorProps } from "./utils";
 import { AddressFieldType } from "./addressField.partial";
 registerFieldType(FieldTypeGuids.Address, new AddressFieldType());
 
+import { AudioFileFieldType } from "./audioFileField.partial";
+registerFieldType(FieldTypeGuids.AudioFile, new AudioFileFieldType());
+
 import { BackgroundCheckFieldType } from "./backgroundCheckField.partial";
 registerFieldType(FieldTypeGuids.Backgroundcheck, new BackgroundCheckFieldType());
 

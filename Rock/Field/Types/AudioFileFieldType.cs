@@ -32,7 +32,7 @@ namespace Rock.Field.Types
     /// Audio file field type
     /// Stored as BinaryFile.Guid
     /// </summary>
-    [RockPlatformSupport( Utility.RockPlatform.WebForms )]
+    [RockPlatformSupport( Utility.RockPlatform.WebForms, Utility.RockPlatform.Obsidian )]
     [Rock.SystemGuid.FieldTypeGuid( Rock.SystemGuid.FieldType.AUDIO_FILE )]
     public class AudioFileFieldType : FileFieldType, IEntityReferenceFieldType
     {
@@ -133,6 +133,40 @@ namespace Rock.Field.Types
         }
 
         #endregion
+
+        #region Edit Control
+
+        /// <inheritdoc/>
+        public override string GetPublicValue( string privateValue, Dictionary<string, string> privateConfigurationValues )
+        {
+            if ( !string.IsNullOrWhiteSpace( privateValue ) && Guid.TryParse( privateValue, out Guid guidValue ) )
+            {
+                using ( var rockContext = new RockContext() )
+                {
+                    var binaryFileInfo = new BinaryFileService( rockContext )
+                        .Queryable()
+                        .AsNoTracking()
+                        .Where( f => f.Guid == guidValue )
+                        .Select( f => new
+                        {
+                            f.FileName,
+                            f.Guid
+                        } )
+                        .FirstOrDefault();
+
+                    if ( binaryFileInfo == null )
+                    {
+                        return "";
+                    }
+
+                    return binaryFileInfo.FileName;
+                }
+            }
+
+            return base.GetPublicValue( privateValue, privateConfigurationValues );
+        }
+
+        #endregion Edit Control
 
         #region IEntityReferenceFieldType
 
