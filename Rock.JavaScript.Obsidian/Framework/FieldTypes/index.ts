@@ -29,6 +29,9 @@ registerFieldType(FieldTypeGuids.Address, new AddressFieldType());
 import { AudioUrlFieldType } from "./audioUrlField.partial";
 registerFieldType(FieldTypeGuids.AudioUrl, new AudioUrlFieldType());
 
+import { BadgesFieldType } from "./badgesField.partial";
+registerFieldType(FieldTypeGuids.Badges, new BadgesFieldType());
+
 import { BackgroundCheckFieldType } from "./backgroundCheckField.partial";
 registerFieldType(FieldTypeGuids.Backgroundcheck, new BackgroundCheckFieldType());
 
