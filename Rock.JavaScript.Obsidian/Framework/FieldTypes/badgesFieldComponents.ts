@@ -115,7 +115,7 @@ export const ConfigurationComponent = defineComponent({
             // Construct the new value that will be emitted if it is different
             // than the current value.
             newValue[ConfigurationValueKey.EnhancedSelection] = asTrueOrFalseString(enhancedSelection.value);
-            newValue[ConfigurationValueKey.RepeatColumns] = enhancedSelection.value ? numberOfColumns.value?.toString() ?? "" : "";
+            newValue[ConfigurationValueKey.RepeatColumns] = enhancedSelection.value === false ? numberOfColumns.value?.toString() ?? "" : "";
             newValue[ConfigurationValueKey.ClientValues] = props.modelValue[ConfigurationValueKey.ClientValues];
 
             // Compare the new value and the old value.
