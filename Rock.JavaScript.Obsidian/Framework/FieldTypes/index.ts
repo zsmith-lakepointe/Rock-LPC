@@ -77,6 +77,9 @@ registerFieldType(FieldTypeGuids.CommunicationPreferenceType, new CommunicationP
 import { CommunicationTemplateFieldType } from "./communicationTemplateField.partial";
 registerFieldType(FieldTypeGuids.CommunicationTemplate, new CommunicationTemplateFieldType());
 
+import { ComparisonFieldType } from "./comparisonField.partial";
+registerFieldType(FieldTypeGuids.Comparison, new ComparisonFieldType());
+
 import { CurrencyFieldType } from "./currencyField.partial";
 registerFieldType(FieldTypeGuids.Currency, new CurrencyFieldType());
 
