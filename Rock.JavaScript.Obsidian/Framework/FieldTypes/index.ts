@@ -74,6 +74,9 @@ registerFieldType(FieldTypeGuids.ConnectionTypes, new ConnectionTypesField());
 import { CommunicationPreferenceField } from "./communicationPreferenceField.partial";
 registerFieldType(FieldTypeGuids.CommunicationPreferenceType, new CommunicationPreferenceField());
 
+import { CommunicationTemplateFieldType } from "./communicationTemplateField.partial";
+registerFieldType(FieldTypeGuids.CommunicationTemplate, new CommunicationTemplateFieldType());
+
 import { CurrencyFieldType } from "./currencyField.partial";
 registerFieldType(FieldTypeGuids.Currency, new CurrencyFieldType());
 
