@@ -24,6 +24,7 @@
 import { CampusScheduleBag } from "@Obsidian/ViewModels/Blocks/Core/CampusDetail/campusScheduleBag";
 import { ListItemBag } from "@Obsidian/ViewModels/Utility/listItemBag";
 import { PublicAttributeBag } from "@Obsidian/ViewModels/Utility/publicAttributeBag";
+import { CampusTopicsBag } from "@Obsidian/ViewModels/Blocks/Core/CampusDetail/campusTopicsBag";
 
 /**
  * Class CampusBag.
@@ -80,4 +81,7 @@ export type CampusBag = {
 
     /** Gets or sets the URL. */
     url?: string | null;
+
+    /** Gets or sets the campus topics. */
+    campusTopics?: CampusTopicsBag[] | null;
 };

@@ -122,8 +122,34 @@
                                 <th>Type</th>
                                 <th>Email</th>
                                 <th>Public</th>
+                                <th class="grid-columncommand"></th>
+                                <th class="grid-columncommand"></th>
                             </tr>
                         </thead>
+
+                        <tbody>
+                            <tr v-for="row in campusTopics">
+                                <td>{{ row.type?.text }}</td>
+                                <td>{{ row.email }}</td>
+                                <td class="grid-bool-field" align="center">
+                                    <i v-if="row.isPublic" class="fa fa-check"></i>
+                                </td>
+                                <td class="grid-columncommand" align="center">
+                                    <a class="btn btn-sm grid-edit-button" @click.prevent="onEditTopicClick(row)">
+                                        <i class="fa fa-pencil"></i>
+                                    </a>
+                                </td>
+                                <td class="grid-columncommand" align="center">
+                                    <a class="btn btn-danger btn-sm grid-delete-button" @click.prevent="onDeleteTopicClick(row)">
+                                        <i class="fa fa-times"></i>
+                                    </a>
+                                </td>
+                            </tr>
+
+                            <tr v-if="campusTopics == null || campusTopics.length == 0">
+                                <td colspan="5">No Topics Found</td>
+                            </tr>
+                        </tbody>
 
                         <tfoot>
                             <tr>
@@ -132,7 +158,7 @@
                                         accesskey="n"
                                         title="Alt+N"
                                         href="#"
-                                        @click.prevent="onAddCustomFieldClick">
+                                        @click.prevent="onAddTopicClick">
                                             <i class="fa fa-plus-circle fa-fw"></i>
                                     </a>
                                 </td>
@@ -158,6 +184,25 @@
                         :definedTypeGuid="DefinedType.ScheduleType"
                         rules="required" />
     </Modal>
+
+    <!-- Campus Topics -->
+    <Modal v-model="isTopicsModalVisible"
+           title="Campus Topics"
+           saveText="OK"
+           @save="onSaveTopic">
+        <DefinedValuePicker v-model="campusTopicType"
+                        label="Topic Type"
+                        :definedTypeGuid="DefinedType.TopicType"
+                        help="A campus can only have one instance of a topic entry."
+                        rules="required" />
+
+        <EmailBox v-model="campusTopicEmail"
+                        label="Email"
+                        rules="required" />
+
+        <CheckBox v-model="isCampusTopicPublic"
+                        label="Public" />
+    </Modal>
 </template>
 
 <script setup lang="ts">
@@ -179,12 +224,14 @@
     import { CampusBag } from "@Obsidian/ViewModels/Blocks/Core/CampusDetail/campusBag";
     import { CampusDetailOptionsBag } from "@Obsidian/ViewModels/Blocks/Core/CampusDetail/campusDetailOptionsBag";
     import { CampusScheduleBag } from "@Obsidian/ViewModels/Blocks/Core/CampusDetail/campusScheduleBag";
+    import { CampusTopicBag } from "@Obsidian/ViewModels/Blocks/Core/CampusDetail/campusTopicBag";
     import { ListItemBag } from "@Obsidian/ViewModels/Utility/listItemBag";
     import { DefinedType } from "@Obsidian/SystemGuids/definedType";
     import SchedulePicker from "@Obsidian/Controls/schedulePicker.obs";
     import { confirmDelete } from "@Obsidian/Utility/dialogs";
     import { areEqual, newGuid } from "@Obsidian/Utility/guid";
     import { DefinedValue } from "@Obsidian/SystemGuids/definedValue";
+    import EmailBox from "@Obsidian/Controls/emailBox.obs";
 
     const props = defineProps({
         modelValue: {
@@ -220,16 +267,30 @@
     const timeZoneId = propertyRef(props.modelValue.timeZoneId ?? "", "TimeZoneId");
     const url = propertyRef(props.modelValue.url ?? "", "Url");
     const campusSchedules = ref(props.modelValue.campusSchedules);
-    const isScheduleModalVisible = ref(false);
-    const schedule = shallowRef<ListItemBag | null>(null);
-    const campusScheduleType = shallowRef<ListItemBag | null>(null);
+    const campusTopics = ref(props.modelValue.campusTopics);
+
     // The `editingSchedule` is a global placeholder for the schedule that is being edited in the Modal in the remote device.
     // Incase a new schedule is being added, the `editingSchedule` needs to be set to null.
-    let editingSchedule: CampusScheduleBag | null = (null);
+    let editingSchedule: CampusScheduleBag | null = null;
     const defaultScheduleType: ListItemBag = {
         text: "Weekend Service",
         value: DefinedValue.ScheduleTypeWeekendService
     };
+
+    // variables for the Campus Schedule Modal
+    const isScheduleModalVisible = ref(false);
+    const schedule = shallowRef<ListItemBag | null>(null);
+    const campusScheduleType = shallowRef<ListItemBag | null>(null);
+
+    // The `editingTopic` is a global placeholder for the topic that is being edited in the Modal in the remote device.
+    // Incase a new topic is being added, the `editingTopic` needs to be set to null.
+    let editingTopic: CampusTopicBag | null = null;
+
+    // variables for the Campus Topic Modal
+    const isTopicsModalVisible = ref(false);
+    const campusTopicType = shallowRef<ListItemBag | null>(null);
+    const campusTopicEmail = ref<string>("");
+    const isCampusTopicPublic = ref<boolean>(false);
 
     // The properties that are being edited. This should only contain
     // objects returned by propertyRef().
@@ -278,6 +339,14 @@
     }
 
     /**
+     * Called when the "+" add button on the Campus Topics grid is clicked.
+     */
+     function onAddTopicClick(): void {
+        editingSchedule = null;
+        isTopicsModalVisible.value = true;
+    }
+
+    /**
      * Called when the "x" add button on the Campus Schedules grid is clicked.
      *
      * @param campusSchedule The schedule to be deleted.
@@ -297,6 +366,25 @@
     }
 
     /**
+     * Called when the "x" add button on the Campus Topics grid is clicked.
+     *
+     * @param campusTopic The topic to be deleted.
+     */
+     async function onDeleteTopicClick(campusTopic: CampusTopicBag): Promise<void>  {
+        if(campusTopics.value == null) {
+            return;
+        }
+        if (!(await confirmDelete("Topic"))) {
+            return;
+        }
+
+        const index = campusTopics.value.findIndex(s => areEqual(s.guid, campusTopic.guid));
+        if (index >= 0) {
+            campusTopics.value.splice(index, 1);
+        }
+    }
+
+    /**
      * Called when the pencil/edit button on the Campus Schedules grid is clicked.
      *
      * @param campusSchedule The schedule to be edited.
@@ -306,6 +394,19 @@
         schedule.value = campusSchedule?.schedule ?? null;
         campusScheduleType.value = campusSchedule?.scheduleTypeValue ?? defaultScheduleType;
         isScheduleModalVisible.value = true;
+    }
+
+    /**
+     * Called when the pencil/edit button on the Campus Topic grid is clicked.
+     *
+     * @param campusTopic The topic to be edited.
+     */
+    function onEditTopicClick(campusTopic: CampusTopicBag): void {
+        editingTopic = campusTopic ?? null;
+        campusTopicType.value = campusTopic?.type ?? null;
+        campusTopicEmail.value = campusTopic?.email ?? "";
+        isCampusTopicPublic.value = campusTopic.isPublic ?? false;
+        isTopicsModalVisible.value = true;
     }
 
      /**
@@ -331,7 +432,31 @@
 
         // Close the model on save.
         isScheduleModalVisible.value = false;
-     }
+    }
+
+
+     /**
+     * Called when a topic is ready to be saved.
+     */
+     function onSaveTopic(): void {
+        if(campusTopics.value == null) {
+            return;
+        }
+        // The `editingTopic` variable happens to be null if a new topic is being added.
+        // The "if block" contains the logic to add the new topic if needed.
+        if (editingTopic == null) {
+            editingTopic = {
+                guid: newGuid()
+            };
+            campusTopics.value.push(editingTopic);
+        }
+        editingTopic.type = campusTopicType.value;
+        editingTopic.email = campusTopicEmail.value;
+        editingTopic.isPublic = isCampusTopicPublic.value;
+
+        // Close the model on save.
+        isTopicsModalVisible.value = false;
+    }
 
     // #endregion
 
