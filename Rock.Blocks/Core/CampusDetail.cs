@@ -261,8 +261,10 @@ namespace Rock.Blocks.Core
                     campus.CampusSchedules.Add( campusSchedule );
                 }
 
-                campusSchedule.ScheduleId = scheduleId.Value;
-                campusSchedule.ScheduleTypeValueId = campusScheduleViewModel.ScheduleTypeValue.GetEntityId<DefinedValue>( rockContext );
+                // do not load just the id, for instance ScheduleId, load the entire entity
+                // otherwise the remote device would need to reload the page when a new schedule is added.
+                campusSchedule.Schedule = new ScheduleService( rockContext ).Get( campusScheduleViewModel.Schedule.Value.AsGuid() );
+                campusSchedule.ScheduleTypeValue = new DefinedValueService( rockContext ).Get( campusScheduleViewModel.ScheduleTypeValue.Value.AsGuid() );
                 campusSchedule.Order = order++;
             }
 
@@ -320,7 +322,8 @@ namespace Rock.Blocks.Core
 
                 campusTopics.Email = campusTopicsViewModel.Email;
                 campusTopics.IsPublic = campusTopicsViewModel.IsPublic;
-                campusTopics.TopicTypeValueId = topicId.Value;
+                campusTopics.TopicTypeValue = new DefinedValueService( rockContext )
+                	.Get( campusTopicsViewModel.Type.Value.AsGuid() );
             }
 
             return true;

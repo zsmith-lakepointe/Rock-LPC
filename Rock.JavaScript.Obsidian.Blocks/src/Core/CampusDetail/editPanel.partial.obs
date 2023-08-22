@@ -282,10 +282,6 @@
     const schedule = shallowRef<ListItemBag | null>(null);
     const campusScheduleType = shallowRef<ListItemBag | null>(null);
 
-    // The `editingTopic` is a global placeholder for the topic that is being edited in the Modal in the remote device.
-    // Incase a new topic is being added, the `editingTopic` needs to be set to null.
-    let editingTopic: CampusTopicBag | null = null;
-
     // variables for the Campus Topic Modal
     const isTopicsModalVisible = ref(false);
     const campusTopicType = shallowRef<ListItemBag | null>(null);
@@ -342,7 +338,6 @@
      * Called when the "+" add button on the Campus Topics grid is clicked.
      */
      function onAddTopicClick(): void {
-        editingSchedule = null;
         isTopicsModalVisible.value = true;
     }
 
@@ -402,7 +397,6 @@
      * @param campusTopic The topic to be edited.
      */
     function onEditTopicClick(campusTopic: CampusTopicBag): void {
-        editingTopic = campusTopic ?? null;
         campusTopicType.value = campusTopic?.type ?? null;
         campusTopicEmail.value = campusTopic?.email ?? "";
         isCampusTopicPublic.value = campusTopic.isPublic ?? false;
@@ -444,13 +438,16 @@
         }
         // The `editingTopic` variable happens to be null if a new topic is being added.
         // The "if block" contains the logic to add the new topic if needed.
+
+        let editingTopic = campusTopics.value.find(c => c.type.value == campusTopicType.value?.value ?? false);
+
         if (editingTopic == null) {
             editingTopic = {
                 guid: newGuid()
             };
             campusTopics.value.push(editingTopic);
+            editingTopic.type = { ...campusTopicType.value };
         }
-        editingTopic.type = campusTopicType.value;
         editingTopic.email = campusTopicEmail.value;
         editingTopic.isPublic = isCampusTopicPublic.value;
 
