@@ -83,6 +83,9 @@ registerFieldType(FieldTypeGuids.Comparison, new ComparisonFieldType());
 import { ComponentFieldType } from "./componentField.partial";
 registerFieldType(FieldTypeGuids.Component, new ComponentFieldType());
 
+import { ComponentsFieldType } from "./componentsField.partial";
+registerFieldType(FieldTypeGuids.Components, new ComponentsFieldType());
+
 import { CurrencyFieldType } from "./currencyField.partial";
 registerFieldType(FieldTypeGuids.Currency, new CurrencyFieldType());
 
