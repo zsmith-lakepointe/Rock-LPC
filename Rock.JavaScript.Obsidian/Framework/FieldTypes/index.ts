@@ -80,6 +80,9 @@ registerFieldType(FieldTypeGuids.CommunicationTemplate, new CommunicationTemplat
 import { ComparisonFieldType } from "./comparisonField.partial";
 registerFieldType(FieldTypeGuids.Comparison, new ComparisonFieldType());
 
+import { ComponentFieldType } from "./componentField.partial";
+registerFieldType(FieldTypeGuids.Component, new ComponentFieldType());
+
 import { CurrencyFieldType } from "./currencyField.partial";
 registerFieldType(FieldTypeGuids.Currency, new CurrencyFieldType());
 
