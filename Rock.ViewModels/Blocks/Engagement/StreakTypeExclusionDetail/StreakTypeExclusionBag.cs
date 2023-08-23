@@ -15,13 +15,24 @@
 // </copyright>
 //
 
-namespace Rock.ViewModels.Utility
+using Rock.ViewModels.Utility;
+
+namespace Rock.ViewModels.Blocks.Engagement.StreakTypeExclusionDetail
 {
     /// <summary>
-    /// View Model
+    /// 
     /// </summary>
-    public interface IViewModel
+    /// <seealso cref="Rock.ViewModels.Utility.EntityBagBase" />
+    public class StreakTypeExclusionBag : EntityBagBase
     {
-        /* This interface is intentionally empty. */
+        /// <summary>
+        /// Gets or sets the Rock.Model.Location .
+        /// </summary>
+        public ListItemBag Location { get; set; }
+
+        /// <summary>
+        /// Gets or sets the Sequence Rock.Model.StreakType .
+        /// </summary>
+        public ListItemBag StreakType { get; set; }
     }
 }

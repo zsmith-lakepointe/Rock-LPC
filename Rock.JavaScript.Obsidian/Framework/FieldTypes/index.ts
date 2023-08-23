@@ -23,6 +23,9 @@ export { ConfigurationValues, getFieldEditorProps } from "./utils";
  * Define the standard field types in Rock.
  */
 
+import { AchievementTypeFieldType } from "./achievementTypeField.partial";
+registerFieldType(FieldTypeGuids.AchievementType, new AchievementTypeFieldType());
+
 import { AddressFieldType } from "./addressField.partial";
 registerFieldType(FieldTypeGuids.Address, new AddressFieldType());
 
@@ -89,6 +92,12 @@ registerFieldType(FieldTypeGuids.Components, new ComponentsFieldType());
 import { CurrencyFieldType } from "./currencyField.partial";
 registerFieldType(FieldTypeGuids.Currency, new CurrencyFieldType());
 
+import { DataViewFieldType } from "./dataViewField.partial";
+registerFieldType(FieldTypeGuids.DataView, new DataViewFieldType());
+
+import { DataViewsFieldType } from "./dataViewsField.partial";
+registerFieldType(FieldTypeGuids.Dataviews, new DataViewsFieldType());
+
 import { DateFieldType } from "./dateField.partial";
 registerFieldType(FieldTypeGuids.Date, new DateFieldType());
 
@@ -121,6 +130,9 @@ registerFieldType(FieldTypeGuids.Email, new EmailFieldType());
 
 import { FinancialAccountFieldType  } from "./financialAccountField.partial";
 registerFieldType(FieldTypeGuids.FinancialAccount, new FinancialAccountFieldType());
+
+import { FinancialAccountsFieldType  } from "./financialAccountsField.partial";
+registerFieldType(FieldTypeGuids.FinancialAccounts, new FinancialAccountsFieldType());
 
 import { FileFieldType } from "./fileField.partial";
 registerFieldType(FieldTypeGuids.File, new FileFieldType());
