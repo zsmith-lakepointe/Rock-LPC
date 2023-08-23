@@ -202,7 +202,10 @@ namespace Rock.Blocks.Finance
                 return null;
             }
 
-            var componentName = Rock.Financial.GatewayContainer.GetComponentName( entityType.Name );
+            //var componentName = Rock.Financial.GatewayContainer.GetComponentName( entityType.Name );
+
+            var componentEntityType = EntityTypeCache.Get( entityType.Guid );
+            var componentName = Rock.Reflection.GetDisplayName( componentEntityType.GetEntityType() );
 
             return new ListItemBag()
             {
