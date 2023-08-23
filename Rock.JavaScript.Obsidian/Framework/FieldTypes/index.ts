@@ -74,6 +74,9 @@ registerFieldType(FieldTypeGuids.ConnectionType, new ConnectionTypeField());
 import { ConnectionTypesField } from "./connectionTypesField.partial";
 registerFieldType(FieldTypeGuids.ConnectionTypes, new ConnectionTypesField());
 
+import { ConnectionRequestFieldType } from "./connectionRequestField.partial";
+registerFieldType(FieldTypeGuids.ConnectionRequest, new ConnectionRequestFieldType());
+
 import { CommunicationPreferenceField } from "./communicationPreferenceField.partial";
 registerFieldType(FieldTypeGuids.CommunicationPreferenceType, new CommunicationPreferenceField());
 
