@@ -260,6 +260,12 @@ namespace Rock.Web.UI.Controls
             }
         }
 
+        /// <summary>
+        /// Gets or sets a value indicating whether the SMS Opt-In checkbox is shown on the form.
+        /// </summary>
+        /// <value>
+        ///   <c>true</c> if [show SMS opt in]; otherwise, <c>false</c>.
+        /// </value>
         public bool ShowSmsOptIn
         {
             get
@@ -824,6 +830,12 @@ namespace Rock.Web.UI.Controls
             }
         }
 
+        /// <summary>
+        /// Gets or sets a value indicating if the MobilePhoneNumber has SMS Enabled.
+        /// </summary>
+        /// <value>
+        ///   <c>true</c> if this instance is messaging enabled; otherwise, <c>false</c>.
+        /// </value>
         public bool IsMessagingEnabled
         {
             get
