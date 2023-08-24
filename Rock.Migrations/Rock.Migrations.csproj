@@ -68,6 +68,10 @@
     <Compile Include="Migrations\202308221829356_AddRemoteSettlementBatchIdToFinancialBatch.designer.cs">
       <DependentUpon>202308221829356_AddRemoteSettlementBatchIdToFinancialBatch.cs</DependentUpon>
     </Compile>
+    <Compile Include="Migrations\202308241608379_WorkflowEntryForm-PersonEntrySmsOptInEntryOption.cs" />
+    <Compile Include="Migrations\202308241608379_WorkflowEntryForm-PersonEntrySmsOptInEntryOption.designer.cs">
+      <DependentUpon>202308241608379_WorkflowEntryForm-PersonEntrySmsOptInEntryOption.cs</DependentUpon>
+    </Compile>
     <Compile Include="Migrations\Version 16.0\Version 1.16.0\202304061959408_CodeGenerated_20230406.cs" />
     <Compile Include="Migrations\Version 16.0\Version 1.16.0\202304061959408_CodeGenerated_20230406.designer.cs">
       <DependentUpon>202304061959408_CodeGenerated_20230406.cs</DependentUpon>
@@ -1772,6 +1776,9 @@
   <ItemGroup>
     <EmbeddedResource Include="Migrations\202308221829356_AddRemoteSettlementBatchIdToFinancialBatch.resx">
       <DependentUpon>202308221829356_AddRemoteSettlementBatchIdToFinancialBatch.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\202308241608379_WorkflowEntryForm-PersonEntrySmsOptInEntryOption.resx">
+      <DependentUpon>202308241608379_WorkflowEntryForm-PersonEntrySmsOptInEntryOption.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Migrations\Version 16.0\Version 1.16.0\202304061959408_CodeGenerated_20230406.resx">
       <DependentUpon>202304061959408_CodeGenerated_20230406.cs</DependentUpon>

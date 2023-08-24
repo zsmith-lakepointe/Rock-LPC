@@ -63,6 +63,7 @@ namespace Rock.Web.UI.Controls
         private DefinedValuePicker _dvpPersonMaritalStatus;
         private EmailBox _ebPersonEmail;
         private PhoneNumberBox _pnbMobilePhoneNumber;
+        private RockCheckBox _chkSmsOptIn;
         private RacePicker _rpRace;
         private EthnicityPicker _epEthnicity;
 
@@ -256,6 +257,20 @@ namespace Rock.Web.UI.Controls
             {
                 EnsureChildControls();
                 _pnbMobilePhoneNumber.Required = value;
+            }
+        }
+
+        public bool ShowSmsOptIn
+        {
+            get
+            {
+                EnsureChildControls ();
+                return _chkSmsOptIn.Visible;
+            }
+
+            set
+            {
+                _chkSmsOptIn.Visible = value;
             }
         }
 
@@ -809,6 +824,21 @@ namespace Rock.Web.UI.Controls
             }
         }
 
+        public bool IsMessagingEnabled
+        {
+            get
+            {
+                EnsureChildControls();
+                return _chkSmsOptIn.Checked;
+            }
+
+            set
+            {
+                EnsureChildControls();
+                _chkSmsOptIn.Checked = value;
+            }
+        }
+
         /// <summary>
         /// Gets or sets the validation group.
         /// </summary>
@@ -977,6 +1007,14 @@ namespace Rock.Web.UI.Controls
                 FormGroupCssClass = "field-mobilephone"
             };
 
+            _chkSmsOptIn = new RockCheckBox
+            {
+                ID = "chkSmsOptIn",
+                Label = "",
+                Text = Rock.Web.SystemSettings.GetValue( Rock.SystemKey.SystemSetting.SMS_OPT_IN_MESSAGE_LABEL ),
+                Visible = false
+            };
+
             _dvpPersonConnectionStatus = new DefinedValuePicker
             {
                 ID = "dvpPersonConnectionStatus",
@@ -1075,6 +1113,7 @@ namespace Rock.Web.UI.Controls
             _dvpPersonSuffix.Parent?.Controls.Remove( _dvpPersonSuffix );
             _ebPersonEmail.Parent?.Controls.Remove( _ebPersonEmail );
             _pnbMobilePhoneNumber.Parent?.Controls.Remove( _pnbMobilePhoneNumber );
+            _chkSmsOptIn.Parent?.Controls.Remove(_chkSmsOptIn );
             _bdpPersonBirthDate.Parent?.Controls.Remove( _bdpPersonBirthDate );
             _rblPersonGender.Parent?.Controls.Remove( _rblPersonGender );
             _rblPersonRole.Parent?.Controls.Remove( _rblPersonRole );
@@ -1091,6 +1130,7 @@ namespace Rock.Web.UI.Controls
                 _pnlCol1.Controls.Add( _dvpPersonSuffix );
                 _pnlCol1.Controls.Add( _ebPersonEmail );
                 _pnlCol1.Controls.Add( _pnbMobilePhoneNumber );
+                _pnlCol1.Controls.Add( _chkSmsOptIn );
 
                 _pnlCol2.Controls.Add( _dvpPersonConnectionStatus );
                 _pnlCol2.Controls.Add( _rblPersonRole );
@@ -1110,6 +1150,7 @@ namespace Rock.Web.UI.Controls
                 _phControls.Controls.Add( _dvpPersonSuffix );
                 _phControls.Controls.Add( _ebPersonEmail );
                 _phControls.Controls.Add( _pnbMobilePhoneNumber );
+                _phControls.Controls.Add( _chkSmsOptIn );
                 _phControls.Controls.Add( _bdpPersonBirthDate );
                 _phControls.Controls.Add( _rblPersonGender );
                 _phControls.Controls.Add( _dvpPersonConnectionStatus );
@@ -1241,8 +1282,13 @@ namespace Rock.Web.UI.Controls
                 var existingMobilePhone = person.GetPhoneNumber( Rock.SystemGuid.DefinedValue.PERSON_PHONE_TYPE_MOBILE.AsGuid() );
 
                 var numberTypeMobile = DefinedValueCache.Get( Rock.SystemGuid.DefinedValue.PERSON_PHONE_TYPE_MOBILE.AsGuid() );
-                var messagingEnabled = existingMobilePhone?.IsMessagingEnabled ?? true;
                 var isUnlisted = existingMobilePhone?.IsUnlisted ?? false;
+                var messagingEnabled = existingMobilePhone?.IsMessagingEnabled ?? true;
+                if ( ShowSmsOptIn )
+                {
+                    messagingEnabled = IsMessagingEnabled;
+                }
+
                 person.UpdatePhoneNumber( numberTypeMobile.Id, MobilePhoneCountryCode, MobilePhoneNumber, messagingEnabled, isUnlisted, rockContext );
             }
         }
