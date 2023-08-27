@@ -197,6 +197,9 @@ registerFieldType(FieldTypeGuids.Integer, new IntegerFieldType());
 import { IntegerRangeFieldType } from "./integerRangeField.partial";
 registerFieldType(FieldTypeGuids.IntegerRange, new IntegerRangeFieldType());
 
+import { InteractionChannelsFieldType } from "./interactionChannelsField.partial";
+registerFieldType(FieldTypeGuids.InteractionChannels, new InteractionChannelsFieldType());
+
 import { KeyValueListFieldType } from "./keyValueListField.partial";
 registerFieldType(FieldTypeGuids.KeyValueList, new KeyValueListFieldType());
 
