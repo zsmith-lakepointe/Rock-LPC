@@ -14,25 +14,30 @@
 // limitations under the License.
 // </copyright>
 //
-using System;
-
-namespace Rock.Lava
+namespace Rock.Migrations
 {
+    using System;
+    using System.Data.Entity.Migrations;
+    
     /// <summary>
-    /// 
+    ///
     /// </summary>
-    /// <seealso cref="System.Exception" />
-    public class LegacyLavaSyntaxDetectedException : Exception
+    public partial class AddRemoteSettlementAmountToFinancialBatch : Rock.Migrations.RockMigration
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="LegacyLavaSyntaxDetectedException"/> class.
+        /// Operations to be performed during the upgrade process.
         /// </summary>
-        /// <param name="entityTypeName">Name of the entity type.</param>
-        /// <param name="fieldName">Name of the field.</param>
-        public LegacyLavaSyntaxDetectedException( string entityTypeName, string fieldName )
-            : base( string.Format( "Warning: Legacy Lava Syntax Detected: {0}.{1}", entityTypeName, fieldName ) )
+        public override void Up()
         {
-            System.Diagnostics.Debug.WriteLine( this.Message );
+            AddColumn("dbo.FinancialBatch", "RemoteSettlementAmount", c => c.Decimal(nullable: true, precision: 18, scale: 2));
+        }
+        
+        /// <summary>
+        /// Operations to be performed during the downgrade process.
+        /// </summary>
+        public override void Down()
+        {
+            DropColumn("dbo.FinancialBatch", "RemoteSettlementAmount");
         }
     }
 }

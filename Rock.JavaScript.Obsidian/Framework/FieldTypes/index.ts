@@ -29,6 +29,9 @@ registerFieldType(FieldTypeGuids.AchievementType, new AchievementTypeFieldType()
 import { AddressFieldType } from "./addressField.partial";
 registerFieldType(FieldTypeGuids.Address, new AddressFieldType());
 
+import { AssessmentTypesFieldType } from "./assessmentTypesField.partial";
+registerFieldType(FieldTypeGuids.AssessmentType, new AssessmentTypesFieldType());
+
 import { AudioUrlFieldType } from "./audioUrlField.partial";
 registerFieldType(FieldTypeGuids.AudioUrl, new AudioUrlFieldType());
 
@@ -67,6 +70,9 @@ registerFieldType(FieldTypeGuids.CodeEditor, new CodeEditorFieldType());
 
 import { ColorFieldType } from "./colorField.partial";
 registerFieldType(FieldTypeGuids.Color, new ColorFieldType());
+
+import { ColorSelectorFieldType } from "./colorSelectorField.partial";
+registerFieldType(FieldTypeGuids.ColorSelector, new ColorSelectorFieldType());
 
 import { ConnectionTypeField } from "./connectionTypeField.partial";
 registerFieldType(FieldTypeGuids.ConnectionType, new ConnectionTypeField());

@@ -2445,7 +2445,7 @@ mission. We are so grateful for your commitment.</p>
                 {
                     cbSmsOptIn.Visible = true;
                     cbSmsOptIn.Text = Rock.Web.SystemSettings.GetValue( Rock.SystemKey.SystemSetting.SMS_OPT_IN_MESSAGE_LABEL );
-                    cbSmsOptIn.Checked = workPhone.IsMessagingEnabled;
+                    cbSmsOptIn.Checked = workPhone?.IsMessagingEnabled ?? false;
                 }
             }
             
@@ -3550,7 +3550,7 @@ mission. We are so grateful for your commitment.</p>
 
         private void ShowSuccess( IHostedGatewayComponent gatewayComponent, Person person, ReferencePaymentInfo paymentInfo )
         {
-            var mergeFields = LavaHelper.GetCommonMergeFields( this.RockPage, this.CurrentPerson, new CommonMergeFieldsOptions { GetLegacyGlobalMergeFields = false } );
+            var mergeFields = LavaHelper.GetCommonMergeFields( this.RockPage, this.CurrentPerson, new CommonMergeFieldsOptions() );
             var finishLavaTemplate = this.GetAttributeValue( AttributeKey.FinishLavaTemplate );
             IEntity transactionEntity = GetTransactionEntity();
             mergeFields.Add( "TransactionEntity", transactionEntity );

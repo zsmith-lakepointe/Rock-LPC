@@ -992,7 +992,7 @@ namespace Rock.Rest.v2
 
                 foreach ( var account in accountsList )
                 {
-                    var mergeFields = LavaHelper.GetCommonMergeFields( null, null, new CommonMergeFieldsOptions { GetLegacyGlobalMergeFields = false } );
+                    var mergeFields = LavaHelper.GetCommonMergeFields( null, null, new CommonMergeFieldsOptions() );
                     mergeFields.Add( "Account", account );
                     var accountAmountLabel = accountHeaderTemplate.ResolveMergeFields( mergeFields );
                     items.Add(new CampusAccountAmountPickerGetAccountsResultItemBag
@@ -5806,13 +5806,18 @@ namespace Rock.Rest.v2
                     continue;
                 }
 
-                var componentName = component.Value.Key;
+                var componentName = Rock.Reflection.GetDisplayName( entityType.GetEntityType() );
 
-                // If the component name already has a space then trust
-                // that they are using the exact name formatting they want.
-                if ( !componentName.Contains( ' ' ) )
+                // If it has a DisplayName use it as is, otherwise use the original logic
+                if ( string.IsNullOrWhiteSpace( componentName ) )
                 {
-                    componentName = componentName.SplitCase();
+                    componentName = component.Value.Key;
+                    // If the component name already has a space then trust
+                    // that they are using the exact name formatting they want.
+                    if ( !componentName.Contains( ' ' ) )
+                    {
+                        componentName = componentName.SplitCase();
+                    }
                 }
 
                 items.Add( new ListItemBag
