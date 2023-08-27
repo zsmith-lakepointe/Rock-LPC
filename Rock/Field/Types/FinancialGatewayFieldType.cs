@@ -26,6 +26,7 @@ using Rock.Model;
 using Rock.Web.UI.Controls;
 using Rock.Attribute;
 using Rock.Web.Cache;
+using Rock.ViewModels.Utility;
 
 namespace Rock.Field.Types
 {
@@ -34,7 +35,7 @@ namespace Rock.Field.Types
     /// Stored as FinancialGateway.Guid
     /// </summary>
     [Serializable]
-    [RockPlatformSupport( Utility.RockPlatform.WebForms )]
+    [RockPlatformSupport( Utility.RockPlatform.WebForms, Utility.RockPlatform.Obsidian )]
     [Rock.SystemGuid.FieldTypeGuid( Rock.SystemGuid.FieldType.FINANCIAL_GATEWAY )]
     public class FinancialGatewayFieldType : FieldType, IEntityFieldType, IEntityReferenceFieldType
     {
@@ -61,6 +62,46 @@ namespace Rock.Field.Types
         #endregion
 
         #region Edit Control
+
+        /// <inheritdoc/>
+        public override string GetPublicValue( string privateValue, Dictionary<string, string> privateConfigurationValues )
+        {
+            return GetTextValue( privateValue, privateConfigurationValues );
+        }
+
+        /// <inheritdoc />
+        public override string GetPublicEditValue( string privateValue, Dictionary<string, string> privateConfigurationValues )
+        {
+            var guid = privateValue.AsGuidOrNull();
+
+            if ( guid.HasValue )
+            {
+                using ( var rockContext = new RockContext() )
+                {
+                    var gateway = new FinancialGatewayService( rockContext ).GetSelect( guid.Value, s => new ListItemBag() { Text = s.Name, Value = s.Guid.ToString() } );
+
+                    if ( gateway != null )
+                    {
+                        return gateway.ToCamelCaseJson( false, true );
+                    }
+                }
+            }
+
+            return base.GetPublicEditValue( privateValue, privateConfigurationValues );
+        }
+
+        /// <inheritdoc />
+        public override string GetPrivateEditValue( string publicValue, Dictionary<string, string> privateConfigurationValues )
+        {
+            var jsonValue = publicValue.FromJsonOrNull<ListItemBag>();
+
+            if ( jsonValue != null )
+            {
+                return jsonValue.Value;
+            }
+
+            return publicValue;
+        }
 
         #endregion
 
