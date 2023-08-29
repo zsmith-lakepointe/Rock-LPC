@@ -30,6 +30,9 @@ export type SignalTypeBag = {
     /** Gets or sets the attribute values. */
     attributeValues?: Record<string, string> | null;
 
+    /** Gets or sets a value indicating whether this instance can administrate. */
+    canAdministrate: boolean;
+
     /** Gets or sets the description. */
     description?: string | null;
 

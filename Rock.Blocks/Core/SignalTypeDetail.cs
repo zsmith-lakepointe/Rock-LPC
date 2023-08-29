@@ -172,7 +172,8 @@ namespace Rock.Blocks.Core
                 Name = entity.Name,
                 Order = entity.Order,
                 SignalColor = entity.SignalColor,
-                SignalIconCssClass = entity.SignalIconCssClass
+                SignalIconCssClass = entity.SignalIconCssClass,
+                CanAdministrate = entity.IsAuthorized( Authorization.ADMINISTRATE, RequestContext.CurrentPerson )
             };
         }
 
@@ -420,36 +421,46 @@ namespace Rock.Blocks.Core
                     entity.SaveAttributeValues( rockContext );
                 } );
 
-                var people = new PersonSignalService( rockContext ).Queryable()
-                    .Where( s => s.SignalTypeId == entity.Id )
-                    .Select( s => s.PersonId )
-                    .Distinct()
-                    .ToList();
-
-                //
-                // If less than 250 people with this signal type then just update them all now,
-                // otherwise put something in the rock queue to take care of it.
-                //
-                if ( people.Count < 250 )
-                {
-                    new PersonService( rockContext ).Queryable()
-                        .Where( p => people.Contains( p.Id ) )
-                        .ToList()
-                        .ForEach( p => p.CalculateSignals() );
-
-                    rockContext.SaveChanges();
-                }
-                else
-                {
-                    var updatePersonSignalTypesMsg = new UpdatePersonSignalTypes.Message()
-                    {
-                        PersonIds = people
-                    };
-
-                    updatePersonSignalTypesMsg.Send();
-                }
+                RecalculateSignals( rockContext, entity.Id );
 
                 return ActionOk( this.GetParentPageUrl() );
+            }
+        }
+
+        /// <summary>
+        /// Calculates the top-most signal and updates the person properties for Persons with this SignalType.
+        /// </summary>
+        /// <param name="rockContext">The rock context.</param>
+        /// <param name="signalTypeId">The signal type identifier.</param>
+        private static void RecalculateSignals( RockContext rockContext, int signalTypeId )
+        {
+            var people = new PersonSignalService( rockContext ).Queryable()
+                .Where( s => s.SignalTypeId == signalTypeId )
+                .Select( s => s.PersonId )
+                .Distinct()
+                .ToList();
+
+            //
+            // If less than 250 people with this signal type then just update them all now,
+            // otherwise put something in the rock queue to take care of it.
+            //
+            if ( people.Count < 250 ) 
+            {
+                new PersonService( rockContext ).Queryable()
+                    .Where( p => people.Contains( p.Id ) )
+                    .ToList()
+                    .ForEach( p => p.CalculateSignals() );
+
+                rockContext.SaveChanges();
+            }
+            else
+            {
+                var updatePersonSignalTypesMsg = new UpdatePersonSignalTypes.Message()
+                {
+                    PersonIds = people
+                };
+
+                updatePersonSignalTypesMsg.Send();
             }
         }
 
@@ -477,6 +488,8 @@ namespace Rock.Blocks.Core
 
                 entityService.Delete( entity );
                 rockContext.SaveChanges();
+
+                RecalculateSignals( rockContext, entity.Id );
 
                 return ActionOk( this.GetParentPageUrl() );
             }

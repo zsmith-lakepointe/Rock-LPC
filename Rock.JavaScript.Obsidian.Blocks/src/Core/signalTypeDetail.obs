@@ -15,9 +15,9 @@
                  :isAuditHidden="isAuditHidden"
                  :isBadgesVisible="true"
                  :isDeleteVisible="isEditable"
-                 :isEditVisible="true"
+                 :isEditVisible="isEditable"
                  :isFollowVisible="false"
-                 :isSecurityHidden="true"
+                 :isSecurityHidden="isSecurityHidden"
                  @cancelEdit="onCancelEdit"
                  @delete="onDelete"
                  @edit="onEdit"
@@ -43,7 +43,6 @@
     import ViewPanel from "./SignalTypeDetail/viewPanel.partial.obs";
     import { getSecurityGrant, provideSecurityGrant, refreshDetailAttributes, useConfigurationValues, useInvokeBlockAction } from "@Obsidian/Utility/block";
     import { debounce } from "@Obsidian/Utility/util";
-    import { makeUrlRedirectSafe } from "@Obsidian/Utility/url";
     import { NavigationUrlKey } from "./SignalTypeDetail/types.partial";
     import { DetailBlockBox } from "@Obsidian/ViewModels/Blocks/detailBlockBox";
     import { SignalTypeBag } from "@Obsidian/ViewModels/Blocks/Core/SignalTypeDetail/signalTypeBag";
@@ -86,6 +85,10 @@
         return !signalTypeViewBag.value?.idKey;
     });
 
+    const isSecurityHidden = computed((): boolean => {
+        return signalTypeViewBag.value?.canAdministrate !== true;
+    });
+
     /**
      * The entity name to display in the block panel.
      */
@@ -125,10 +128,6 @@
     const options = computed((): SignalTypeDetailOptionsBag => {
         return config.options ?? {};
     });
-
-    // #endregion
-
-    // #region Functions
 
     // #endregion
 

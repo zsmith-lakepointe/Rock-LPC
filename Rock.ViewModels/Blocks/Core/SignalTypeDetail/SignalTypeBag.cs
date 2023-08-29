@@ -1,4 +1,4 @@
-// <copyright>
+﻿// <copyright>
 // Copyright by the Spark Development Network
 //
 // Licensed under the Rock Community License (the "License");
@@ -45,5 +45,13 @@ namespace Rock.ViewModels.Blocks.Core.SignalTypeDetail
         /// Gets or sets the icon CSS class of the SignalType.
         /// </summary>
         public string SignalIconCssClass { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether this instance can administrate.
+        /// </summary>
+        /// <value>
+        ///   <c>true</c> if this instance can administrate; otherwise, <c>false</c>.
+        /// </value>
+        public bool CanAdministrate { get; set; }
     }
 }
