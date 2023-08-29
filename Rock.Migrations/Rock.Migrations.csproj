@@ -76,6 +76,10 @@
     <Compile Include="Migrations\202308291925296_ModifyValueAsPersonIdColumnInAttributeValueTableAndRenamePayFlowGatewayBlocks.designer.cs">
       <DependentUpon>202308291925296_ModifyValueAsPersonIdColumnInAttributeValueTableAndRenamePayFlowGatewayBlocks.cs</DependentUpon>
     </Compile>
+    <Compile Include="Migrations\202308292007203_AddViewProtectionProfileToPersonBioSummaryBlock.cs" />
+    <Compile Include="Migrations\202308292007203_AddViewProtectionProfileToPersonBioSummaryBlock.designer.cs">
+      <DependentUpon>202308292007203_AddViewProtectionProfileToPersonBioSummaryBlock.cs</DependentUpon>
+    </Compile>
     <Compile Include="Migrations\Version 16.0\Version 1.16.0\202308221829356_AddRemoteSettlementBatchIdToFinancialBatch.cs" />
     <Compile Include="Migrations\Version 16.0\Version 1.16.0\202308221829356_AddRemoteSettlementBatchIdToFinancialBatch.designer.cs">
       <DependentUpon>202308221829356_AddRemoteSettlementBatchIdToFinancialBatch.cs</DependentUpon>
@@ -1802,6 +1806,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Migrations\202308291925296_ModifyValueAsPersonIdColumnInAttributeValueTableAndRenamePayFlowGatewayBlocks.resx">
       <DependentUpon>202308291925296_ModifyValueAsPersonIdColumnInAttributeValueTableAndRenamePayFlowGatewayBlocks.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\202308292007203_AddViewProtectionProfileToPersonBioSummaryBlock.resx">
+      <DependentUpon>202308292007203_AddViewProtectionProfileToPersonBioSummaryBlock.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Migrations\Version 16.0\Version 1.16.0\202308221829356_AddRemoteSettlementBatchIdToFinancialBatch.resx">
       <DependentUpon>202308221829356_AddRemoteSettlementBatchIdToFinancialBatch.cs</DependentUpon>
