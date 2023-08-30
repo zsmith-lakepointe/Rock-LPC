@@ -18,6 +18,8 @@ import { computed, defineComponent, ref, watch } from "vue";
 import { getFieldConfigurationProps, getFieldEditorProps } from "./utils";
 import DropDownList from "@Obsidian/Controls/dropDownList.obs";
 import NumberBox from "@Obsidian/Controls/numberBox.obs";
+import { CodeEditorThemeDescription } from "@Obsidian/Enums/Controls/codeEditorTheme";
+import { CodeEditorModeDescription } from "@Obsidian/Enums/Controls/codeEditorMode";
 import CodeEditor from "@Obsidian/Controls/codeEditor.obs";
 import { ConfigurationPropertyKey, ConfigurationValueKey } from "./codeEditorField.partial";
 import { ListItemBag } from "@Obsidian/ViewModels/Utility/listItemBag";
@@ -36,23 +38,18 @@ export const EditComponent = defineComponent({
         // The internal value used by the text editor.
         const minimumHeight = 200;
         const internalValue = ref<string>("");
-        const editorModes = [ "text", "css", "html", "lava", "javascript", "less", "powershell", "sql", "typescript", "csharp", "markdown", "xml" ];
-        const editorThemes = [ "github", "chrome", "crimson_editor", "dawn", "dreamweaver", "eclipse", "solarized_light", "textmate",
-            "tomorrow", "xcode", "github", "ambiance", "chaos", "clouds_midnight", "cobalt", "idle_fingers", "kr_theme",
-            "merbivore", "merbivore_soft", "mono_industrial", "monokai", "pastel_on_dark", "solarized_dark", "terminal", "tomorrow_night", "tomorrow_night_blue",
-            "tomorrow_night_bright", "tomorrow_night_eighties", "twilight", "vibrant_ink" ];
 
         // The selected code editor mode from the field type's configuration.
         const editorMode = computed((): string => {
             const editorModeValue = toNumber(props.configurationValues[ConfigurationValueKey.EditorMode]);
-            const editorMode = editorModes[editorModeValue];
+            const editorMode = CodeEditorModeDescription[editorModeValue];
             return editorMode;
         });
 
         // The selected code editor theme from the field type's configuration.
         const editorTheme = computed((): string => {
             const editorThemeValue = toNumber(props.configurationValues[ConfigurationValueKey.EditorTheme]);
-            const editorTheme = editorThemes[editorThemeValue];
+            const editorTheme = CodeEditorThemeDescription[editorThemeValue];
             return editorTheme;
         });
 
