@@ -54,10 +54,14 @@ export class AudioUrlFieldType extends FieldTypeBase {
     }
 
     public override getHtmlValue(value: string, _configurationValues: Record<string, string>): string {
+        if (!value) {
+            return "";
+        }
+
         const html = `
 <audio
     src='${value}'
-    class='img img-responsive js-media-audio'
+    class='js-media-audio'
     controls>
 </audio>
 
@@ -70,8 +74,8 @@ export class AudioUrlFieldType extends FieldTypeBase {
     }
 
     public override getCondensedHtmlValue(value: string, _configurationValues: Record<string, string>): string {
-        if(!value) {
-            return value;
+        if (!value) {
+            return "";
         }
 
         const condensedValue = `<a href="${this.encodeXml(value)}">${truncate(value, 100)}</a>`;
@@ -83,32 +87,34 @@ export class AudioUrlFieldType extends FieldTypeBase {
         let encoded = "";
         for (let i = 0; i < str.length; i++) {
             const chr = str.charAt(i);
-            if (chr === "<") {
-                encoded += "&lt;";
-            }
-            else if (chr === ">") {
-                encoded += "&gt;";
-            }
-            else if (chr === "&") {
-                encoded += "&amp;";
-            }
-            else if (chr === '"') {
-                encoded += "&quot;";
-            }
-            else if (chr == "'") {
-                encoded += "&apos;";
-            }
-            else if (chr == "\n") {
-                encoded += "&#xA;";
-            }
-            else if (chr == "\r") {
-                encoded += "&#xD;";
-            }
-            else if (chr == "\t") {
-                encoded += "&#x9;";
-            }
-            else {
-                encoded += chr;
+            switch (chr) {
+                case "<":
+                    encoded += "&lt;";
+                    break;
+                case ">":
+                    encoded += "&gt;";
+                    break;
+                case "&":
+                    encoded += "&amp;";
+                    break;
+                case '"':
+                    encoded += "&quot;";
+                    break;
+                case "'":
+                    encoded += "&apos;";
+                    break;
+                case "\n":
+                    encoded += "&#xA;";
+                    break;
+                case "\r":
+                    encoded += "&#xD;";
+                    break;
+                case "\t":
+                    encoded += "&#x9;";
+                    break;
+                default:
+                    encoded += chr;
+                    break;
             }
         }
 
