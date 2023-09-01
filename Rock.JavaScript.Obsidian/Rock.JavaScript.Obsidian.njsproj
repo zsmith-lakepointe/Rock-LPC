@@ -258,6 +258,7 @@
     <Folder Include="Framework\ViewModels\Blocks\Groups\GroupRegistration\" />
     <Folder Include="Framework\ViewModels\Blocks\Group\" />
     <Folder Include="Framework\ViewModels\Blocks\Group\GroupAttendanceDetail\" />
+    <Folder Include="Framework\ViewModels\Blocks\Group\GroupRequirementTypeDetail\" />
     <Folder Include="Framework\ViewModels\Blocks\Group\GroupSchedulePreference\" />
     <Folder Include="Framework\ViewModels\Blocks\Group\GroupScheduleSignup\" />
     <Folder Include="Framework\ViewModels\Blocks\Group\GroupScheduleToolbox\" />
@@ -900,6 +901,8 @@
     <TypeScriptCompile Include="Framework\ViewModels\Blocks\Finance\FinancialPledgeDetail\financialPledgeDetailOptionsBag.d.ts" />
     <TypeScriptCompile Include="Framework\ViewModels\Blocks\Group\GroupRegistration\groupRegistrationBag.d.ts" />
     <TypeScriptCompile Include="Framework\ViewModels\Blocks\Group\GroupRegistration\groupRegistrationBlockBox.d.ts" />
+    <TypeScriptCompile Include="Framework\ViewModels\Blocks\Group\GroupRequirementTypeDetail\groupRequirementTypeBag.d.ts" />
+    <TypeScriptCompile Include="Framework\ViewModels\Blocks\Group\GroupRequirementTypeDetail\groupRequirementTypeDetailOptionsBag.d.ts" />
     <TypeScriptCompile Include="Framework\ViewModels\Blocks\Group\GroupSchedulePreference\assignmentScheduleAndLocationBag.d.ts" />
     <TypeScriptCompile Include="Framework\ViewModels\Blocks\Group\GroupSchedulePreference\preferencePageContentBag.d.ts" />
     <TypeScriptCompile Include="Framework\ViewModels\Blocks\Group\GroupScheduleSignup\personScheduleSignupBag.d.ts" />
