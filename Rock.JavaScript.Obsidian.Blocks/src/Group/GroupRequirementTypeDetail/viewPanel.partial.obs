@@ -15,7 +15,7 @@
         </div>
 
         <AttributeValuesContainer :modelValue="attributeValues" :attributes="attributes" :numberOfColumns="2" />
-    
+
 </fieldset>
 </template>
 
@@ -55,6 +55,10 @@
 
         if (!props.modelValue) {
             return valueBuilder.build();
+        }
+
+        if (props.modelValue.name) {
+            valueBuilder.addTextValue("Name", props.modelValue.name);
         }
 
         if (props.modelValue.description) {
