@@ -14,7 +14,7 @@
                  entityTypeName="Layout"
                  :isAuditHidden="isAuditHidden"
                  :isBadgesVisible="true"
-                 :isDeleteVisible="false"
+                 :isDeleteVisible="isEditable"
                  :isEditVisible="isEditable"
                  :isFollowVisible="false"
                  :isSecurityHidden="true"
