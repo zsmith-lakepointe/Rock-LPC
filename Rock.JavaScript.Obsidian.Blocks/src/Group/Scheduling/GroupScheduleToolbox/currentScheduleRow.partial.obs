@@ -1,0 +1,236 @@
+<!-- Copyright by the Spark Development Network; Licensed under the Rock Community License -->
+<template>
+    <NotificationBox v-if="errorMessage" :alertType="AlertType.Warning">
+        {{ errorMessage }}
+    </NotificationBox>
+
+    <div :class="cardCssClass">
+        <div class="card-body d-flex">
+
+            <div class="flex-fill">
+                <span v-if="scheduleDate" class="card-title">
+                    <span class="schedule-date">
+                        {{ scheduleDate }}
+                    </span>
+                </span>
+                <span class="schedule-occurrence" v-html="cardDetails"></span>
+                <span class="schedule-occurrence-schedule">
+                    {{ row.scheduleName }}
+                </span>
+            </div>
+
+            <div v-if="row.confirmationStatus === ToolboxScheduleRowConfirmationStatus.Pending" class="schedule-confirm">
+                <RockButton type="button"
+                            :btnType="BtnType.Danger"
+                            @click="onPerformAction(ToolboxScheduleRowActionType.Decline)"
+                            :disabled="isRowDisabled">
+                    Decline
+                </RockButton>
+
+                <RockButton type="button"
+                            :btnType="BtnType.Primary"
+                            @click="onPerformAction(ToolboxScheduleRowActionType.Accept)"
+                            :disabled="isRowDisabled">
+                    Accept
+                </RockButton>
+            </div>
+
+            <div v-else class="d-flex align-items-center flex-nowrap justify-content-end">
+                <HighlightLabel :labelType="highlightLabel">
+                    {{ ToolboxScheduleRowConfirmationStatusDescription[row.confirmationStatus] }}
+                </HighlightLabel>
+
+                <div class="btn-group dropdown-right ml-1">
+                    <button type="button"
+                            class="btn btn-link btn-overflow dropdown-toggle"
+                            data-toggle="dropdown"
+                            :disabled="isContextMenuDisabled">
+                        <i class="fa fa-ellipsis-v"></i>
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li>
+                            <a v-if="row.confirmationStatus === ToolboxScheduleRowConfirmationStatus.Confirmed"
+                               class="text-danger"
+                               href="#"
+                               @click.prevent="onPerformAction(ToolboxScheduleRowActionType.Cancel)">
+                                Cancel Confirmation
+                            </a>
+
+                            <a v-else
+                               class="text-danger"
+                               href="#"
+                               @click.prevent="onPerformAction(ToolboxScheduleRowActionType.Delete)">
+                                Delete
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <DeclineReason v-model:isVisible="isDeclineReasonModalVisible"
+                   :attendanceGuid="row.entityGuid" />
+</template>
+
+<script setup lang="ts">
+    import { computed, PropType, ref } from "vue";
+    import DeclineReason from "./declineReason.partial.obs";
+    import HighlightLabel from "@Obsidian/Controls/highlightLabel.obs";
+    import NotificationBox from "@Obsidian/Controls/notificationBox.obs";
+    import RockButton from "@Obsidian/Controls/rockButton.obs";
+    import { AlertType } from "@Obsidian/Enums/Controls/alertType";
+    import { BtnType } from "@Obsidian/Enums/Controls/btnType";
+    import { ScheduleRowActionRequestBag } from "@Obsidian/ViewModels/Blocks/Group/Scheduling/GroupScheduleToolbox/scheduleRowActionRequestBag";
+    import { ScheduleRowActionResponseBag } from "@Obsidian/ViewModels/Blocks/Group/Scheduling/GroupScheduleToolbox/scheduleRowActionResponseBag";
+    import { ScheduleRowBag } from "@Obsidian/ViewModels/Blocks/Group/Scheduling/GroupScheduleToolbox/scheduleRowBag";
+    import { ToolboxScheduleRowActionType } from "@Obsidian/Enums/Blocks/Group/Scheduling/toolboxScheduleRowActionType";
+    import {
+        ToolboxScheduleRowConfirmationStatus,
+        ToolboxScheduleRowConfirmationStatusDescription
+    } from "@Obsidian/Enums/Blocks/Group/Scheduling/toolboxScheduleRowConfirmationStatus";
+    import { useInvokeBlockAction } from "@Obsidian/Utility/block";
+    import { DateTimeFormat, RockDateTime } from "@Obsidian/Utility/rockDateTime";
+
+    const invokeBlockAction = useInvokeBlockAction();
+
+    const props = defineProps({
+        row: {
+            type: Object as PropType<ScheduleRowBag>,
+            required: true
+        }
+    });
+
+    const emit = defineEmits<{
+        (e: "removeScheduleRow", entityGuid: string): void
+    }>();
+
+    // #region Values
+
+    const isPerformingAction = ref(false);
+    const errorMessage = ref("");
+
+    const isDeclineReasonModalVisible = ref(false);
+
+    // #endregion Values
+
+    // #region Computed Values
+
+    const cardCssClass = computed((): string => {
+        const statusDescription = ToolboxScheduleRowConfirmationStatusDescription[props.row.confirmationStatus];
+        return `card card-sm card-schedule${statusDescription ? ` schedule-${statusDescription.toLowerCase()}` : ""}`;
+    });
+
+    const scheduleDate = computed((): string => {
+        const startDate = RockDateTime.parseISO(props.row.occurrenceStartDate ?? "");
+        if (!startDate) {
+            return "";
+        }
+
+        const startDateLocaleString = startDate.toLocaleString(DateTimeFormat.DateShort);
+
+        const endDate = RockDateTime.parseISO(props.row.occurrenceEndDate ?? "");
+        if (!endDate) {
+            return startDateLocaleString;
+        }
+
+        return `${startDateLocaleString} - ${endDate.toLocaleString(DateTimeFormat.DateShort)}`;
+    });
+
+    const cardDetails = computed((): string => {
+        const detailParts: string[][] = [];
+
+        // Family member name.
+        if (props.row.familyMemberName) {
+            detailParts.push(["family-member-name", props.row.familyMemberName]);
+        }
+
+        // Group name.
+        if (props.row.groupName) {
+            detailParts.push(["group", props.row.groupName]);
+        }
+
+        // Location name.
+        if (props.row.locationName) {
+            detailParts.push(["location", props.row.locationName]);
+        }
+
+        // Combine and dash-delimit the parts.
+        let detail = "";
+        for (let i = 0; i < detailParts.length; i++) {
+            const cssClass = detailParts[i][0];
+            const delimiter = i > 0 ? " - " : "";
+            const value = detailParts[i][1];
+            detail += `${delimiter}<span class="schedule-occurrence-${cssClass}">${value}</span>`;
+        }
+
+        return detail;
+    });
+
+    const highlightLabel = computed((): "default" | "success" | "danger" => {
+        switch (props.row.confirmationStatus) {
+            case ToolboxScheduleRowConfirmationStatus.Confirmed:
+                return "success";
+            case ToolboxScheduleRowConfirmationStatus.Declined:
+                return "danger";
+            default:
+                return "default";
+        }
+    });
+
+    const isRowDisabled = computed((): boolean => {
+        return !!(!props.row.entityGuid || isPerformingAction.value);
+    });
+
+    const isContextMenuDisabled = computed((): boolean => {
+        return isRowDisabled.value || props.row.confirmationStatus === ToolboxScheduleRowConfirmationStatus.Declined;
+    });
+
+    // #endregion Computed Values
+
+    // #region Event Handlers
+
+    /**
+     * Handles the `click` event of schedule row action buttons.
+     *
+     * @param actionType The action type to be performed.
+     */
+    async function onPerformAction(actionType: ToolboxScheduleRowActionType): Promise<void> {
+        if (isRowDisabled.value) {
+            return;
+        }
+
+        isPerformingAction.value = true;
+        errorMessage.value = "";
+
+        const bag: ScheduleRowActionRequestBag = {
+            entityGuid: props.row.entityGuid,
+            actionType
+        };
+
+        const result = await invokeBlockAction<ScheduleRowActionResponseBag>("PerformScheduleRowAction", { bag });
+        if (!result.isSuccess) {
+            errorMessage.value = result.errorMessage || "Unknown error while trying to perform schedule row action.";
+            isPerformingAction.value = false;
+            return;
+        }
+
+        // A falsy check won't work here, as ToolboxScheduleRowConfirmationStatus.Pending == 0;
+        const newStatus = result.data?.newStatus;
+        if (newStatus !== null && newStatus !== undefined) {
+            props.row.confirmationStatus = newStatus;
+        }
+        else {
+            emit("removeScheduleRow", props.row.entityGuid ?? "");
+        }
+
+        if (result.data?.isDeclineReasonRequired) {
+            isDeclineReasonModalVisible.value = true;
+        }
+
+        isPerformingAction.value = false;
+    }
+
+    // #endregion Event Handlers
+</script>

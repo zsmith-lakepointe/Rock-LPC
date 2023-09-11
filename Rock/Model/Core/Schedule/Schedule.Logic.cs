@@ -1183,12 +1183,22 @@ namespace Rock.Model
         }
 
         /// <summary>
-        /// Returns a <see cref="System.String" /> that represents this instance.
+        /// Returns the schedule's name if defined, or a friendly text of the calendar event if not.
+        /// For example, "Every 3 days at 10:30am", "Monday, Wednesday, Friday at 5:00pm", "Saturday at 4:30pm"
         /// </summary>
-        /// <returns>
-        /// A <see cref="System.String" /> that represents this instance.
-        /// </returns>
+        /// <returns>The schedule's name if defined, or a friendly text of the calendar event if not.</returns>
         public override string ToString()
+        {
+            return ToString( false );
+        }
+
+        /// <summary>
+        /// Returns the schedule's name if defined, or a friendly text of the calendar event if not.
+        /// For example, "Every 3 days at 10:30am", "Monday, Wednesday, Friday at 5:00pm", "Saturday at 4:30pm"
+        /// </summary>
+        /// <param name="condensed">Whether to return condensed friendly text (with no HTML markup, for example).</param>
+        /// <returns>The schedule's name if defined, or a friendly text of the calendar event if not.</returns>
+        public string ToString( bool condensed )
         {
             if ( this.Name.IsNotNullOrWhiteSpace() )
             {
@@ -1196,7 +1206,7 @@ namespace Rock.Model
             }
             else
             {
-                return this.ToFriendlyScheduleText();
+                return this.ToFriendlyScheduleText( condensed );
             }
         }
 

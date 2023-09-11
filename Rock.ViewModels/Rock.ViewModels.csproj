@@ -74,6 +74,16 @@
     <Compile Include="Blocks\Finance\FinancialGatewayDetail\FinancialGatewayDetailOptionsBag.cs" />
     <Compile Include="Blocks\Engagement\StreakTypeExclusionDetail\StreakTypeExclusionBag.cs" />
     <Compile Include="Blocks\Engagement\StreakTypeExclusionDetail\StreakTypeExclusionDetailOptionsBag.cs" />
+    <Compile Include="Blocks\Group\Scheduling\GroupScheduleToolbox\AdditionalTimeSignUpsBag.cs" />
+    <Compile Include="Blocks\Group\Scheduling\GroupScheduleToolbox\ScheduleRowActionRequestBag.cs" />
+    <Compile Include="Blocks\Group\Scheduling\GroupScheduleToolbox\AdditionalTimeSignUpBag.cs" />
+    <Compile Include="Blocks\Group\Scheduling\GroupScheduleToolbox\GroupBag.cs" />
+    <Compile Include="Blocks\Group\Scheduling\GroupScheduleToolbox\SchedulePreferencesBag.cs" />
+    <Compile Include="Blocks\Group\Scheduling\GroupScheduleToolbox\ScheduleRowActionResponseBag.cs" />
+    <Compile Include="Blocks\Group\Scheduling\GroupScheduleToolbox\ScheduleRowBag.cs" />
+    <Compile Include="Blocks\Group\Scheduling\GroupScheduleToolbox\InitializationBox.cs" />
+    <Compile Include="Blocks\Group\Scheduling\GroupScheduleToolbox\AdditionalTimeSignUpLocationBag.cs" />
+    <Compile Include="Blocks\Group\Scheduling\GroupScheduleToolbox\ScheduleUnavailabilityBag.cs" />
     <Compile Include="Blocks\Reporting\MergeTemplateDetail\MergeTemplateFileValidationBag.cs" />
     <Compile Include="Blocks\Finance\FinancialPledgeDetail\FinancialPledgeBag.cs" />
     <Compile Include="Blocks\Finance\FinancialPledgeDetail\FinancialPledgeDetailOptionsBag.cs" />

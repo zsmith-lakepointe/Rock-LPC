@@ -1,0 +1,240 @@
+<!-- Copyright by the Spark Development Network; Licensed under the Rock Community License -->
+<template>
+    <NotificationBox v-if="blockErrorMessage" :alertType="AlertType.Warning">
+        {{ blockErrorMessage }}
+    </NotificationBox>
+
+    <Panel v-else
+           type="block"
+           title="Schedule Toolbox">
+        <div class="row">
+            <div :class="contentColumnCssClass">
+
+                <div v-html="contentHeaderHtml"></div>
+
+                <CurrentSchedule v-if="isActionTypeViewCurrent"
+                                 :schedule-rows="currentScheduleRows"
+                                 :isScheduleUnavailabilityEnabled="isScheduleUnavailabilityEnabled"
+                                 :scheduleUnavailabilitybuttonText="scheduleUnavailabilityButtonText"
+                                 :currentScheduleHeaderHtml="currentScheduleHeaderHtml"
+                                 @removeScheduleRow="onRemoveScheduleRow" />
+
+                <UpdatePreferences v-if="isActionTypeUpdatePreferences" />
+
+                <SignUp v-if="isActionTypeSignUp" />
+
+            </div>
+
+            <div v-if="areActionButtonsVisible" class="col-md-4 column-actions">
+                <div class="schedule-actions">
+
+                    <div v-html="actionHeaderHtml"></div>
+
+                    <RockButton type="button"
+                                :btnType="isActionTypeViewCurrent ? BtnType.Primary : BtnType.Default"
+                                class="btn-block"
+                                @click="onCurrentScheduleClick">
+                        {{ currentScheduleButtonText }}
+                    </RockButton>
+
+                    <RockButton v-if="isSchedulePreferencesEnabled"
+                                type="button"
+                                :btnType="isActionTypeUpdatePreferences ? BtnType.Primary : BtnType.Default"
+                                class="btn-block"
+                                @click="onUpdatePreferencesClick">
+                        {{ schedulePreferencesButtonText }}
+                    </RockButton>
+
+                    <RockButton v-if="isAdditionalTimeSignUpsEnabled"
+                                type="button"
+                                :btnType="isActionTypeSignUp ? BtnType.Primary : BtnType.Default"
+                                class="btn-block"
+                                @click="onSignUpClick">
+                        {{ additionalTimeSignUpsButtonText }}
+                    </RockButton>
+                </div>
+            </div>
+        </div>
+    </Panel>
+</template>
+
+<script setup lang="ts">
+    import { computed, ref, watch } from "vue";
+    import CurrentSchedule from "./GroupScheduleToolbox/currentSchedule.partial.obs";
+    import SignUp from "./GroupScheduleToolbox/signUp.partial.obs";
+    import { PageParameterKey } from "./GroupScheduleToolbox/types.partial";
+    import UpdatePreferences from "./GroupScheduleToolbox/updatePreferences.partial.obs";
+    import NotificationBox from "@Obsidian/Controls/notificationBox.obs";
+    import Panel from "@Obsidian/Controls/panel.obs";
+    import RockButton from "@Obsidian/Controls/rockButton.obs";
+    import { ToolboxActionType, ToolboxActionTypeDescription } from "@Obsidian/Enums/Blocks/Group/Scheduling/toolboxActionType";
+    import { AlertType } from "@Obsidian/Enums/Controls/alertType";
+    import { BtnType } from "@Obsidian/Enums/Controls/btnType";
+    import {
+        getSecurityGrant,
+        onConfigurationValuesChanged,
+        provideSecurityGrant,
+        useConfigurationValues,
+        useInvokeBlockAction,
+        useReloadBlock
+    } from "@Obsidian/Utility/block";
+    import { InitializationBox } from "@Obsidian/ViewModels/Blocks/Group/Scheduling/GroupScheduleToolbox/initializationBox";
+    import { SchedulePreferencesBag } from "@Obsidian/ViewModels/Blocks/Group/Scheduling/GroupScheduleToolbox/schedulePreferencesBag";
+    import { ScheduleRowBag } from "@Obsidian/ViewModels/Blocks/Group/Scheduling/GroupScheduleToolbox/scheduleRowBag";
+
+    const config = useConfigurationValues<InitializationBox>();
+    const invokeBlockAction = useInvokeBlockAction();
+
+    const securityGrant = getSecurityGrant(config.securityGrantToken);
+    const reloadBlock = useReloadBlock();
+
+    // #region Values
+
+    const blockErrorMessage = ref<string | undefined | null>(config.errorMessage);
+
+    const toolboxActionType = ref<ToolboxActionType>(config.toolboxActionType);
+    const actionHeaderHtml = ref(config.actionHeaderHtml);
+
+    const currentScheduleRows = ref<ScheduleRowBag[]>(config.currentScheduleRows ?? []);
+    const currentScheduleButtonText = ref(config.currentScheduleButtonText);
+    const currentScheduleHeaderHtml = ref(config.currentScheduleHeaderHtml);
+
+    const isSchedulePreferencesEnabled = ref(config.isSchedulePreferencesEnabled);
+    const schedulePreferences = ref<SchedulePreferencesBag[]>(config.schedulePreferences ?? []);
+    const schedulePreferencesButtonText = ref(config.schedulePreferencesButtonText);
+    const schedulePreferencesHeaderHtml = ref(config.schedulePreferencesHeaderHtml);
+
+    const isScheduleUnavailabilityEnabled = ref(config.isScheduleUnavailabilityEnabled);
+    const scheduleUnavailabilityButtonText = ref(config.scheduleUnavailabilityButtonText);
+    const scheduleUnavailabilityHeaderHtml = ref(config.scheduleUnavailabilityHeaderHtml);
+
+    const isAdditionalTimeSignUpsEnabled = ref(config.isAdditionalTimeSignUpsEnabled);
+    const additionalTimeSignUpsButtonText = ref(config.additionalTimeSignUpsButtonText);
+    const additionalTimeSignUpsHeaderHtml = ref(config.additionalTimeSignUpsHeaderHtml);
+    const isLocationRequiredForAdditionalTimeSignUps = ref(config.isLocationRequiredForAdditionalTimeSignUps);
+    const isImmediateNeedsEnabled = ref(config.isImmediateNeedsEnabled);
+    const immediateNeedsTitle = ref(config.immediateNeedsTitle);
+    const immediateNeedsIntroduction = ref(config.immediateNeedsIntroduction);
+
+    // #end region Values
+
+    // #region Computed Values
+
+    const areActionButtonsVisible = computed((): boolean => {
+        return (isSchedulePreferencesEnabled.value || isAdditionalTimeSignUpsEnabled.value);
+    });
+
+    const contentColumnCssClass = computed((): string => {
+        const action = ToolboxActionTypeDescription[toolboxActionType.value]
+            .replace(" ", "-")
+            .toLowerCase();
+
+        return `col-md-${areActionButtonsVisible.value ? "8" : "12"} column-${action}`;
+    });
+
+    const contentHeaderHtml = computed((): string | null | undefined => {
+        switch (toolboxActionType.value) {
+            case ToolboxActionType.ViewCurrent:
+                return currentScheduleHeaderHtml.value;
+            case ToolboxActionType.UpdatePreferences:
+                return schedulePreferencesHeaderHtml.value;
+            case ToolboxActionType.SignUp:
+                return additionalTimeSignUpsHeaderHtml.value;
+        }
+    });
+
+    const isActionTypeViewCurrent = computed((): boolean => {
+        return toolboxActionType.value === ToolboxActionType.ViewCurrent;
+    });
+
+    const isActionTypeUpdatePreferences = computed((): boolean => {
+        return toolboxActionType.value === ToolboxActionType.UpdatePreferences;
+    });
+
+    const isActionTypeSignUp = computed((): boolean => {
+        return toolboxActionType.value === ToolboxActionType.SignUp;
+    });
+
+    // #endregion Computed Values
+
+    // #region Functions
+
+    /**
+     * Updates the window query string to match the currently-selected action and group (if applicable).
+     */
+    function updateUrl(): void {
+        const qs: string[][] = [
+            [PageParameterKey.ToolboxActionType, toolboxActionType.value.toString()]
+        ];
+
+        // Add in any query string parameters not related to us.
+        for (const entry of new URLSearchParams(window.location.search).entries()) {
+            if (![
+                PageParameterKey.ToolboxActionType,
+                PageParameterKey.ToolboxGroupId
+            ].some(key => key.toLowerCase() === entry[0].toLowerCase())) {
+                qs.push([entry[0], entry[1]]);
+            }
+        }
+
+        // Update the URL in the window.
+        if (qs.length) {
+            const queryString = qs.map(q => `${q[0]}=${q[1]}`).join("&");
+            window.history.replaceState(null, "", `${window.location.pathname}?${queryString}`);
+        }
+        else {
+            window.history.replaceState(null, "", window.location.pathname);
+        }
+    }
+
+    // #endregion Functions
+
+    // #region Event Handlers
+
+    /**
+     * Handles the `click` event of the "Current Schedule" action button.
+     */
+    function onCurrentScheduleClick(): void {
+        toolboxActionType.value = ToolboxActionType.ViewCurrent;
+    }
+
+    /**
+     * Handles the `click` event of the "Update Schedule Preferences" action button.
+     */
+    function onUpdatePreferencesClick(): void {
+        toolboxActionType.value = ToolboxActionType.UpdatePreferences;
+    }
+
+    /**
+     * Handles the `click` event of the "Sign Up For Additional Times" action button.
+     */
+    function onSignUpClick(): void {
+        toolboxActionType.value = ToolboxActionType.SignUp;
+    }
+
+    /**
+     * Handles the `removeScheduleRow` event of the CurrentSchedule component.
+     *
+     * @param entityGuid The unique identifier of the schedule row to remove.
+     */
+     function onRemoveScheduleRow(entityGuid: string): void {
+        const rowToRemove = currentScheduleRows.value?.find(r => r?.entityGuid === entityGuid);
+        if (!rowToRemove) {
+            return;
+        }
+
+        currentScheduleRows.value = currentScheduleRows.value.filter(r => r !== rowToRemove);
+    }
+
+    // #endregion Event Handlers
+
+    provideSecurityGrant(securityGrant);
+
+    onConfigurationValuesChanged(reloadBlock);
+
+    updateUrl();
+
+    watch(toolboxActionType, () => {
+        updateUrl();
+    });
+</script>

@@ -1,0 +1,79 @@
+<!-- Copyright by the Spark Development Network; Licensed under the Rock Community License -->
+<template>
+    <div class="d-flex flex-wrap justify-content-between">
+
+        <div class="mb-4">
+            <RockButton type="button"
+                        :btnType="BtnType.Default"
+                        :btnSize="BtnSize.ExtraSmall">
+                <i class="fa fa-calendar-plus-o"></i>
+                Add to Calendar
+            </RockButton>
+
+            <RockButton type="button"
+                        :btnType="BtnType.Default"
+                        :btnSize="BtnSize.ExtraSmall"
+                        class="ml-1">
+                <i class="fa fa-calendar-alt"></i>
+                Copy Calendar Link
+            </RockButton>
+        </div>
+
+        <RockButton v-if="isScheduleUnavailabilityEnabled"
+                    type="button"
+                    :btnType="BtnType.Default"
+                    :btnSize="BtnSize.ExtraSmall"
+                    class="mb-4">
+            <i class="fa fa-calendar-times-o"></i>
+            {{ scheduleUnavailabilitybuttonText }}
+        </RockButton>
+
+    </div>
+
+    <div class="schedule-toolbox-cards">
+        <CurrentScheduleRow v-for="row in scheduleRows"
+                            :key="row.entityGuid ?? ''"
+                            :row="row"
+                            @removeScheduleRow="$emit('removeScheduleRow', $event)" />
+    </div>
+</template>
+
+<script setup lang="ts">
+    import { PropType } from "vue";
+    import CurrentScheduleRow from "./currentScheduleRow.partial.obs";
+    import RockButton from "@Obsidian/Controls/rockButton.obs";
+    import { BtnSize } from "@Obsidian/Enums/Controls/btnSize";
+    import { BtnType } from "@Obsidian/Enums/Controls/btnType";
+    import { ScheduleRowBag } from "@Obsidian/ViewModels/Blocks/Group/Scheduling/GroupScheduleToolbox/scheduleRowBag";
+
+    defineProps({
+        scheduleRows: {
+            type: Array as PropType<ScheduleRowBag[]>,
+            required: true
+        },
+
+        isScheduleUnavailabilityEnabled: {
+            type: Boolean as PropType<boolean>,
+            required: true
+        },
+
+        scheduleUnavailabilitybuttonText: {
+            type: String as PropType<string | null | undefined>,
+            required: true
+        },
+
+        currentScheduleHeaderHtml: {
+            type: String as PropType<string | null | undefined>,
+            required: true
+        },
+
+        disabled: {
+            type: Boolean as PropType<boolean>,
+            default: false
+        }
+    });
+
+    defineEmits<{
+        (e: "removeScheduleRow", entityGuid: string): void
+    }>();
+</script>
