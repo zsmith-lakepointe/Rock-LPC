@@ -95,7 +95,12 @@ namespace Rock.Blocks.Group
             var options = new GroupRequirementTypeDetailOptionsBag();
 
             options.DueDateOptions = ToEnumListItemBag( typeof( DueDateType ) );
-            options.RequirementTypeOptions = ToEnumListItemBag( typeof( RequirementCheckType ) );
+            options.RequirementTypeOptions = new List<ListItemBag>()
+            {
+                new ListItemBag() { Text = "SQL", Value = RequirementCheckType.Sql.ToString() },
+                new ListItemBag() { Text = "Data View", Value = RequirementCheckType.Dataview.ToString() },
+                new ListItemBag() { Text = "Manual", Value = RequirementCheckType.Manual.ToString() },
+            };
 
             return options;
         }
