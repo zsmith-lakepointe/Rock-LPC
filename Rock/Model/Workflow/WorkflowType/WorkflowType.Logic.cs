@@ -63,17 +63,6 @@ namespace Rock.Model
             return this.Name;
         }
 
-        /// <summary>
-        /// When checking for security, first check the category it belongs to, but then check the default entity security.
-        /// I don't think we would ever want an actual ParentAuthority defined on WorkflowType because it would
-        /// likely interfere with the WorkflowEntry block's behavior when it checks the workflow.IsAuthorized(...).
-        /// Why? -- Because the Workflow's ParentAuthority is the WorkflowType, and if we were to add a
-        /// ParentAuthority (not ParentAuthorityPre) to be the Category, it would then cause anyone who had edit on the
-        /// Category to also be able to edit the _running_ workflow instance (which should really only be handled
-        /// by the 'workflow assignment' feature).
-        /// </summary>
-        public override ISecured ParentAuthorityPre => this.Category ?? base.ParentAuthority;
-
         #endregion Public Methods
 
         #region ICacheable
