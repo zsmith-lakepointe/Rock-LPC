@@ -1,0 +1,145 @@
+<template>
+    <Panel type="block" title="New Communication" titleIconCssClass="fa fa-comment-o">
+        <template #headerActions>
+            <HighlightLabel v-if="statusLabel">{{ statusLabel }}</HighlightLabel>
+        </template>
+
+        <template #default>
+            <div ID="pnlEdit">
+
+                <NotificationBox v-if="validationSummaryMessage"
+                                id="ValidationSummary"
+                                heading="Please correct the following:"
+                                alertType="validation">{{ validationSummaryMessage }}</NotificationBox>
+
+                <PanelNavigationBar :items="communicationMediumOptions" />
+
+                <NotificationBox v-if="false"
+                                id="nbInvalidTransport"
+                                alertType="warning"
+                                :dismissible="true"
+                                heading="Warning" />
+
+                <div v-if="isFullMode" class="row">
+                    <div class="col-md-12">
+                        <PeoplePicker id="ppAddPerson" />
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <DropDownList v-if="isFullMode"
+                                    id="ddlTemplate"
+                                    :enhanceForLongLists="true"
+                                    :items="communicationTemplates"
+                                    label="Template" />
+                    </div>
+                    <div class="col-md-6">
+                        <div v-if="isFullMode" class="pull-right">
+                            <Toggle id="cbBulk"
+                                    text="Bulk Communication"
+                                    class="js-bulk-option"
+                                    help="Select this option if you are sending this email to a group of people.  This will include the option for recipients to unsubscribe and will not send the email to any recipients that have already asked to be unsubscribed." />
+                        </div>
+                    </div>
+                </div>
+
+                <asp:PlaceHolder id="phContent" />
+
+                <DateTimePicker v-if="isFullMode"
+                                id="dtpFutureSend"
+                                label="Delay Send Until"
+                                SourceTypeName="Rock.Model.Communication"
+                                PropertyName="FutureSendDateTime" />
+
+
+                <NotificationBox v-if="false" id="nbTestResult" class="margin-t-md" />
+            </div>
+
+            <div ref="resultsDiv" v-if="areResultsShown" id="pnlResult" class="js-pnl-result">
+                <NotificationBox id="nbResult" alertType="success" />
+                <br />
+                <a id="hlViewCommunication">View Communication</a>
+            </div>
+        </template>
+
+        <template #footerActions>
+            <RockButton id="btnSubmit"
+                        class="btn btn-primary"
+                        OnClick="btnSubmit_Click">Submit</RockButton>
+
+            <RockButton v-if="isFullMode"
+                        id="btnTest"
+                        class="btn btn-link"
+                        OnClick="btnTest_Click">Send Test</RockButton>
+
+            <RockButton v-if="isFullMode"
+                        id="btnSave"
+                        class="btn btn-link"
+                        OnClick="btnSave_Click">Save as Draft</RockButton>
+
+            <RockButton id="btnCancel"
+                        class="btn btn-link"
+                        OnClick="btnCancel_Click">Cancel</RockButton>
+        </template>
+    </Panel>
+</template>
+
+<script setup lang="ts">
+import { nextTick, ref } from "vue";
+import PanelNavigationBar from "./CommunicationEntry/panelNavigationBar.partial.obs";
+import PeoplePicker from "./CommunicationEntry/peoplePicker.partial.obs";
+import DateTimePicker from "@Obsidian/Controls/dateTimePicker.obs";
+import DropDownList from "@Obsidian/Controls/dropDownList.obs";
+import HighlightLabel from "@Obsidian/Controls/highlightLabel.obs";
+import NotificationBox from "@Obsidian/Controls/notificationBox.obs";
+import Panel from "@Obsidian/Controls/panel.obs";
+import RockButton from "@Obsidian/Controls/rockButton.obs";
+import Toggle from "@Obsidian/Controls/toggle.obs";
+import { useConfigurationValues } from "@Obsidian/Utility/block";
+import { ListItemBag } from "@Obsidian/ViewModels/Utility/listItemBag";
+
+type CommunicationEntryInitializationBox = {
+    canSearchOrAddNewPeople: boolean;
+    communicationMediumOptions: ListItemBag[];
+};
+
+const config = useConfigurationValues<CommunicationEntryInitializationBox>();
+defineProps();
+
+//#region Values
+
+const areResultsShown = ref<boolean>(false);
+const isFullMode = ref<boolean>(config.canSearchOrAddNewPeople);
+const statusLabel = ref<string | null | undefined>("Draft");
+const resultsDiv = ref<HTMLElement | undefined>();
+
+//#endregion
+
+//#region Functions
+
+function showResults(): void {
+    areResultsShown.value = true;
+
+    // Scroll on next tick so Vue can process the v-if binding that shows the elements.
+    nextTick(() => {
+        const results = resultsDiv.value;
+        if (results) {
+            results.scrollIntoView({
+                behavior: "smooth",
+                block: "start",
+                inline: "start"
+            });
+        }
+    });
+}
+
+//#endregion
+
+//#region Event Handlers
+
+
+
+//#endregion
+
+</script>

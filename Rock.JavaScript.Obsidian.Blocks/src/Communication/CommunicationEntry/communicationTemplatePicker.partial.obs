@@ -1,0 +1,7 @@
+<template>
+    Communication Template Picker works!
+</template>
+
+<script setup lang="ts">
+defineProps();
+</script>
