@@ -314,6 +314,7 @@ namespace Rock.Data
             }
         }
 
+        // LPC MODIFIED CODE
         /// <summary>
         /// Executes the query, and returns the first column of the first row in the
         /// result set returned by the query. Additional columns or rows are ignored.
@@ -321,6 +322,7 @@ namespace Rock.Data
         /// <param name="query">The query.</param>
         /// <param name="commandType">Type of the command.</param>
         /// <param name="parameters">The parameters.</param>
+        /// <param name="commandTimeout">The command timeout (seconds)</param>
         /// <returns></returns>
         [RockObsolete( "1.16" )]
         [Obsolete( @"Please use the static method ExecuteScalar( string query, CommandType commandType = CommandType.Text, Dictionary<string, object> parameters = null, int? commandTimeout = null ) instead" )]

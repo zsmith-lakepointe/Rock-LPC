@@ -192,6 +192,10 @@ export type RegistrarInfo = {
     nickName: string;
     lastName: string;
     email: string;
+    // LPC CODE
+    mobilePhone: string;
+    preferredLanguage: string;
+    // END LPC CODE
     updateEmail: boolean;
     familyGuid: Guid | null;
 };
@@ -236,6 +240,9 @@ export type RegistrantBasicInfo = {
     firstName: string;
     lastName: string;
     email: string;
+    // LPC CODE
+    mobilePhone: string;
+    // END LPC CODE
     guid: Guid;
 };
 

@@ -673,6 +673,11 @@ namespace RockWeb.Blocks.Groups
         public bool AttendanceEntered { get; set; }
         public bool DidNotOccur { get; set; }
         public int DidAttendCount { get; set; }
+
+		// LPC CODE
+        public int? AnonymousAttendanceCount { get; set; }
+        // END LPC CODE
+        
         public double AttendanceRate { get; set; }
         public bool CanDelete { get; set; }
         public string Notes { get; set; }
@@ -709,6 +714,11 @@ namespace RockWeb.Blocks.Groups
             AttendanceEntered = occurrence.AttendanceEntered;
             DidNotOccur = occurrence.DidNotOccur ?? false;
             DidAttendCount = occurrence.DidAttendCount;
+            
+            // LPC CODE
+            AnonymousAttendanceCount = occurrence.AnonymousAttendanceCount;
+            // END LPC CODE
+            
             AttendanceRate = occurrence.AttendanceRate;
             Notes = occurrence.Notes;
             AttendanceTypeValueId = occurrence.AttendanceTypeValueId;

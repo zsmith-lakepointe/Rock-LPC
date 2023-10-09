@@ -27,7 +27,6 @@ using Rock.Enums.Blocks.Group.Scheduling;
 using Rock.Enums.Controls;
 using Rock.Model;
 using Rock.Security;
-using Rock.Utility;
 using Rock.ViewModels.Blocks.Group.Scheduling.GroupScheduler;
 using Rock.ViewModels.Controls;
 using Rock.ViewModels.Utility;
@@ -71,7 +70,14 @@ namespace Rock.Blocks.Group.Scheduling
         Key = AttributeKey.RosterPage,
         Description = "Page used for viewing the group schedule roster.",
         Order = 3,
-        IsRequired = true )]
+        IsRequired = false )]
+
+    [BooleanField( "Disallow Group Selection If Specified",
+        Key = AttributeKey.DisallowGroupSelectionIfSpecified,
+        Description = "When enabled, will hide the group picker if there is a GroupId in the query string.",
+        DefaultBooleanValue = false,
+        Order = 4,
+        IsRequired = false )]
 
     [BooleanField( "Disallow Group Selection If Specified",
         Key = AttributeKey.DisallowGroupSelectionIfSpecified,

@@ -22,6 +22,23 @@ import RockButton from "@Obsidian/Controls/rockButton.obs";
 import TextBox from "@Obsidian/Controls/textBox.obs";
 import { asFormattedString } from "@Obsidian/Utility/numberUtils";
 import { RegistrationEntryBlockViewModel, RegistrationEntryState, RegistrationEntryBlockArgs } from "./types.partial";
+// LPC CODE
+import { useStore } from "@Obsidian/PageState";
+
+const store = useStore();
+
+/** Gets the lang parameter from the query string.
+ * Returns "en" or "es". Defaults to "en" if invalid. */
+function getLang(): string {
+    var lang = typeof store.state.pageParameters["lang"] === 'string' ? store.state.pageParameters["lang"] : "";
+
+    if (lang != "es") {
+        lang = "en";
+    }
+
+    return lang;
+}
+// END LPC CODE
 
 type CheckDiscountCodeResult = {
     discountCode: string;
@@ -83,7 +100,9 @@ export default defineComponent({
                 return `Your ${discountText} discount code was successfully applied to the maximum allowed number of ${discountMaxRegistrants} ${registrantTerm}`;
             }
 
-            return `Your ${discountText} discount code for all registrants was successfully applied.`;
+            // MODIFIED LPC CODE
+            return getLang() == 'es' ? `Tu codigo de descuento ha sido aplicado por ${discountText} para todos los registrados.` : `Your ${discountText} discount code for all registrants was successfully applied.`;
+            // END MODIFIED LPC CODE
         },
 
         /** Should the discount panel be shown? */
@@ -107,6 +126,9 @@ export default defineComponent({
         }
     },
     methods: {
+        // LPC CODE
+        getLang,
+        // END LPC CODE
         /** Send a user input discount code to the server so the server can check and send back
          *  the discount amount. */
         async tryDiscountCode(isAutoApply: boolean): Promise<void> {
@@ -156,11 +178,15 @@ export default defineComponent({
     <NotificationBox v-if="discountCodeWarningMessage" alertType="warning">{{discountCodeWarningMessage}}</NotificationBox>
     <NotificationBox v-if="discountCodeSuccessMessage" alertType="success">{{discountCodeSuccessMessage}}</NotificationBox>
     <div class="form-group pull-right">
-        <label class="control-label">Discount Code</label>
+        <!-- MODIFIED LPC CODE -->
+        <label class="control-label">{{getLang() == 'es' ? 'Código de Descuento' : 'Discount Code'}}</label>
+        <!-- END MODIFIED LPC CODE -->
         <div class="input-group">
             <input type="text" :disabled="loading || !isDiscountCodeAllowed" class="form-control input-width-md input-sm" v-model="discountCodeInput" />
             <RockButton v-if="isDiscountCodeAllowed" btnSize="sm" :isLoading="loading" class="margin-l-sm" @click="tryDiscountCode(false)">
-                Apply
+                <!-- MODIFIED LPC CODE -->
+                {{ getLang() == 'es' ? 'Aplicar' : 'Apply' }}
+                <!-- END MODIFIED LPC CODE -->
             </RockButton>
         </div>
     </div>
