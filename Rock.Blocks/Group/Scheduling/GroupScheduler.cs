@@ -41,6 +41,7 @@ namespace Rock.Blocks.Group.Scheduling
     [Category( "Group Scheduling" )]
     [Description( "Allows group schedules for groups and locations to be managed by a scheduler." )]
     [IconCssClass( "fa fa-calendar-alt" )]
+    [SupportedSiteTypes( Model.SiteType.Web )]
 
     #region Block Attributes
 
@@ -78,11 +79,18 @@ namespace Rock.Blocks.Group.Scheduling
         Order = 4,
         IsRequired = false )]
 
+    [BooleanField( "Disallow Group Selection If Specified",
+        Key = AttributeKey.DisallowGroupSelectionIfSpecified,
+        Description = "When enabled, will hide the group picker if there is a GroupId in the query string.",
+        DefaultBooleanValue = false,
+        Order = 4,
+        IsRequired = false )]
+
     #endregion
 
     [Rock.SystemGuid.EntityTypeGuid( "7ADCE833-A785-4A54-9805-7335809C5367" )]
     [Rock.SystemGuid.BlockTypeGuid( "511D8E2E-4AF3-48D8-88EF-2AB311CD47E0" )]
-    public class GroupScheduler : RockObsidianBlockType
+    public class GroupScheduler : RockBlockType
     {
         #region Keys & Constants
 
@@ -119,25 +127,32 @@ namespace Rock.Blocks.Group.Scheduling
 
         private static class PersonPreferenceKey
         {
-            public const string GroupIds = "group-ids";
-            public const string LocationIds = "location-ids";
-            public const string ScheduleIds = "schedule-ids";
+            public const string GroupId = "GroupId";
+            public const string GroupIds = "GroupIds";
+            public const string LocationIds = "LocationIds";
+            public const string ScheduleId = "ScheduleId";
+            public const string ScheduleIds = "ScheduleIds";
 
-            public const string RangeType = "range-type";
-            public const string TimeUnit = "time-unit";
-            public const string TimeValue = "time-value";
-            public const string LowerDate = "lower-date";
-            public const string UpperDate = "upper-date";
+            public const string RangeType = "RangeType";
+            public const string TimeUnit = "TimeUnit";
+            public const string TimeValue = "TimeValue";
+            public const string LowerDate = "LowerDate";
+            public const string UpperDate = "UpperDate";
 
-            public const string ResourceListSourceType = "resource-list-source-type";
-            public const string AlternateGroupId = "alternate-group-id";
-            public const string DataViewId = "data-view-id";
+            public const string ShowChildGroups = "ShowChildGroups";
+            public const string SelectedDate = "EndOfWeekDate";
+            public const string SelectAllSchedules = "SelectAllSchedules";
 
-            public const string CloneSourceDate = "clone-source-date";
-            public const string CloneDestinationDate = "clone-destination-date";
-            public const string CloneGroups = "clone-groups";
-            public const string CloneLocations = "clone-locations";
-            public const string CloneSchedules = "clone-schedules";
+            public const string ResourceListSourceType = "ResourceListSourceType";
+            public const string GroupMemberFilterType = "GroupMemberFilterType";
+            public const string AlternateGroupId = "AlternateGroupId";
+            public const string DataViewId = "DataViewId";
+
+            public const string CloneSourceDate = "CloneSourceDate";
+            public const string CloneDestinationDate = "CloneDestinationDate";
+            public const string CloneGroups = "CloneGroups";
+            public const string CloneLocations = "CloneLocations";
+            public const string CloneSchedules = "CloneSchedules";
         }
 
         private const string NoScheduleTemplateValue = "0";
@@ -162,13 +177,11 @@ namespace Rock.Blocks.Group.Scheduling
         private readonly string _dateFormatWithYear = "M/d/yyyy";
 
         private IDictionary<string, string> _pageParameters;
-        //private PersonPreferenceCollection _personPreferences;
+        private PersonPreferenceCollection _personPreferences;
 
         #endregion
 
         #region Properties
-
-        public override string BlockFileUrl => $"{base.BlockFileUrl}.obs";
 
         public IDictionary<string, string> PageParameters
         {
@@ -183,18 +196,18 @@ namespace Rock.Blocks.Group.Scheduling
             }
         }
 
-        //public PersonPreferenceCollection PersonPreferences
-        //{
-        //    get
-        //    {
-        //        if ( _personPreferences == null )
-        //        {
-        //            _personPreferences = this.GetBlockPersonPreferences();
-        //        }
+        public PersonPreferenceCollection PersonPreferences
+        {
+            get
+            {
+                if ( _personPreferences == null )
+                {
+                    _personPreferences = this.GetBlockPersonPreferences();
+                }
 
-        //        return _personPreferences;
-        //    }
-        //}
+                return _personPreferences;
+            }
+        }
 
         #endregion
 
@@ -223,7 +236,7 @@ namespace Rock.Blocks.Group.Scheduling
             var block = new BlockService( rockContext ).Get( this.BlockId );
             block.LoadAttributes( rockContext );
 
-            var (filters, disallowGroupSelection) = GetFiltersFromURLOrPersonPreferences( rockContext );
+            var ( filters, disallowGroupSelection ) = GetFiltersFromURLOrPersonPreferences( rockContext );
 
             box.AppliedFilters = new GroupSchedulerAppliedFiltersBag
             {
@@ -240,7 +253,7 @@ namespace Rock.Blocks.Group.Scheduling
         /// </summary>
         /// <param name="rockContext">The rock context.</param>
         /// <returns>The filters and whether to disallow group selection.</returns>
-        private (GroupSchedulerFiltersBag filters, bool disallowGroupSelection) GetFiltersFromURLOrPersonPreferences( RockContext rockContext )
+        private ( GroupSchedulerFiltersBag filters, bool disallowGroupSelection ) GetFiltersFromURLOrPersonPreferences( RockContext rockContext )
         {
             var filters = new GroupSchedulerFiltersBag();
             var disallowGroupSelection = false;
@@ -270,8 +283,7 @@ namespace Rock.Blocks.Group.Scheduling
             }
             else
             {
-                //groupIds = ( this.PersonPreferences.GetValue( PersonPreferenceKey.GroupIds ) ?? string.Empty ).Split( ',' ).AsIntegerList();
-                groupIds = new List<int>();
+                groupIds = this.PersonPreferences.GetValue( PersonPreferenceKey.GroupIds ).Split( ',' ).AsIntegerList();
             }
 
             if ( groupIds.Any() )
@@ -285,8 +297,7 @@ namespace Rock.Blocks.Group.Scheduling
 
             var locationIds = HasPageParameter( PageParameterKey.LocationIds )
                 ? ( this.PageParameter( PageParameterKey.LocationIds ) ?? string.Empty ).Split( ',' ).AsIntegerList()
-                //: ( this.PersonPreferences.GetValue( PersonPreferenceKey.LocationIds ) ?? string.Empty ).Split( ',' ).AsIntegerList();
-                : new List<int>();
+                : this.PersonPreferences.GetValue( PersonPreferenceKey.LocationIds ).Split( ',' ).AsIntegerList();
 
             if ( locationIds.Any() )
             {
@@ -302,8 +313,7 @@ namespace Rock.Blocks.Group.Scheduling
 
             var scheduleIds = HasPageParameter( PageParameterKey.ScheduleIds )
                 ? ( this.PageParameter( PageParameterKey.ScheduleIds ) ?? string.Empty ).Split( ',' ).AsIntegerList()
-                //: ( this.PersonPreferences.GetValue( PersonPreferenceKey.ScheduleIds ) ?? string.Empty ).Split( ',' ).AsIntegerList();
-                : new List<int>();
+                : this.PersonPreferences.GetValue( PersonPreferenceKey.ScheduleIds ).Split( ',' ).AsIntegerList();
 
             if ( scheduleIds.Any() )
             {
@@ -337,16 +347,11 @@ namespace Rock.Blocks.Group.Scheduling
             }
             else
             {
-                //rangeType = this.PersonPreferences.GetValue( PersonPreferenceKey.RangeType ).ConvertToEnumOrNull<SlidingDateRangeType>();
-                //timeUnit = this.PersonPreferences.GetValue( PersonPreferenceKey.TimeUnit ).ConvertToEnumOrNull<TimeUnitType>();
-                //timeValue = this.PersonPreferences.GetValue( PersonPreferenceKey.TimeValue ).AsIntegerOrNull();
-                //lowerDate = this.PersonPreferences.GetValue( PersonPreferenceKey.LowerDate ).AsDateTime();
-                //upperDate = this.PersonPreferences.GetValue( PersonPreferenceKey.UpperDate ).AsDateTime();
-                rangeType = null;
-                timeUnit = null;
-                timeValue = null;
-                lowerDate = null;
-                upperDate = null;
+                rangeType = this.PersonPreferences.GetValue( PersonPreferenceKey.RangeType ).ConvertToEnumOrNull<SlidingDateRangeType>();
+                timeUnit = this.PersonPreferences.GetValue( PersonPreferenceKey.TimeUnit ).ConvertToEnumOrNull<TimeUnitType>();
+                timeValue = this.PersonPreferences.GetValue( PersonPreferenceKey.TimeValue ).AsIntegerOrNull();
+                lowerDate = this.PersonPreferences.GetValue( PersonPreferenceKey.LowerDate ).AsDateTime();
+                upperDate = this.PersonPreferences.GetValue( PersonPreferenceKey.UpperDate ).AsDateTime();
             }
 
             if ( rangeType.HasValue
@@ -387,7 +392,7 @@ namespace Rock.Blocks.Group.Scheduling
 
             RefineFilters( rockContext, filters );
 
-            return (filters, disallowGroupSelection);
+            return ( filters, disallowGroupSelection );
         }
 
         /// <summary>
@@ -1037,7 +1042,7 @@ namespace Rock.Blocks.Group.Scheduling
         /// <returns>An object containing the validated or fallback filters.</returns>
         private GroupSchedulerFiltersBag ValidateClientFilters( RockContext rockContext, GroupSchedulerFiltersBag filters )
         {
-            var (fallbackFilters, disallowGroupSelection) = GetFiltersFromURLOrPersonPreferences( rockContext );
+            var ( fallbackFilters, disallowGroupSelection ) = GetFiltersFromURLOrPersonPreferences( rockContext );
             if ( filters?.Groups?.Any() == true && disallowGroupSelection )
             {
                 filters.Groups = fallbackFilters.Groups;
@@ -1074,21 +1079,21 @@ namespace Rock.Blocks.Group.Scheduling
         /// <param name="filters">The filters to save.</param>
         private void SaveFiltersToPersonPreferences( GroupSchedulerFiltersBag filters )
         {
-            //this.PersonPreferences.SetValue( PersonPreferenceKey.GroupIds, _groupIds?.Any() == true ? _groupIds.AsDelimited( "," ) : null );
-            //this.PersonPreferences.SetValue( PersonPreferenceKey.LocationIds, _selectedLocationIds?.Any() == true ? _selectedLocationIds.AsDelimited( "," ) : null );
-            //this.PersonPreferences.SetValue( PersonPreferenceKey.ScheduleIds, _selectedScheduleIds?.Any() == true ? _selectedScheduleIds.AsDelimited( "," ) : null );
+            this.PersonPreferences.SetValue( PersonPreferenceKey.GroupIds, _groupIds?.Any() == true ? _groupIds.AsDelimited( "," ) : null );
+            this.PersonPreferences.SetValue( PersonPreferenceKey.LocationIds, _selectedLocationIds?.Any() == true ? _selectedLocationIds.AsDelimited( "," ) : null );
+            this.PersonPreferences.SetValue( PersonPreferenceKey.ScheduleIds, _selectedScheduleIds?.Any() == true ? _selectedScheduleIds.AsDelimited( "," ) : null );
 
-            //this.PersonPreferences.SetValue( PersonPreferenceKey.RangeType, filters.DateRange?.RangeType.ToString() );
-            //this.PersonPreferences.SetValue( PersonPreferenceKey.TimeUnit, filters.DateRange?.TimeUnit?.ToString() );
-            //this.PersonPreferences.SetValue( PersonPreferenceKey.TimeValue, filters.DateRange?.TimeValue?.ToString() );
-            //this.PersonPreferences.SetValue( PersonPreferenceKey.LowerDate, filters.DateRange?.LowerDate.HasValue == true
-            //    ? filters.DateRange.LowerDate.Value.DateTime.ToISO8601DateString()
-            //    : null );
-            //this.PersonPreferences.SetValue( PersonPreferenceKey.UpperDate, filters.DateRange?.UpperDate.HasValue == true
-            //    ? filters.DateRange.UpperDate.Value.DateTime.ToISO8601DateString()
-            //    : null );
+            this.PersonPreferences.SetValue( PersonPreferenceKey.RangeType, filters.DateRange?.RangeType.ToString() );
+            this.PersonPreferences.SetValue( PersonPreferenceKey.TimeUnit, filters.DateRange?.TimeUnit?.ToString() );
+            this.PersonPreferences.SetValue( PersonPreferenceKey.TimeValue, filters.DateRange?.TimeValue?.ToString() );
+            this.PersonPreferences.SetValue( PersonPreferenceKey.LowerDate, filters.DateRange?.LowerDate.HasValue == true
+                ? filters.DateRange.LowerDate.Value.DateTime.ToISO8601DateString()
+                : null );
+            this.PersonPreferences.SetValue( PersonPreferenceKey.UpperDate, filters.DateRange?.UpperDate.HasValue == true
+                ? filters.DateRange.UpperDate.Value.DateTime.ToISO8601DateString()
+                : null );
 
-            //this.PersonPreferences.Save();
+            this.PersonPreferences.Save();
         }
 
         /// <summary>
@@ -1103,14 +1108,13 @@ namespace Rock.Blocks.Group.Scheduling
 
             resourceSettings.EnabledResourceListSourceTypes = enabledTypes;
 
-            //var selectedType = this.PersonPreferences.GetValue( PersonPreferenceKey.ResourceListSourceType ).ConvertToEnumOrNull<ResourceListSourceType>();
-            //if ( !selectedType.HasValue || !enabledTypes.Contains( selectedType.Value ) )
-            //{
-            //    selectedType = enabledTypes.FirstOrDefault();
-            //}
+            var selectedType = this.PersonPreferences.GetValue( PersonPreferenceKey.ResourceListSourceType ).ConvertToEnumOrNull<ResourceListSourceType>();
+            if ( !selectedType.HasValue || !enabledTypes.Contains( selectedType.Value ) )
+            {
+                selectedType = enabledTypes.FirstOrDefault();
+            }
 
-            //resourceSettings.ResourceListSourceType = selectedType.Value;
-            resourceSettings.ResourceListSourceType = enabledTypes.FirstOrDefault();
+            resourceSettings.ResourceListSourceType = selectedType.Value;
 
             SetGroupMemberFilterType( resourceSettings );
         }
@@ -1175,26 +1179,26 @@ namespace Rock.Blocks.Group.Scheduling
         /// <param name="resourceSettings">The resource settings on which to set the alternate resource list identifier.</param>
         private void SetPersonPreferenceAlternateResourceListId( RockContext rockContext, GroupSchedulerResourceSettingsBag resourceSettings )
         {
-            //if ( resourceSettings.ResourceListSourceType == ResourceListSourceType.AlternateGroup )
-            //{
-            //    Guid? alternateGroupGuid = this.PersonPreferences.GetValue( PersonPreferenceKey.AlternateGroupId ).AsGuidOrNull();
-            //    if ( alternateGroupGuid.HasValue )
-            //    {
-            //        resourceSettings.ResourceAlternateGroup = new GroupService( rockContext )
-            //            .GetNoTracking( alternateGroupGuid.Value )
-            //            .ToListItemBag();
-            //    }
-            //}
-            //else if ( resourceSettings.ResourceListSourceType == ResourceListSourceType.DataView )
-            //{
-            //    Guid? dataViewGuid = this.PersonPreferences.GetValue( PersonPreferenceKey.DataViewId ).AsGuidOrNull();
-            //    if ( dataViewGuid.HasValue )
-            //    {
-            //        resourceSettings.ResourceDataView = new DataViewService( rockContext )
-            //            .GetNoTracking( dataViewGuid.Value )
-            //            .ToListItemBag();
-            //    }
-            //}
+            if ( resourceSettings.ResourceListSourceType == ResourceListSourceType.AlternateGroup )
+            {
+                Guid? alternateGroupGuid = this.PersonPreferences.GetValue( PersonPreferenceKey.AlternateGroupId ).AsGuidOrNull();
+                if ( alternateGroupGuid.HasValue )
+                {
+                    resourceSettings.ResourceAlternateGroup = new GroupService( rockContext )
+                        .GetNoTracking( alternateGroupGuid.Value )
+                        .ToListItemBag();
+                }
+            }
+            else if ( resourceSettings.ResourceListSourceType == ResourceListSourceType.DataView )
+            {
+                Guid? dataViewGuid = this.PersonPreferences.GetValue( PersonPreferenceKey.DataViewId ).AsGuidOrNull();
+                if ( dataViewGuid.HasValue )
+                {
+                    resourceSettings.ResourceDataView = new DataViewService( rockContext )
+                        .GetNoTracking( dataViewGuid.Value )
+                        .ToListItemBag();
+                }
+            }
         }
 
         /// <summary>
@@ -1213,23 +1217,23 @@ namespace Rock.Blocks.Group.Scheduling
             var typeToApply = settingsToApply.ResourceListSourceType;
             if ( resourceSettings.EnabledResourceListSourceTypes.Contains( typeToApply ) )
             {
-                //// If the provided type [to apply] is enabled, save it.
-                //this.PersonPreferences.SetValue( PersonPreferenceKey.ResourceListSourceType, typeToApply.ToString() );
+                // If the provided type [to apply] is enabled, save it.
+                this.PersonPreferences.SetValue( PersonPreferenceKey.ResourceListSourceType, typeToApply.ToString() );
 
-                //// Only overwrite alternate list identifiers within person preferences if they selected that resource list source type.
-                //// Otherwise, preserve their previously-selected identifier values for the next time they select that type.
+                // Only overwrite alternate list identifiers within person preferences if they selected that resource list source type.
+                // Otherwise, preserve their previously-selected identifier values for the next time they select that type.
 
-                //if ( typeToApply == ResourceListSourceType.AlternateGroup && settingsToApply.ResourceAlternateGroupGuid.HasValue )
-                //{
-                //    this.PersonPreferences.SetValue( PersonPreferenceKey.AlternateGroupId, settingsToApply.ResourceAlternateGroupGuid?.ToString() );
-                //}
+                if ( typeToApply == ResourceListSourceType.AlternateGroup && settingsToApply.ResourceAlternateGroupGuid.HasValue )
+                {
+                    this.PersonPreferences.SetValue( PersonPreferenceKey.AlternateGroupId, settingsToApply.ResourceAlternateGroupGuid?.ToString() );
+                }
 
-                //if ( typeToApply == ResourceListSourceType.DataView && settingsToApply.ResourceDataViewGuid.HasValue )
-                //{
-                //    this.PersonPreferences.SetValue( PersonPreferenceKey.DataViewId, settingsToApply.ResourceDataViewGuid?.ToString() );
-                //}
+                if ( typeToApply == ResourceListSourceType.DataView && settingsToApply.ResourceDataViewGuid.HasValue )
+                {
+                    this.PersonPreferences.SetValue( PersonPreferenceKey.DataViewId, settingsToApply.ResourceDataViewGuid?.ToString() );
+                }
 
-                //this.PersonPreferences.Save();
+                this.PersonPreferences.Save();
 
                 resourceSettings.ResourceListSourceType = typeToApply;
                 SetGroupMemberFilterType( resourceSettings );
@@ -1286,47 +1290,47 @@ namespace Rock.Blocks.Group.Scheduling
                 AvailableSchedules = GetAvailableSchedules( _unfilteredGroupLocationSchedules )
             };
 
-            //var selectedSourceDate = this.PersonPreferences.GetValue( PersonPreferenceKey.CloneSourceDate );
-            //cloneSettings.SelectedSourceDate = selectedSourceDate.IsNotNullOrWhiteSpace()
-            //    && cloneSettings.AvailableSourceDates.Any( listItemBag => listItemBag.Value == selectedSourceDate )
-            //        ? selectedSourceDate
-            //        : null;
+            var selectedSourceDate = this.PersonPreferences.GetValue( PersonPreferenceKey.CloneSourceDate );
+            cloneSettings.SelectedSourceDate = selectedSourceDate.IsNotNullOrWhiteSpace()
+                && cloneSettings.AvailableSourceDates.Any( listItemBag => listItemBag.Value == selectedSourceDate )
+                    ? selectedSourceDate
+                    : null;
 
-            //var selectedDestinationDate = this.PersonPreferences.GetValue( PersonPreferenceKey.CloneDestinationDate );
-            //cloneSettings.SelectedDestinationDate = selectedDestinationDate.IsNotNullOrWhiteSpace()
-            //    && cloneSettings.AvailableDestinationDates.Any( listItemBag => listItemBag.Value == selectedDestinationDate )
-            //        ? selectedDestinationDate
-            //        : null;
+            var selectedDestinationDate = this.PersonPreferences.GetValue( PersonPreferenceKey.CloneDestinationDate );
+            cloneSettings.SelectedDestinationDate = selectedDestinationDate.IsNotNullOrWhiteSpace()
+                && cloneSettings.AvailableDestinationDates.Any( listItemBag => listItemBag.Value == selectedDestinationDate )
+                    ? selectedDestinationDate
+                    : null;
 
-            //var selectedGroups = ( this.PersonPreferences.GetValue( PersonPreferenceKey.CloneGroups ) ?? string.Empty ).Split( ',' );
-            //cloneSettings.SelectedGroups = selectedGroups
-            //    .Where( g =>
-            //    {
-            //        var guid = g.AsGuidOrNull();
-            //        return guid.HasValue
-            //            && cloneSettings.AvailableGroups.Any( listItemBag => listItemBag.Value.AsGuidOrNull() == guid );
-            //    } )
-            //    .ToList();
+            var selectedGroups = this.PersonPreferences.GetValue( PersonPreferenceKey.CloneGroups ).Split( ',' );
+            cloneSettings.SelectedGroups = selectedGroups
+                .Where( g =>
+                {
+                    var guid = g.AsGuidOrNull();
+                    return guid.HasValue
+                        && cloneSettings.AvailableGroups.Any( listItemBag => listItemBag.Value.AsGuidOrNull() == guid );
+                } )
+                .ToList();
 
-            //var selectedLocations = ( this.PersonPreferences.GetValue( PersonPreferenceKey.CloneLocations ) ?? string.Empty ).Split( ',' );
-            //cloneSettings.SelectedLocations = selectedLocations
-            //    .Where( l =>
-            //    {
-            //        var guid = l.AsGuidOrNull();
-            //        return guid.HasValue
-            //            && cloneSettings.AvailableLocations.Any( listItemBag => listItemBag.Value.AsGuidOrNull() == guid );
-            //    } )
-            //    .ToList();
+            var selectedLocations = this.PersonPreferences.GetValue( PersonPreferenceKey.CloneLocations ).Split( ',' );
+            cloneSettings.SelectedLocations = selectedLocations
+                .Where( l =>
+                {
+                    var guid = l.AsGuidOrNull();
+                    return guid.HasValue
+                        && cloneSettings.AvailableLocations.Any( listItemBag => listItemBag.Value.AsGuidOrNull() == guid );
+                } )
+                .ToList();
 
-            //var selectedSchedules = ( this.PersonPreferences.GetValue( PersonPreferenceKey.CloneSchedules ) ?? string.Empty ).Split( ',' );
-            //cloneSettings.SelectedSchedules = selectedSchedules
-            //    .Where( s =>
-            //    {
-            //        var guid = s.AsGuidOrNull();
-            //        return guid.HasValue
-            //            && cloneSettings.AvailableSchedules.Any( listItemBag => listItemBag.Value.AsGuidOrNull() == guid );
-            //    } )
-            //    .ToList();
+            var selectedSchedules = this.PersonPreferences.GetValue( PersonPreferenceKey.CloneSchedules ).Split( ',' );
+            cloneSettings.SelectedSchedules = selectedSchedules
+                .Where( s =>
+                {
+                    var guid = s.AsGuidOrNull();
+                    return guid.HasValue
+                        && cloneSettings.AvailableSchedules.Any( listItemBag => listItemBag.Value.AsGuidOrNull() == guid );
+                } )
+                .ToList();
 
             return cloneSettings;
         }
@@ -1410,12 +1414,12 @@ namespace Rock.Blocks.Group.Scheduling
             var selectedSchedules = cloneSettings.SelectedSchedules ?? new List<string>();
             var schedules = selectedSchedules.Select( s => new ListItemBag { Value = s } ).ToList();
 
-            //this.PersonPreferences.SetValue( PersonPreferenceKey.CloneSourceDate, cloneSettings.SelectedSourceDate );
-            //this.PersonPreferences.SetValue( PersonPreferenceKey.CloneDestinationDate, cloneSettings.SelectedDestinationDate );
-            //this.PersonPreferences.SetValue( PersonPreferenceKey.CloneGroups, selectedGroups.AsDelimited( "," ) );
-            //this.PersonPreferences.SetValue( PersonPreferenceKey.CloneLocations, selectedLocations.AsDelimited( "," ) );
-            //this.PersonPreferences.SetValue( PersonPreferenceKey.CloneSchedules, selectedSchedules.AsDelimited( "," ) );
-            //this.PersonPreferences.Save();
+            this.PersonPreferences.SetValue( PersonPreferenceKey.CloneSourceDate, cloneSettings.SelectedSourceDate );
+            this.PersonPreferences.SetValue( PersonPreferenceKey.CloneDestinationDate, cloneSettings.SelectedDestinationDate );
+            this.PersonPreferences.SetValue( PersonPreferenceKey.CloneGroups, selectedGroups.AsDelimited( "," ) );
+            this.PersonPreferences.SetValue( PersonPreferenceKey.CloneLocations, selectedLocations.AsDelimited( "," ) );
+            this.PersonPreferences.SetValue( PersonPreferenceKey.CloneSchedules, selectedSchedules.AsDelimited( "," ) );
+            this.PersonPreferences.Save();
 
             var filters = new GroupSchedulerFiltersBag
             {

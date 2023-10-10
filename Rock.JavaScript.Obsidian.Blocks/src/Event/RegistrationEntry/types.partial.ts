@@ -69,6 +69,7 @@ export type SessionRenewalResult = {
 };
 
 export type RegistrationEntryBlockViewModel = {
+    currentPersonFamilyGuid?: Guid | null;
     timeoutMinutes: number | null;
     registrantsSameFamily: RegistrantsSameFamily;
     maxRegistrants: number;
@@ -114,6 +115,8 @@ export type RegistrationEntryBlockViewModel = {
     registrationInstanceNotFoundMessage: string | null;
     races: ListItemBag[];
     ethnicities: ListItemBag[];
+    showSmsOptIn: boolean;
+    smsOptInText: string;
 
     isInlineSignatureRequired: boolean;
     isSignatureDrawn: boolean;
@@ -141,6 +144,7 @@ export type RegistrationEntryBlockFeeItemViewModel = {
     name: string;
     guid: Guid;
     cost: number;
+    originalCountRemaining: number | null;
     countRemaining: number | null;
 };
 

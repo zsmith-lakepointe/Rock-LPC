@@ -26,7 +26,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Web.UI;
 using System.Web.UI.WebControls;
-using Newtonsoft.Json;
+
 using Rock;
 using Rock.Attribute;
 using Rock.Chart;
@@ -34,7 +34,7 @@ using Rock.Data;
 using Rock.Logging;
 using Rock.Model;
 using Rock.Reporting;
-using Rock.Security;
+using Rock.Utility;
 using Rock.Web.Cache;
 using Rock.Web.UI;
 using Rock.Web.UI.Controls;
@@ -252,7 +252,7 @@ namespace RockWeb.Blocks.CheckIn
             var rockContextAnalytics = new RockContextAnalytics();
             rockContextAnalytics.Database.CommandTimeout = databaseTimeoutSeconds;
 
-            cbShowInactive.Checked = GetUserPreference( BlockCache.Guid.ToString() + "_showInactive" ).AsBoolean();
+            cbShowInactive.Checked = GetBlockPersonPreferences().GetValue( "show-inactive" ).AsBoolean();
 
             // Determine if the block should be for a specific group
             _isGroupSpecific = GetAttributeValue( AttributeKeys.GroupSpecific ).AsBoolean();
@@ -862,23 +862,23 @@ var headerText = dp.label;
         /// </summary>
         private void SaveSettings()
         {
-            string keyPrefix = string.Format( "attendance-reporting-{0}-", this.BlockId );
+            var preferences = GetBlockPersonPreferences();
 
-            this.SetUserPreference( keyPrefix + "TemplateGroupTypeId", ddlAttendanceArea.SelectedGroupTypeId.ToString(), false );
+            preferences.SetValue( "TemplateGroupTypeId", ddlAttendanceArea.SelectedGroupTypeId.ToString() );
 
-            this.SetUserPreference( keyPrefix + "SlidingDateRange", drpSlidingDateRange.DelimitedValues, false );
-            this.SetUserPreference( keyPrefix + "GroupBy", hfGroupBy.Value, false );
-            this.SetUserPreference( keyPrefix + "GraphBy", hfGraphBy.Value, false );
-            this.SetUserPreference( keyPrefix + "CampusIds", clbCampuses.SelectedValues.AsDelimited( "," ), false );
-            this.SetUserPreference( keyPrefix + "ScheduleIds", spSchedules.SelectedValues.ToList().AsDelimited( "," ), false );
-            this.SetUserPreference( keyPrefix + "DataView", dvpDataView.SelectedValue, false );
+            preferences.SetValue( "SlidingDateRange", drpSlidingDateRange.DelimitedValues );
+            preferences.SetValue( "GroupBy", hfGroupBy.Value );
+            preferences.SetValue( "GraphBy", hfGraphBy.Value );
+            preferences.SetValue( "CampusIds", clbCampuses.SelectedValues.AsDelimited( "," ) );
+            preferences.SetValue( "ScheduleIds", spSchedules.SelectedValues.ToList().AsDelimited( "," ) );
+            preferences.SetValue( "DataView", dvpDataView.SelectedValue );
 
             var selectedGroupIds = GetSelectedGroupIds();
-            this.SetUserPreference( keyPrefix + "GroupIds", selectedGroupIds.AsDelimited( "," ), false );
+            preferences.SetValue( "GroupIds", selectedGroupIds.AsDelimited( "," ) );
 
-            this.SetUserPreference( keyPrefix + "ShowBy", hfShowBy.Value, false );
+            preferences.SetValue( "ShowBy", hfShowBy.Value );
 
-            this.SetUserPreference( keyPrefix + "ViewBy", hfViewBy.Value, false );
+            preferences.SetValue( "ViewBy", hfViewBy.Value );
 
             AttendeesFilterBy attendeesFilterBy;
             if ( radByVisit.Checked )
@@ -894,18 +894,17 @@ var headerText = dp.label;
                 attendeesFilterBy = AttendeesFilterBy.All;
             }
 
-            this.SetUserPreference( keyPrefix + "AttendeesFilterByType", attendeesFilterBy.ConvertToInt().ToString(), false );
-            this.SetUserPreference( keyPrefix + "AttendeesFilterByVisit", ddlNthVisit.SelectedValue, false );
-            this.SetUserPreference( keyPrefix + "AttendeesFilterByPattern", string.Format( "{0}|{1}|{2}|{3}", tbPatternXTimes.Text, cbPatternAndMissed.Checked, tbPatternMissedXTimes.Text, drpPatternDateRange.DelimitedValues ), false );
+            preferences.SetValue( "AttendeesFilterByType", attendeesFilterBy.ConvertToInt().ToString() );
+            preferences.SetValue( "AttendeesFilterByVisit", ddlNthVisit.SelectedValue );
+            preferences.SetValue( "AttendeesFilterByPattern", string.Format( "{0}|{1}|{2}|{3}", tbPatternXTimes.Text, cbPatternAndMissed.Checked, tbPatternMissedXTimes.Text, drpPatternDateRange.DelimitedValues ) );
 
-            this.SaveUserPreferences( keyPrefix );
+            preferences.Save();
 
             // Create URL for selected settings
             var pageReference = CurrentPageReference;
-            foreach ( var setting in GetUserPreferences( keyPrefix ) )
+            foreach ( var key in preferences.GetKeys() )
             {
-                string key = setting.Key.Substring( keyPrefix.Length );
-                pageReference.Parameters.AddOrReplace( key, setting.Value );
+                pageReference.Parameters.AddOrReplace( key, preferences.GetValue( key ) );
             }
 
             Uri uri = new Uri( Request.UrlProxySafe().ToString() );
@@ -955,16 +954,16 @@ var headerText = dp.label;
         {
             FilterIncludedInURL = false;
 
-            string keyPrefix = string.Format( "attendance-reporting-{0}-", this.BlockId );
+            var preferences = GetBlockPersonPreferences();
 
             if ( !_isGroupSpecific )
             {
-                ddlAttendanceArea.SelectedGroupTypeId = GetSetting( keyPrefix, "TemplateGroupTypeId" ).AsIntegerOrNull();
-                cbIncludeGroupsWithoutSchedule.Checked = this.GetBlockUserPreference( "IncludeGroupsWithoutSchedule" ).AsBooleanOrNull() ?? true;
+                ddlAttendanceArea.SelectedGroupTypeId = GetSetting( preferences, "TemplateGroupTypeId" ).AsIntegerOrNull();
+                cbIncludeGroupsWithoutSchedule.Checked = preferences.GetValue( "IncludeGroupsWithoutSchedule" ).AsBooleanOrNull() ?? true;
                 BuildGroupTypesUI( false );
             }
 
-            string slidingDateRangeSettings = GetSetting( keyPrefix, "SlidingDateRange" );
+            string slidingDateRangeSettings = GetSetting( preferences, "SlidingDateRange" );
             if ( string.IsNullOrWhiteSpace( slidingDateRangeSettings ) )
             {
                 // default to current year
@@ -976,10 +975,10 @@ var headerText = dp.label;
                 drpSlidingDateRange.DelimitedValues = slidingDateRangeSettings;
             }
 
-            dvpDataView.SetValue( GetSetting( keyPrefix, "DataView" ).AsIntegerOrNull() );
+            dvpDataView.SetValue( GetSetting( preferences, "DataView" ).AsIntegerOrNull() );
 
-            hfGroupBy.Value = GetSetting( keyPrefix, "GroupBy" );
-            hfGraphBy.Value = GetSetting( keyPrefix, "GraphBy" );
+            hfGroupBy.Value = GetSetting( preferences, "GroupBy" );
+            hfGraphBy.Value = GetSetting( preferences, "GraphBy" );
 
             if ( GetAttributeValue( AttributeKeys.ShowCampusFilter ).AsBoolean() )
             {
@@ -995,12 +994,9 @@ var headerText = dp.label;
                 }
                 else
                 {
-                    string campusKey = keyPrefix + "CampusIds";
-
-                    var sessionPreferences = RockPage.SessionUserPreferences();
-                    if ( sessionPreferences.ContainsKey( campusKey ) )
+                    if ( preferences.ContainsKey( "CampusIds" ) )
                     {
-                        campusIdList = sessionPreferences[campusKey].Split( ',' ).ToList();
+                        campusIdList = preferences.GetValue( "CampusIds" ).Split( ',' ).ToList();
                         clbCampuses.SetValues( campusIdList );
                     }
                     else
@@ -1022,7 +1018,7 @@ var headerText = dp.label;
             {
                 spSchedules.Visible = true;
 
-                var scheduleIdList = GetSetting( keyPrefix, "ScheduleIds" ).Split( new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries ).AsIntegerList();
+                var scheduleIdList = GetSetting( preferences, "ScheduleIds" ).Split( new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries ).AsIntegerList();
                 if ( scheduleIdList.Any() )
                 {
                     var schedules = new ScheduleService( new RockContextAnalytics() )
@@ -1037,7 +1033,7 @@ var headerText = dp.label;
                 spSchedules.Visible = false;
             }
 
-            var groupIdList = GetSetting( keyPrefix, "GroupIds" ).Split( new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries ).ToList();
+            var groupIdList = GetSetting( preferences, "GroupIds" ).Split( new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries ).ToList();
 
             // if no groups are selected, and option to show all groups is configured, default to showing all of them
 
@@ -1060,13 +1056,13 @@ var headerText = dp.label;
                 BindSelectedGroupsGP();
             }
 
-            ShowBy showBy = GetSetting( keyPrefix, "ShowBy" ).ConvertToEnumOrNull<ShowBy>() ?? ShowBy.Chart;
+            ShowBy showBy = GetSetting( preferences, "ShowBy" ).ConvertToEnumOrNull<ShowBy>() ?? ShowBy.Chart;
             DisplayShowBy( showBy );
 
             if ( GetAttributeValue( AttributeKeys.ShowViewByOption ).AsBoolean() )
             {
                 pnlViewBy.Visible = true;
-                ViewBy viewBy = GetSetting( keyPrefix, "ViewBy" ).ConvertToEnumOrNull<ViewBy>() ?? ViewBy.Attendees;
+                ViewBy viewBy = GetSetting( preferences, "ViewBy" ).ConvertToEnumOrNull<ViewBy>() ?? ViewBy.Attendees;
                 hfViewBy.Value = viewBy.ConvertToInt().ToString();
             }
             else
@@ -1075,7 +1071,7 @@ var headerText = dp.label;
                 hfViewBy.Value = ViewBy.Attendees.ConvertToInt().ToString();
             }
 
-            AttendeesFilterBy attendeesFilterBy = GetSetting( keyPrefix, "AttendeesFilterByType" ).ConvertToEnumOrNull<AttendeesFilterBy>() ?? AttendeesFilterBy.All;
+            AttendeesFilterBy attendeesFilterBy = GetSetting( preferences, "AttendeesFilterByType" ).ConvertToEnumOrNull<AttendeesFilterBy>() ?? AttendeesFilterBy.All;
 
             switch ( attendeesFilterBy )
             {
@@ -1096,8 +1092,8 @@ var headerText = dp.label;
                     break;
             }
 
-            ddlNthVisit.SelectedValue = GetSetting( keyPrefix, "AttendeesFilterByVisit" );
-            string attendeesFilterByPattern = GetSetting( keyPrefix, "AttendeesFilterByPattern" );
+            ddlNthVisit.SelectedValue = GetSetting( preferences, "AttendeesFilterByVisit" );
+            string attendeesFilterByPattern = GetSetting( preferences, "AttendeesFilterByPattern" );
             string[] attendeesFilterByPatternValues = attendeesFilterByPattern.Split( '|' );
             if ( attendeesFilterByPatternValues.Length == 4 )
             {
@@ -1114,7 +1110,7 @@ var headerText = dp.label;
         /// <param name="prefix">The prefix.</param>
         /// <param name="key">The key.</param>
         /// <returns></returns>
-        private string GetSetting( string prefix, string key )
+        private string GetSetting( PersonPreferenceCollection preferences, string key )
         {
             string setting = Request.QueryString[key];
             if ( setting != null )
@@ -1123,7 +1119,7 @@ var headerText = dp.label;
                 return setting;
             }
 
-            return this.GetUserPreference( prefix + key );
+            return preferences.GetValue( key );
         }
 
         /// <summary>
@@ -2454,7 +2450,7 @@ var headerText = dp.label;
             {
                 _addedGroupTypeIds.Add( groupType.Id );
 
-                bool showInactive = GetUserPreference( BlockCache.Guid.ToString() + "_showInactive" ).AsBoolean();
+                bool showInactive = GetBlockPersonPreferences().GetValue( "show-inactive" ).AsBoolean();
 
                 if ( ( groupType.Groups.Any() && showInactive ) || groupType.Groups.Where( g => g.IsActive ).Any() )
                 {
@@ -2538,15 +2534,7 @@ var headerText = dp.label;
                         campusIdList = null;
                     }
 
-                    if ( ( includeNullCampus && !group.CampusId.HasValue ) || ( campusIdList != null ) && campusIdList.Contains( group.CampusId ?? 0 ) )
-                    {
-                        _addedGroupIds.Add( group.Id );
-                        if ( cbIncludeGroupsWithoutSchedule.Checked || group.ScheduleId.HasValue || group.GroupLocations.Any( l => l.Schedules.Any() ) )
-                        {
-                            string displayName = showGroupAncestry ? service.GroupAncestorPathName( group.Id ) : group.Name;
-                            checkBoxList.Items.Add( new ListItem( displayName, group.Id.ToString() ) );
-                        }
-                    }
+                    bool showInactive = GetBlockPersonPreferences().GetValue( "show-inactive" ).AsBoolean();
 
                     if ( group.Groups != null )
                     {
@@ -2879,7 +2867,11 @@ var headerText = dp.label;
 
         protected void cbShowInactive_CheckedChanged( object sender, EventArgs e )
         {
-            SetUserPreference( BlockCache.Guid.ToString() + "_showInactive", cbShowInactive.Checked.ToString() );
+            var preferences = GetBlockPersonPreferences();
+
+            preferences.SetValue( "show-inactive", cbShowInactive.Checked.ToString() );
+            preferences.Save();
+
             BuildGroupTypesUI( true );
         }
 
@@ -2890,8 +2882,12 @@ var headerText = dp.label;
         /// <param name="e">The <see cref="EventArgs"/> instance containing the event data.</param>
         protected void cbIncludeGroupsWithoutSchedule_CheckedChanged( object sender, EventArgs e )
         {
+            var preferences = GetBlockPersonPreferences();
+
+            preferences.SetValue( "IncludeGroupsWithoutSchedule", cbIncludeGroupsWithoutSchedule.Checked.ToTrueFalse() );
+            preferences.Save();
+
             // NOTE: OnLoad already rebuilt the GroupTypes UI with the changed value of cbIncludeGroupsWithoutSchedule , so we just need to set it as a preference
-            this.SetBlockUserPreference( "IncludeGroupsWithoutSchedule", cbIncludeGroupsWithoutSchedule.Checked.ToTrueFalse() );
         }
 
         protected void gpGroups_SelectItem( object sender, EventArgs e )

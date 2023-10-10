@@ -56,11 +56,9 @@ export type PublicAttributeBag = {
     /** Gets or sets the order. */
     order: number;
 
-    // LPC CODE - Pulled in v15.2 changes
     /** Gets or sets the pre HTML. */
     postHtml?: string | null;
 
     /** Gets or sets the pre HTML. */
     preHtml?: string | null;
-    // END LPC CODE - Pulled in v15.2 changes
 };

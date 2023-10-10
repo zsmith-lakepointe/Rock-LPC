@@ -17,30 +17,31 @@
 
 import { Guid } from "@Obsidian/Types";
 import { computed, defineComponent, inject, PropType, ref } from "vue";
-import DropDownList from "@Obsidian/Controls/dropDownList";
-import ElectronicSignature from "@Obsidian/Controls/electronicSignature";
-import RadioButtonList from "@Obsidian/Controls/radioButtonList";
+import DropDownList from "@Obsidian/Controls/dropDownList.obs";
+import ElectronicSignature from "@Obsidian/Controls/electronicSignature.obs";
+import RadioButtonList from "@Obsidian/Controls/radioButtonList.obs";
 import { getRegistrantBasicInfo } from "./utils.partial";
 import StringFilter from "@Obsidian/Utility/stringUtils";
-import RockButton from "@Obsidian/Controls/rockButton";
+import RockButton from "@Obsidian/Controls/rockButton.obs";
 import RegistrantPersonField from "./registrantPersonField.partial";
 import RegistrantAttributeField from "./registrantAttributeField.partial";
 import NotificationBox from "@Obsidian/Controls/notificationBox.obs";
-import { RegistrantInfo, RegistrantsSameFamily, RegistrationEntryBlockFamilyMemberViewModel, RegistrationEntryBlockFormFieldViewModel, RegistrationEntryBlockFormViewModel, RegistrationEntryBlockViewModel, RegistrationFieldSource, RegistrationEntryState, RegistrationEntryBlockArgs } from "./types.partial";
+import { RegistrantInfo, RegistrantsSameFamily, RegistrationEntryBlockFamilyMemberViewModel, RegistrationEntryBlockFormFieldViewModel, RegistrationEntryBlockFormFieldRuleViewModel, RegistrationEntryBlockFormViewModel, RegistrationEntryBlockViewModel, RegistrationFieldSource, RegistrationEntryState, RegistrationEntryBlockArgs } from "./types.partial";
 import { areEqual, newGuid } from "@Obsidian/Utility/guid";
-import RockForm from "@Obsidian/Controls/rockForm";
+import RockForm from "@Obsidian/Controls/rockForm.obs";
 import FeeField from "./feeField.partial";
-import ItemsWithPreAndPostHtml, { ItemWithPreAndPostHtml } from "@Obsidian/Controls/itemsWithPreAndPostHtml";
+import ItemsWithPreAndPostHtml from "@Obsidian/Controls/itemsWithPreAndPostHtml.obs";
+import { ItemWithPreAndPostHtml } from "@Obsidian/Types/Controls/itemsWithPreAndPostHtml";
 import { useStore } from "@Obsidian/PageState";
-import { PersonBag } from "@Obsidian/ViewModels/Entities/personBag";
+import { CurrentPersonBag } from "@Obsidian/ViewModels/Crm/currentPersonBag";
 import { ListItemBag } from "@Obsidian/ViewModels/Utility/listItemBag";
 import { useInvokeBlockAction } from "@Obsidian/Utility/block";
 import { ElectronicSignatureValue } from "@Obsidian/ViewModels/Controls/electronicSignatureValue";
+import { FilterExpressionType } from "@Obsidian/Core/Reporting/filterExpressionType";
+import { getFieldType } from "@Obsidian/Utility/fieldTypes";
 // LPC CODE
 import Page from "@Obsidian/Utility/page";
-import { FilterExpressionType } from "@Obsidian/Core/Reporting/filterExpressionType";
-import { RegistrationEntryBlockFormFieldRuleViewModel, RegistrationPersonFieldType } from "./types.partial";
-import { getFieldType } from "@Obsidian/Utility/fieldTypes";
+import { RegistrationPersonFieldType } from "./types.partial";
 import { getDefaultAddressControlModel } from "@Obsidian/Utility/address";
 import { getDefaultDatePartsPickerModel } from "@Obsidian/Controls/datePartsPicker";
 // END LPC CODE
@@ -81,6 +82,27 @@ function isRuleMet(rule: RegistrationEntryBlockFormFieldRuleViewModel, fieldValu
 }
 // END LPC CODE
 
+function isRuleMet(rule: RegistrationEntryBlockFormFieldRuleViewModel, fieldValues: Record<Guid, unknown>, formFields: RegistrationEntryBlockFormFieldViewModel[]): boolean {
+    const value = fieldValues[rule.comparedToRegistrationTemplateFormFieldGuid] || "";
+
+    if (typeof value !== "string") {
+        return false;
+    }
+
+    const comparedToFormField = formFields.find(ff => areEqual(ff.guid, rule.comparedToRegistrationTemplateFormFieldGuid));
+    if (!comparedToFormField?.attribute?.fieldTypeGuid) {
+        return false;
+    }
+
+    const fieldType = getFieldType(comparedToFormField.attribute.fieldTypeGuid);
+
+    if (!fieldType) {
+        return false;
+    }
+
+    return fieldType.doesValueMatchFilter(value, rule.comparisonValue, comparedToFormField.attribute.configurationValues ?? {});
+}
+
 export default defineComponent({
     name: "Event.RegistrationEntry.Registrant",
     components: {
@@ -114,9 +136,7 @@ export default defineComponent({
         const signatureSource = ref("");
         const signatureToken = ref("");
         const formResetKey = ref("");
-
         const isNextDisabled = ref(false);
-
         const isSignatureDrawn = computed((): boolean => registrationEntryState.viewModel.isSignatureDrawn);
 
         return {
@@ -130,6 +150,9 @@ export default defineComponent({
             signatureSource,
             signatureToken
         };
+    },
+    updated() {
+        this.updateFeeItemsRemaining();
     },
     data() {
         return {
@@ -253,8 +276,8 @@ export default defineComponent({
         },
 
         /** The filtered fields to show on the current form augmented to remove pre/post HTML from non-visible fields */
-        currentFormFieldsAugmented (): RegistrationEntryBlockFormFieldViewModel[] {
-            var fields = JSON.parse(JSON.stringify(this.currentFormFields));
+        currentFormFieldsAugmented(): RegistrationEntryBlockFormFieldViewModel[] {
+            const fields = JSON.parse(JSON.stringify(this.currentFormFields));
 
             fields.forEach((value, index) => {
                 if (value.fieldSource != this.fieldSources.personField) {
@@ -281,16 +304,15 @@ export default defineComponent({
                             break;
                     }
 
-                    if (isVisible == false) {
+                    if (isVisible === false) {
                         value.preHtml = "";
                         value.postHtml = "";
                     }
                 }
-            })
+            });
 
             return fields;
         },
-        // END LPC CODE
 
         /** The current fields as pre-post items to allow pre-post HTML to be rendered */
         // MODIFIED LPC CODE
@@ -303,8 +325,7 @@ export default defineComponent({
                     isRequired: f.isRequired
                 }));
         },
-        // END MODIFIED LPC CODE
-        currentPerson(): PersonBag | null {
+        currentPerson(): CurrentPersonBag | null {
             return store.state.currentPerson;
         },
         pluralFeeTerm(): string {
@@ -337,11 +358,11 @@ export default defineComponent({
             }
 
             // Add the current person (registrant) if not already added
-            if (this.currentPerson?.primaryFamilyGuid && this.currentPerson.fullName && !usedFamilyGuids[this.currentPerson.primaryFamilyGuid]) {
-                usedFamilyGuids[this.currentPerson.primaryFamilyGuid] = true;
+            if (this.viewModel.currentPersonFamilyGuid && this.currentPerson?.fullName && !usedFamilyGuids[this.viewModel.currentPersonFamilyGuid]) {
+                usedFamilyGuids[this.viewModel.currentPersonFamilyGuid] = true;
                 options.push({
                     text: this.currentPerson.fullName,
-                    value: this.currentPerson.primaryFamilyGuid
+                    value: this.viewModel.currentPersonFamilyGuid
                 });
             }
 
@@ -414,10 +435,12 @@ export default defineComponent({
         // END LPC CODE
         onPrevious(): void {
             this.clearFormErrors();
+
             if (this.currentFormIndex <= 0) {
                 this.$emit("previous");
                 return;
             }
+
 
             this.registrationEntryState.currentRegistrantFormIndex--;
 
@@ -469,6 +492,51 @@ export default defineComponent({
             // Wait for the next form to be rendered before scrolling to the top
             setTimeout(() => Page.smoothScrollToTop(), 10);
             // END LPC CODE
+        },
+        updateFeeItemsRemaining(): void {
+            // calculate fee items remaining
+            const combinedFeeItemQuantities: Record<Guid, number> = {};
+
+            /* eslint-disable-next-line */
+            const self = this;
+
+            // Get all of the fee items in use for all registrants and add them to the combinedFeeItemQuantities Record
+            for(const registrant of self.registrationEntryState.registrants) {
+                if(registrant.guid === this.currentRegistrant.guid) {
+                    continue;
+                }
+
+                for (const feeItemGuid in registrant.feeItemQuantities) {
+
+                    if (registrant.feeItemQuantities[feeItemGuid] > 0) {
+                        const feeItemsUsed = registrant.feeItemQuantities[feeItemGuid];
+                        if(combinedFeeItemQuantities[feeItemGuid] === undefined || combinedFeeItemQuantities[feeItemGuid] === null) {
+                            combinedFeeItemQuantities[feeItemGuid] = feeItemsUsed;
+                        }
+                        else {
+                            combinedFeeItemQuantities[feeItemGuid] = combinedFeeItemQuantities[feeItemGuid] + feeItemsUsed;
+                        }
+                    }
+                }
+            }
+
+            // No go through all of the fee items and update the usage by subtracting the the total in combinedFeeItemQuantities from the originalCountRemaining
+            const fees = self.registrationEntryState.viewModel.fees;
+            for(const fee of fees){
+                const selfFee = fee;
+                if(selfFee !== undefined && selfFee !== null && selfFee.items !== undefined && selfFee.items !== null && selfFee.items.length > 0) {
+                    for(const feeItem of selfFee.items) {
+                        if(feeItem.countRemaining === null || feeItem.countRemaining === undefined || feeItem.originalCountRemaining === undefined || feeItem.originalCountRemaining === null) {
+                            continue;
+                        }
+
+                        const usedFeeItemCount = combinedFeeItemQuantities[feeItem.guid];
+                        if(usedFeeItemCount !== undefined && usedFeeItemCount !== null) {
+                            feeItem.countRemaining = feeItem.originalCountRemaining - usedFeeItemCount;
+                        }
+                    }
+                }
+            }
         },
 
         /**
@@ -531,7 +599,7 @@ export default defineComponent({
                     }
                 }
             }
-        }
+        },
     },
     watch: {
         "currentRegistrant.familyGuid"(): void {
