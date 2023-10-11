@@ -29,7 +29,7 @@ import { CurrentPersonBag } from "@Obsidian/ViewModels/Crm/currentPersonBag";
 import { ListItemBag } from "@Obsidian/ViewModels/Utility/listItemBag";
 // LPC CODE
 import { useInvokeBlockAction } from "@Obsidian/Utility/block";
-import DropDownList from "@Obsidian/Controls/dropDownList";
+import DropDownList from "@Obsidian/Controls/dropDownList.obs";
 import PhoneNumberBox from "@Obsidian/Controls/phoneNumberBox.obs";
 // END LPC CODE
 

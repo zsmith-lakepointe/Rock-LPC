@@ -2538,8 +2538,6 @@ var headerText = dp.label;
 
                     if ( group.Groups != null )
                     {
-                        bool showInactive = GetUserPreference( BlockCache.Guid.ToString() + "_showInactive" ).AsBoolean();
-
                         foreach ( var childGroup in group.Groups
                             .Where( a => a.IsActive || showInactive )
                             .OrderBy( a => a.Order )

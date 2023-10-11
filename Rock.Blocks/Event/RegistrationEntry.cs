@@ -280,7 +280,7 @@ namespace Rock.Blocks.Event
                     } );
                 }
 
-                if ( discount == null || discount.UsagesRemaining < 1 )
+                if ( discount == null || discount.RegistrationUsagesRemaining < 1 )
                 {
                     // The code is not found
                     return ActionNotFound();

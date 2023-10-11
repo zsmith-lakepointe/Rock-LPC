@@ -43,7 +43,7 @@ import { getFieldType } from "@Obsidian/Utility/fieldTypes";
 import Page from "@Obsidian/Utility/page";
 import { RegistrationPersonFieldType } from "./types.partial";
 import { getDefaultAddressControlModel } from "@Obsidian/Utility/address";
-import { getDefaultDatePartsPickerModel } from "@Obsidian/Controls/datePartsPicker";
+import { DatePartsPickerValue } from "@Obsidian/Types/Controls/datePartsPicker";
 // END LPC CODE
 
 const store = useStore();
@@ -58,27 +58,6 @@ function getLang(): string {
     }
 
     return lang;
-}
-
-function isRuleMet(rule: RegistrationEntryBlockFormFieldRuleViewModel, fieldValues: Record<Guid, unknown>, formFields: RegistrationEntryBlockFormFieldViewModel[]): boolean {
-    const value = fieldValues[rule.comparedToRegistrationTemplateFormFieldGuid] || "";
-
-    if (typeof value !== "string") {
-        return false;
-    }
-
-    const comparedToFormField = formFields.find(ff => areEqual(ff.guid, rule.comparedToRegistrationTemplateFormFieldGuid));
-    if (!comparedToFormField?.attribute?.fieldTypeGuid) {
-        return false;
-    }
-
-    const fieldType = getFieldType(comparedToFormField.attribute.fieldTypeGuid);
-
-    if (!fieldType) {
-        return false;
-    }
-
-    return fieldType.doesValueMatchFilter(value, rule.comparisonValue, comparedToFormField.attribute.configurationValues ?? {});
 }
 // END LPC CODE
 
@@ -615,11 +594,11 @@ export default defineComponent({
                             // MODIFIED LPC CODE
                             switch (field.personFieldType) {
                                 case RegistrationPersonFieldType.Birthdate:
-                                    this.currentRegistrant.fieldValues[field.guid] = getDefaultDatePartsPickerModel();
+                                    this.currentRegistrant.fieldValues[field.guid] = undefined as DatePartsPickerValue | undefined;
                                     break;
 
                                 case RegistrationPersonFieldType.AnniversaryDate:
-                                    this.currentRegistrant.fieldValues[field.guid] = getDefaultDatePartsPickerModel();
+                                    this.currentRegistrant.fieldValues[field.guid] = undefined as DatePartsPickerValue | undefined;
                                     break;
 
                                 case RegistrationPersonFieldType.Address:

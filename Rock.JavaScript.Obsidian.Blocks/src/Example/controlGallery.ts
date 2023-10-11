@@ -1802,8 +1802,8 @@ const itemsWithPreAndPostHtmlGallery = defineComponent({
     setup() {
         return {
             value: ref<ItemWithPreAndPostHtml[]>([
-                { preHtml: '<div class="row"><div class="col-sm-6">', postHtml: "</div>", slotName: "item1", isRequired:false },
-                { preHtml: '<div class="col-sm-6">', postHtml: "</div></div>", slotName: "item2", isRequired: false }
+                { preHtml: '<div class="row"><div class="col-sm-6">', postHtml: "</div>", slotName: "item1" },
+                { preHtml: '<div class="col-sm-6">', postHtml: "</div></div>", slotName: "item2" }
             ]),
             importCode: getControlImportPath("itemsWithPreAndPostHtml"),
             exampleCode: `<ItemsWithPreAndPostHtml :items="value">
