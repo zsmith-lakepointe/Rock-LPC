@@ -1,26 +1,32 @@
 <!-- Resources Selection -->
 <style>
-    .btn-primary {
-        margin-top: 15px;
-        margin-bottom: 15px;
-        padding-top: 15px;
-        padding-bottom: 15px;
-        display: block;
+    .leader-tools a {
+        color: unset;
     }
-
-    .two-lines {
-        height: 3em;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        display: -webkit-box;
-        -webkit-line-clamp: 2;
-        -webkit-box-orient: vertical;
-        text-wrap: wrap;
-        margin: 0;
+    .leader-tools .card {
+        margin-bottom: 1rem;
+        padding: 0 !important;
+        transform: none;
+        height: 12rem;
+    }
+    .leader-tools .card>.row {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .leader-tools .card i {
+        font-size: 4.5rem;
+    }
+    .leader-tools .card-title {
+        color: var(--brand-primary);
+        font-size: 1rem;
+    }
+    .leader-tools .card-text:last-child {
+        padding-bottom: 0;
     }
 </style>
 
-<!-- figure out what curricula they should be able to see -->
+//- Figure out what curricula they should be able to see
 {% sql personAliasId:'{{ Person.PrimaryAlias.Id }}' return:'resources'%}
     -- replaces old _org_lakepointe_sp_CanViewAdultLeaderResources
     -- Adult LG Leader Resources
@@ -58,26 +64,46 @@
 {% endsql %}
 
 {% assign channelCount = resources | Size %}
-{% if channelCount == 1 %}
+{% if channelCount == 0 %}
+    <a href="/page/4655" class="btn btn-default mb-3"><i class="fa fa-angle-left"></i> Back</a>
+    <div class="alert alert-warning">
+        <p>We couldn't find any content for you at this time. Please make sure you're signed into the right account.</p>
+    </div>
+{% elseif channelCount == 1 %}
     {% capture link %}{{ 'Global' | Attribute:'PublicApplicationRoot' }}page/{% case resources[0].Id %}{% when 5658 %}4668{% when 5659 %}4671{% endcase %}{% endcapture %}
     {{ link | PageRedirect }}
 {% else %}
-    <div class="container-fluid">
+    <div class="leader-tools">
+        <a href="/page/4655" class="btn btn-default mb-3"><i class="fa fa-angle-left"></i> Back</a>
         <div class="row">
             {% for resource in resources %}
-                <div class="col-sm-12 col-md-6 col-lg-3">
+                <div class="col-lg-3 col-md-4 col-sm-6 col-xs-12">
                     {% case resource.Id %}
                     {% when 5658 %}
-                        <a href="/page/4668" class="btn btn-primary stretched-link"
-                            data-toggle="tooltip" data-placement="top" data-html="true">
-                            <i class="fal fa-newspaper fa-5x"></i>
-                            <p class="two-lines">Leader Resources</p>
+                        <a href="/page/4668">
+                            <div class="card">
+                                <div class="card-body row">
+                                    <div class="col-xs-4">
+                                        <i class="fa fa-newspaper"></i>
+                                    </div>
+                                    <div class="col-xs-8">
+                                        <h3 class="card-title">Leader Resources</h3>
+                                    </div>
+                                </div>
+                            </div>
                         </a>
                     {% when 5659 %}
-                        <a href="/page/4671" class="btn btn-primary stretched-link"
-                            data-toggle="tooltip" data-placement="top" data-html="true" style="text-wrap:wrap">
-                            <i class="fal fa-newspaper fa-5x"></i>
-                            <p class="two-lines">RECURSOS DE LIDERAZGO</p>
+                        <a href="/page/4671">
+                            <div class="card">
+                                <div class="card-body row">
+                                    <div class="col-xs-4">
+                                        <i class="fa fa-newspaper"></i>
+                                    </div>
+                                    <div class="col-xs-8">
+                                        <h3 class="card-title">Recursos De Liderazgo</h3>
+                                    </div>
+                                </div>
+                            </div>
                         </a>
                     {% endcase %}
                 </div>
