@@ -104,7 +104,7 @@
     {% sql personAliasId:'{{ Person.PrimaryAlias.Id }}' return:'lifegroups'%}
         DECLARE @FeatureSetAttributeId INT = 132518
         DECLARE @GroupsTag INT = 471 -- tag for groups toolbox
-        DECLARE @Roster NVARCHAR(40) = '%5C3E2545-EE21-43B4-A7C9-F3CC4ECA018B%'
+        DECLARE @GroupLeaderToolbox NVARCHAR(40) = '%BF778FB4-6613-4565-8A45-371CB9A7C172%'
 
         SELECT GroupId, GroupName, STRING_AGG(Role, ', ') AS [Roles], GroupType, GroupTypeId, IconCssClass, Campus
         FROM
@@ -123,7 +123,7 @@
             JOIN [GroupTypeRole] gtr ON gtr.Id = gm.GroupRoleId
             JOIN [AttributeValue] av ON av.EntityId = gtr.Id
                 AND av.AttributeId = @FeatureSetAttributeId
-                AND av.Value LIKE @Roster
+                AND av.Value LIKE @GroupLeaderToolbox
             WHERE g.IsActive = 1
                 AND g.IsArchived = 0
 
@@ -144,7 +144,7 @@
             JOIN [GroupTypeRole] gtr ON gtr.Id = gm.GroupRoleId
             JOIN [AttributeValue] av ON av.EntityId = gtr.Id
                 AND av.AttributeId = @FeatureSetAttributeId
-                AND av.Value LIKE @Roster
+                AND av.Value LIKE @GroupLeaderToolbox
             WHERE g.IsActive = 1
                 AND g.IsArchived = 0
 
@@ -166,7 +166,7 @@
             JOIN [GroupTypeRole] gtr ON gtr.Id = gm.GroupRoleId
             JOIN [AttributeValue] av ON av.EntityId = gtr.Id
                 AND av.AttributeId = @FeatureSetAttributeId
-                AND av.Value LIKE @Roster
+                AND av.Value LIKE @GroupLeaderToolbox
             WHERE g.IsActive = 1
                 AND g.IsArchived = 0
 
@@ -189,7 +189,7 @@
             JOIN [GroupTypeRole] gtr ON gtr.Id = gm.GroupRoleId
             JOIN [AttributeValue] av ON av.EntityId = gtr.Id
                 AND av.AttributeId = @FeatureSetAttributeId
-                AND av.Value LIKE @Roster
+                AND av.Value LIKE @GroupLeaderToolbox
             WHERE g.IsActive = 1
                 AND g.IsArchived = 0
         ) a
@@ -228,15 +228,21 @@
     {% sql personAliasId:'{{ Person.PrimaryAlias.Id }}' return:'serveteams'%}
         DECLARE @FeatureSetAttributeId INT = 132518
         DECLARE @ServeTag INT = 472
-        DECLARE @Roster NVARCHAR(40) = '%5C3E2545-EE21-43B4-A7C9-F3CC4ECA018B%'
+        DECLARE @GroupLeaderToolbox NVARCHAR(40) = '%BF778FB4-6613-4565-8A45-371CB9A7C172%'
+        DECLARE @Scheduler NVARCHAR(40) = '%2b7997c0-e98b-40eb-9f6c-d9375bac79f1%'
 
-        SELECT GroupId, GroupName, STRING_AGG(Role, ', ') AS [Roles], GroupType, GroupTypeId, IconCssClass, Campus
+        SELECT GroupId, GroupName, STRING_AGG(Role, ', ') AS [Roles], GroupType, GroupTypeId, IconCssClass, Campus, CanSchedule
         FROM
         (
             -- Leaders who are members of the Coach group
             SELECT g.Id AS [GroupId], g.Name AS [GroupName], 'Coach' AS [Role]
                 , gt.Name AS [GroupType], gt.Id AS [GroupTypeId], gt.IconCssClass AS [IconCssClass]
                 , c.Name AS [Campus]
+                , CASE
+                    WHEN av.[Value] NOT LIKE @Scheduler THEN 0
+                    WHEN g.DisableScheduling = 1 THEN 0
+                    ELSE gt.IsSchedulingEnabled
+                    END AS [CanSchedule]
             FROM [Group] g
             LEFT JOIN [Campus] c ON c.Id = g.CampusId
             JOIN [GroupType] gt ON gt.Id = g.GroupTypeId
@@ -248,7 +254,7 @@
             JOIN [GroupTypeRole] gtr ON gtr.Id = gm.GroupRoleId
             JOIN [AttributeValue] av ON av.EntityId = gtr.Id
                 AND av.AttributeId = @FeatureSetAttributeId
-                AND av.Value LIKE @Roster
+                AND av.Value LIKE @GroupLeaderToolbox
             WHERE g.IsActive = 1
                 AND g.IsArchived = 0
 
@@ -258,6 +264,11 @@
             SELECT g.Id AS [GroupId], g.Name AS [GroupName], 'Captain' AS [Role]
                 , gt.Name AS [GroupType], gt.Id AS [GroupTypeId], gt.IconCssClass AS [IconCssClass]
                 , c.Name AS [Campus]
+                , CASE
+                    WHEN av.[Value] NOT LIKE @Scheduler THEN 0
+                    WHEN g.DisableScheduling = 1 THEN 0
+                    ELSE gt.IsSchedulingEnabled
+                    END AS [CanSchedule]
             FROM [Group] g
             LEFT JOIN [Campus] c ON c.Id = g.CampusId
             JOIN [GroupType] gt ON gt.Id = g.GroupTypeId
@@ -270,7 +281,7 @@
             JOIN [GroupTypeRole] gtr ON gtr.Id = gm.GroupRoleId
             JOIN [AttributeValue] av ON av.EntityId = gtr.Id
                 AND av.AttributeId = @FeatureSetAttributeId
-                AND av.Value LIKE @Roster
+                AND av.Value LIKE @GroupLeaderToolbox
             WHERE g.IsActive = 1
                 AND g.IsArchived = 0
 
@@ -280,6 +291,11 @@
             SELECT g.Id AS [GroupId], g.Name AS [GroupName], 'Pastor' AS [Role]
                 , gt.Name AS [GroupType], gt.Id AS [GroupTypeId], gt.IconCssClass AS [IconCssClass]
                 , c.Name AS [Campus]
+                , CASE
+                    WHEN av.[Value] NOT LIKE @Scheduler THEN 0
+                    WHEN g.DisableScheduling = 1 THEN 0
+                    ELSE gt.IsSchedulingEnabled
+                    END AS [CanSchedule]
             FROM [Group] g
             LEFT JOIN [Campus] c ON c.Id = g.CampusId
             JOIN [GroupType] gt ON gt.Id = g.GroupTypeId
@@ -293,11 +309,11 @@
             JOIN [GroupTypeRole] gtr ON gtr.Id = gm.GroupRoleId
             JOIN [AttributeValue] av ON av.EntityId = gtr.Id
                 AND av.AttributeId = @FeatureSetAttributeId
-                AND av.Value LIKE @Roster
+                AND av.Value LIKE @GroupLeaderToolbox
             WHERE g.IsActive = 1
                 AND g.IsArchived = 0
         ) a
-        GROUP BY a.Campus, a.GroupId, a.GroupName, a.GroupType, a.GroupTypeId, a.IconCssClass
+        GROUP BY a.Campus, a.GroupId, a.GroupName, a.GroupType, a.GroupTypeId, a.IconCssClass, a.CanSchedule
         ORDER BY [GroupName]
     {% endsql %}
 
@@ -308,8 +324,15 @@
             <hr>
             <div class="row">
                 {% for serveteam in serveteams %}
+                    {% assign link = '/page/4656?GroupId=' | Append:serveteam.GroupId %}
+                    {% if serveteam.CanSchedule == 1 %}
+                        {% assign hasSchedulingRights = serveteam.GroupId | HasRightsTo:'Schedule','Rock.Model.Group' %}
+                        {% if hasSchedulingRights == true %}
+                            {% assign link = '/schedulegroup?GroupId=' | Append:serveteam.GroupId %}
+                        {% endif %}
+                    {% endif %}
                     <div class="col-lg-3 col-md-4 col-sm-6 col-xs-12">
-                        <a href="/schedulegroup?GroupId={{ serveteam.GroupId }}">
+                        <a href="{{ link }}">
                             <div class="card">
                                 <div class="card-body row">
                                     <div class="col-xs-4">
@@ -384,7 +407,7 @@
             {% sql personAliasId:'{{ Person.PrimaryAlias.Id }}' return:'curricula'%}
                 -- This will replace the old _org_lakepointe_sp_CanViewLgCurriculum
                 DECLARE @FeatureSetAttributeId INT = 132518
-                DECLARE @Curriculum NVARCHAR(40) = '%63E6EA73-7E54-4BF6-A060-100F028B19A1%' --  Curriculum -- change for production
+                DECLARE @Curriculum NVARCHAR(40) = '%63E6EA73-7E54-4BF6-A060-100F028B19A1%' --  Curriculum
 
                 -- check if in an Override Group
                 DECLARE @Override INT;

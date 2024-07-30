@@ -593,19 +593,22 @@ namespace RockWeb.Plugins.org_lakepointe.Groups
                 }
                 gmUpdateContext.SaveChanges();
 
-                // make sure the person is in a Member role if they're not already in a Member role or a role that includes "Prospect" (Prospect, Prospective Member) or "Guest"
                 var selectedMemberRoles = cblGroupMemberRole.SelectedValuesAsInt;
-                var memberRole = group.GroupType.Roles.Where( r => r.Name == "Member" ).FirstOrDefault();
-                if ( memberRole != null )
+                if ( group.GroupType.IsSchedulingEnabled == false )
                 {
-                    var isProspect = gmService.Queryable().Where( m =>
-                                                     m.GroupId == groupMember.GroupId &&
-                                                     m.PersonId == groupMember.PersonId &&
-                                                     ( m.GroupRole.Name.Contains( "Prospect" ) || m.GroupRole.Name.Contains( "Guest" ) ) )
-                                                .Any();
-                    if ( !isProspect )
+                    // make sure the person is in a Member role if they're not already in a Member role or a role that includes "Prospect" (Prospect, Prospective Member) or "Guest"
+                    var memberRole = group.GroupType.Roles.Where( r => r.Name == "Member" ).FirstOrDefault();
+                    if ( memberRole != null )
                     {
-                        selectedMemberRoles.Add( memberRole.Id );
+                        var isProspect = gmService.Queryable().Where( m =>
+                                                         m.GroupId == groupMember.GroupId &&
+                                                         m.PersonId == groupMember.PersonId &&
+                                                         ( m.GroupRole.Name.Contains( "Prospect" ) || m.GroupRole.Name.Contains( "Guest" ) ) )
+                                                    .Any();
+                        if ( !isProspect )
+                        {
+                            selectedMemberRoles.Add( memberRole.Id );
+                        }
                     }
                 }
 
@@ -613,7 +616,7 @@ namespace RockWeb.Plugins.org_lakepointe.Groups
                 if ( group.GroupType.IsSchedulingEnabled && selectedMemberRoles.Count > 1 )
                 {
                     nbMemberRoleError.Visible = true;
-                    nbMemberRoleError.Text = "<span style='color:red;'>Groups that do group scheduling do not support multiple roles for a group member. Please select only one role for each person in the group.</span>";
+                    nbMemberRoleError.Text = "Groups that do group scheduling do not support multiple roles for a group member. Please select only one role for each person in the group.";
                     return;
                 }
 
@@ -1420,10 +1423,18 @@ namespace RockWeb.Plugins.org_lakepointe.Groups
                 UpdateNotification( "Unable to View Group", "The selected group is not currently accessible.", NotificationBoxType.Warning );
                 return;
             }
-            if ( !SelectedGroup.IsAuthorized( Authorization.VIEW, CurrentPerson ) )
+            else if ( !SelectedGroup.IsAuthorized( Authorization.VIEW, CurrentPerson ) )
             {
                 UpdateNotification( "Unable to View Group",
-                    "<p>You do not have permission to view this group. If you received this in error please contact your ministry leader or coach.",
+                    "You do not have permission to view this group. If you received this in error please contact your ministry leader or coach.",
+                    NotificationBoxType.Danger );
+
+                return;
+            }
+            else if ( _featureSet.Roster == false )
+            {
+                UpdateNotification( "Unable to View Group",
+                    "You do not have permission to view this group. If you received this in error please contact your ministry leader or coach.",
                     NotificationBoxType.Danger );
 
                 return;
@@ -1873,7 +1884,7 @@ namespace RockWeb.Plugins.org_lakepointe.Groups
                 LeaderNewsPortal = features.Contains( "e93c8e1d-afe2-486c-bd10-74dfe47593f5" );
                 Curriculum = features.Contains( "63e6ea73-7e54-4bf6-a060-100f028b19a1" );
                 EditGroupMembers = features.Contains( "1f54b1cc-b94c-429b-b927-1e542d8c7fe3" );
-                GroupCommunication = features.Contains( "4f092398-a348-4974-bc70-517da060b7cd" ) || features.Contains( "2a54ed73-6562-4c23-a8b9-34f6f83a6251" ); // ::: the second guid is temporary and can be deleted after the next time Beta is refreshed.
+                GroupCommunication = features.Contains( "4f092398-a348-4974-bc70-517da060b7cd" );
             }
         }
 
