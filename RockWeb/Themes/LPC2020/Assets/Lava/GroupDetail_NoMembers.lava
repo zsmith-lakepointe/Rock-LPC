@@ -9,7 +9,7 @@
 	{% endif %}
 
 	{% if features.schedulerButton == true %}
-		{% if Group.DisableScheduling != true and Group.IsSchedulingEnabled == true %}
+		{% if Group.DisableScheduling != true and Group.GroupType.IsSchedulingEnabled == true %}
 			{% assign hasSchedulingRights = Group | HasRightsTo:'Schedule' %}
 			{% if hasSchedulingRights == true %}
 				<a href='/schedulegroup?GroupId={{Group.Id}}' class="btn btn-sm btn-primary">Scheduler</a>
@@ -117,7 +117,7 @@
 
 	{% if features.requestUpdates == true %}
 		<div class="actions margin-v-md clearfix">
-			<a class="btn btn-sm btn-default pull-right" href="/RequestGroupUpdate?Group{{ Group.Guid }}">Request Group Details Update</a>
+			<a class="btn btn-sm btn-default pull-right" href="/RequestGroupUpdate?Group={{ Group.Guid }}">Request Group Details Update</a>
 			<a class="btn btn-sm btn-default pull-right mr-2" href="/RequestGroupImageUpdate?Group={{ Group.Guid }}">Request Image Update</a>
 		</div>
 	{% endif %}
@@ -141,7 +141,7 @@
 
 			{% if features.attendance == true %}
 				{% if LinkedPages.AttendancePage != '' and Group.GroupType.TakesAttendance == 'True' %}
-					{% assign rosterTabShown = true %}
+					{% assign attendanceTabShown = true %}
 
 					{% if LinkedPages.AttendancePage == CurrentPage.Path %}
 						<li role="presentation" class="active"><a href="{{ LinkedPages.AttendancePage }}?GroupId={{ Group.Id }}">Attendance</a></li>
@@ -153,9 +153,9 @@
 		</ul>
 
 		{% if rosterTabShown == true and attendanceTabShown == false and LinkedPages.AttendancePage == CurrentPage.Path %}
-			{{ LinkedPages.RosterPage | PageRedirect }}
+			{{ LinkedPages.RosterPage | Append:'?GroupId=' | Append:Group.Id | PageRedirect }}
 		{% elseif rosterTabShown == false and attendanceTabShown == true and LinkedPages.RosterPage == CurrentPage.Path %}
-			{{ LinkedPages.AttendancePage | PageRedirect }}
+			{{ LinkedPages.AttendancePage | Append:'?GroupId=' | Append:Group.Id | PageRedirect }}
 		{% endif %}
 	{% endif %}
 

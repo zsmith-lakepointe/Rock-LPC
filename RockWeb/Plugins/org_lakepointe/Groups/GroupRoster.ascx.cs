@@ -264,7 +264,7 @@ namespace RockWeb.Plugins.org_lakepointe.Groups
         {
             get
             {
-                if ( String.IsNullOrWhiteSpace( _communicationPageRoute ) )
+                if ( string.IsNullOrWhiteSpace( _communicationPageRoute ) )
                 {
                     _communicationPageRoute = LinkedPageRoute( AttributeKey.CommunicationsPage );
                 }
@@ -412,7 +412,7 @@ namespace RockWeb.Plugins.org_lakepointe.Groups
         {
             get
             {
-                if ( ShowCommonProperties && SelectedGroup.GroupType.IsSchedulingEnabled && !SelectedGroup.DisableScheduling )
+                if ( ShowCommonProperties && SelectedGroup != null && SelectedGroup.GroupType.IsSchedulingEnabled && !SelectedGroup.DisableScheduling )
                 {
                     return "375px";
                 }
@@ -990,7 +990,7 @@ namespace RockWeb.Plugins.org_lakepointe.Groups
                 }
             }
 
-            if ( !AllowCommunications || String.IsNullOrWhiteSpace( CommunicationPageRoute ) )
+            if ( !AllowCommunications || string.IsNullOrWhiteSpace( CommunicationPageRoute ) )
             {
                 cbGroupMember.Visible = false;
             }
@@ -1083,7 +1083,7 @@ namespace RockWeb.Plugins.org_lakepointe.Groups
         {
             if ( SelectedGroup != null )
             {
-                if ( String.IsNullOrWhiteSpace( CommunicationPageRoute ) || GroupId <= 0 || CurrentPerson == null )
+                if ( string.IsNullOrWhiteSpace( CommunicationPageRoute ) || GroupId <= 0 || CurrentPerson == null )
                 {
                     return;
                 }
@@ -1162,7 +1162,7 @@ namespace RockWeb.Plugins.org_lakepointe.Groups
         {
             if ( SelectedGroup != null )
             {
-                if ( String.IsNullOrWhiteSpace( CommunicationPageRoute ) || GroupId <= 0 || CurrentPerson == null )
+                if ( string.IsNullOrWhiteSpace( CommunicationPageRoute ) || GroupId <= 0 || CurrentPerson == null )
                 {
                     return;
                 }
@@ -1451,33 +1451,36 @@ namespace RockWeb.Plugins.org_lakepointe.Groups
 
         private string GetFeatureSetStrings()
         {
-            List<String> result = new List<String>();
+            List<string> result = new List<string>();
 
-            var context = new RockContext();
-            var groupMemberService = new GroupMemberService( context );
-
-            // get features that might be enabled because the current person is a member of this group
-            foreach (var gm in  groupMemberService.Queryable().AsNoTracking().Where( gm => gm.GroupId == SelectedGroup.Id && gm.PersonId == CurrentPerson.Id ) )
+            if ( SelectedGroup != null && SelectedGroup.Id > 0 )
             {
-                var role = gm.GroupRole;
-                role.LoadAttributes();
-                result.Add( role.AttributeValues[ "GroupLeaderToolboxFeatureSet" ]?.Value ?? String.Empty );
-            }
+                var context = new RockContext();
+                var groupMemberService = new GroupMemberService( context );
 
-            // get features that might be enabled because the current person is a member of a coach group
-            foreach ( var gm in groupMemberService.Queryable().AsNoTracking().Where( gm => gm.GroupId == SelectedGroup.ParentGroupId && gm.PersonId == CurrentPerson.Id ) )
-            {
-                var role = gm.GroupRole;
-                role.LoadAttributes();
-                result.Add( role.AttributeValues["GroupLeaderToolboxFeatureSet"]?.Value ?? String.Empty );
-            }
+                // get features that might be enabled because the current person is a member of this group
+                foreach ( var gm in groupMemberService.Queryable().AsNoTracking().Where( gm => gm.GroupId == SelectedGroup.Id && gm.PersonId == CurrentPerson.Id ) )
+                {
+                    var role = gm.GroupRole;
+                    role.LoadAttributes();
+                    result.Add( role.AttributeValues["GroupLeaderToolboxFeatureSet"]?.Value ?? string.Empty );
+                }
 
-            // get features that might be enabled because the current person is a member of a captain group
-            foreach ( var gm in groupMemberService.Queryable().AsNoTracking().Where( gm => gm.GroupId == SelectedGroup.ParentGroup.ParentGroupId && gm.PersonId == CurrentPerson.Id ) )
-            {
-                var role = gm.GroupRole;
-                role.LoadAttributes();
-                result.Add( role.AttributeValues["GroupLeaderToolboxFeatureSet"]?.Value ?? String.Empty );
+                // get features that might be enabled because the current person is a member of a coach group
+                foreach ( var gm in groupMemberService.Queryable().AsNoTracking().Where( gm => gm.GroupId == SelectedGroup.ParentGroupId && gm.PersonId == CurrentPerson.Id ) )
+                {
+                    var role = gm.GroupRole;
+                    role.LoadAttributes();
+                    result.Add( role.AttributeValues["GroupLeaderToolboxFeatureSet"]?.Value ?? string.Empty );
+                }
+
+                // get features that might be enabled because the current person is a member of a captain group
+                foreach ( var gm in groupMemberService.Queryable().AsNoTracking().Where( gm => gm.GroupId == SelectedGroup.ParentGroup.ParentGroupId && gm.PersonId == CurrentPerson.Id ) )
+                {
+                    var role = gm.GroupRole;
+                    role.LoadAttributes();
+                    result.Add( role.AttributeValues["GroupLeaderToolboxFeatureSet"]?.Value ?? string.Empty );
+                }
             }
 
             return result.JoinStrings( "," );
