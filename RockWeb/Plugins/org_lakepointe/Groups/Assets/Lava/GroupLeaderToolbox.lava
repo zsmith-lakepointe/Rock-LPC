@@ -8,11 +8,16 @@
         padding: 0 !important;
         transform: none;
         height: 12rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
     }
     .leader-tools .card>.row {
         display: flex;
         align-items: center;
         justify-content: center;
+        width: 100%;
+        padding: 0;
     }
     .leader-tools .card i {
         font-size: 4.5rem;
