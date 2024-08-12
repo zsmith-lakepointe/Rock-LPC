@@ -27,6 +27,8 @@ using Rock.Data;
 using Rock.Logging;
 using Rock.Model;
 
+using System.Diagnostics;
+
 namespace Rock.Jobs
 {
     /// <summary>
@@ -99,6 +101,7 @@ namespace Rock.Jobs
                         Log( RockLogLevel.Warning, message );
 
                         // Force the job to use email, since SMS is not available.
+                        Debug.WriteLine( "--- Forced to use email since SMS is not available." );
                         jobPreferredCommunicationType = CommunicationType.Email;
                     }
                 }
@@ -481,6 +484,9 @@ namespace Rock.Jobs
                     mergeObjects.Add( "Occurrence", occurrenceDate );
 
                     var sendResult = CommunicationHelper.SendMessage( leader.Person, mediumType, systemCommunication, mergeObjects );
+                    Debug.WriteLine( "-------------Communication-------------" );
+                    Debug.WriteLine( "mediumType: " + mediumType );
+                    Debug.WriteLine( "systemCommunication: " + systemCommunication );
 
                     result.MessagesSent += sendResult.MessagesSent;
                     result.Errors.AddRange( sendResult.Errors );
