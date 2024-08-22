@@ -81,7 +81,7 @@
     {% assign coachcount = coaches | Size %}
     {% if coachcount > 0 %}
         <div class="section">
-            <h2>Group Leader Application</h2>
+            <h2>Check-in</h2>
             <hr>
             <div class="row">
                 {% for coach in coaches %}
@@ -93,7 +93,7 @@
                                         <i class="fa fa-clipboard-check"></i>
                                     </div>
                                     <div class="col-xs-8">
-                                        <h3 class="card-title">Check in as {{ coach.GroupType }}<br>to {{ coach.Name }} - {{ coach.Campus }}</h3>
+                                        <h3 class="card-title">Check in as a {{ coach.GroupType | TrimStart:'V2 ' }}</h3>
                                         <p class="card-text">Check in when supervising Life Groups</p>
                                     </div>
                                 </div>
