@@ -5,7 +5,9 @@
         Contains debug query strings that override variables to allow for developers to debug this file without adding and removing themselves from serving groups
     Debug Query Strings:
         Date - Date object (ex '12/31/2022')
-        Campus - Comma seperated campus Ids
+        Campus - Comma separated campus Ids
+        Curricula - Comma separated curriculum Ids
+        Debug - Boolean that shows debug information
 {% endcomment %}
 <style>
     [style*="--aspect-ratio"] > :first-child {
@@ -87,41 +89,81 @@
     }
 </style>
 
-{% sql personAliasGuid:'{{ CurrentPerson.PrimaryAlias.Guid }}' return:'groups' %}
-    SELECT data.GroupId AS [GroupId], data.GroupName AS [GroupName], data.GroupRole AS [GroupRole], data.CampusId AS [CampusId]
-        , c.Name AS [Campus], dv.Id AS [CurriculumId], dv.Value AS [Curriculum]
+{% sql personAliasGuid:'{{ CurrentPerson.PrimaryAlias.Guid }}' return:'roles' %}
+    /* Query running from RockWeb/Plugins/org_lakepointe/Assets/Lava/AdultLifeGroupLeaderNews.lava */
+    /* Query written by Jon Corey on 08/22/2024 */
+    /* Purpose: Checks which life groups the person leads and therefore which content they should have access to. */
+    SELECT
+        STRING_AGG([Data].[GroupRole], ',') AS [GroupRoles],
+        STRING_AGG([Data].CampusId, ',') AS [CampusIds],
+        STRING_AGG([Data].[CurriculumId], ',') AS [CurriculumIds]
     FROM
     (
-        SELECT g.Id AS [GroupId], g.Name AS [GroupName], gtr.Name AS [GroupRole], g.CampusId AS [CampusId]
-        FROM [GroupMember] gm
-        JOIN [PersonAlias] pa ON gm.PersonId = pa.PersonId AND pa.Guid = TRY_CAST(@personAliasGuid AS UNIQUEIDENTIFIER)
-        JOIN [Group] g ON gm.GroupId = g.Id AND g.IsActive = 1
-        JOIN [GroupType] gt ON gt.Id = g.GroupTypeId AND gt.GroupTypePurposeValueId = 5856 -- Life Groups
-        JOIN [GroupTypeRole] gtr on gtr.Id = gm.GroupRoleId AND gtr.IsLeader = 1
-        WHERE gm.IsArchived = 0 AND gm.GroupMemberStatus = 1
+        SELECT gtr.[Name] AS [GroupRole], g.[CampusId], TRY_CAST(dv.Id AS NVARCHAR(MAX)) AS [CurriculumId]
+        FROM [dbo].[GroupMember] gm
+        JOIN [dbo].[PersonAlias] pa ON gm.[PersonId] = pa.[PersonId]
+        JOIN [dbo].[Group] g ON gm.[GroupId] = g.[Id]
+        JOIN [dbo].[GroupType] gt ON gt.[Id] = g.[GroupTypeId]
+        JOIN [dbo].[GroupTypeRole] gtr on gtr.[Id] = gm.[GroupRoleId]
+        JOIN [dbo].[AttributeValue] fsav ON fsav.[EntityId] = gtr.[Id]
+        JOIN [dbo].[Attribute] fsa ON fsa.[Id] = fsav.[AttributeId]
+        JOIN [dbo].[AttributeValue] av ON av.[EntityId] = g.[Id]
+        JOIN [dbo].[Attribute] a ON a.[Id] = av.[AttributeId]
+        JOIN [dbo].[DefinedValue] dv ON dv.[Guid] = TRY_CAST(av.[Value] AS UNIQUEIDENTIFIER)
+        WHERE gm.[GroupMemberStatus] != 0 AND gm.[IsArchived] = 0
+            AND g.[IsActive] = 1 AND g.[IsArchived] = 0
+            AND gt.[GroupTypePurposeValueId] = 5856 --Life Groups
+            AND pa.[Guid] = TRY_CAST(@personAliasGuid AS UNIQUEIDENTIFIER)
+            AND fsa.[Key] = 'GroupLeaderToolboxFeatureSet'
+            AND fsav.[Value] LIKE '%e93c8e1d-afe2-486c-bd10-74dfe47593f5%' --Leader News Portal
+            AND a.[Key] = 'GroupCurriculum'
+            AND dv.[DefinedTypeId] IN (381, 423) --LP Groups Curriculum, LPE Groups Curriculum
+            AND dv.[IsActive] = 1
 
         UNION ALL
 
-        SELECT g.Id AS [GroupId], g.Name AS [GroupName], a.Name AS [GroupRole], g.CampusId AS [CampusId]
-        FROM [Group] g
-        JOIN [GroupType] gt ON gt.Id = g.GroupTypeId AND gt.GroupTypePurposeValueId = 5856 -- Life Groups
-        JOIN [AttributeValue] av ON av.EntityId = g.Id AND av.Value = @personAliasGuid
-        JOIN [Attribute] a ON a.Id = av.AttributeId AND (a.[Key] = 'AGCoach' OR a.[Key] = 'LGCoach')
-        WHERE g.IsActive = 1
+        SELECT CASE gt.[Id] WHEN cg.[GroupTypeId] THEN 'Coach' WHEN gcg.[GroupTypeId] THEN 'Captain' END AS [GroupRole], g.[CampusId], [CurriculumIds].[Ids] AS [CurriculumId]
+        FROM [dbo].[GroupMember] gm
+        JOIN [dbo].[Group] g ON g.[Id] = gm.[GroupId]
+        JOIN [dbo].[Group] cg ON cg.[ParentGroupId] = g.[Id]
+        LEFT JOIN [dbo].[Group] gcg ON gcg.[ParentGroupId] = cg.[Id]
+            AND gcg.[IsActive] = 1 AND gcg.[IsArchived] = 0
+        JOIN [dbo].[GroupType] gt ON gt.[Id] = cg.[GroupTypeId] OR gt.[Id] = gcg.[GroupTypeId]
+        JOIN [dbo].[PersonAlias] pa ON pa.[PersonId] = gm.[PersonId]
+        CROSS JOIN (
+            SELECT STRING_AGG(dv.[Id], ',') [Ids]
+            FROM [dbo].[DefinedValue] dv
+            WHERE dv.[DefinedTypeId] IN (381, 423) --LP Groups Curriculum, LPE Groups Curriculum
+                AND dv.[IsActive] = 1
+            ) AS [CurriculumIds]
+        WHERE gm.[GroupMemberStatus] != 0 AND gm.[IsArchived] = 0
+            AND g.[IsActive] = 1 AND g.[IsArchived] = 0
+            AND cg.[IsActive] = 1 AND cg.[IsArchived] = 0
+            AND gt.[GroupTypePurposeValueId] = 5856 --Life Groups
+            AND pa.[Guid] = TRY_CAST(@personAliasGuid AS UNIQUEIDENTIFIER)
 
         UNION ALL
 
-        SELECT g.Id AS [GroupId], g.Name AS [GroupName], 'Administrative' AS [GroupRole], g.CampusId AS [CampusId]
-        FROM [Group] g
-        JOIN [GroupMember] gm ON gm.GroupId = g.Id AND gm.IsArchived = 0 AND gm.GroupMemberStatus = 1
-        JOIN [PersonAlias] pa ON gm.PersonId = pa.PersonId AND pa.Guid = TRY_CAST(@personAliasGuid AS UNIQUEIDENTIFIER)
-        WHERE g.IsActive = 1 AND g.ParentGroupId = 800793
-    ) data
-    LEFT JOIN [Campus] c ON c.Id = data.CampusId
-    JOIN [AttributeValue] gc ON gc.EntityId = data.GroupId
-    JOIN [Attribute] gca ON gca.Id = gc.AttributeId AND gca.[Key] = 'GroupCurriculum'
-    JOIN [DefinedValue] dv ON dv.Guid = TRY_CAST(gc.Value AS UNIQUEIDENTIFIER)
+        SELECT 'Admin' AS [GroupRole], p.[PrimaryCampusId] AS [CampusId], [CurriculumIds].[Ids] AS [CurriculumId]
+        FROM [dbo].[GroupMember] gm
+        JOIN [dbo].[Group] g ON g.Id = gm.[GroupId]
+        JOIN [dbo].[TaggedItem] ti ON ti.[EntityGuid] = g.[Guid]
+        JOIN [dbo].[Person] p ON p.Id = gm.[PersonId]
+        JOIN [dbo].PersonAlias pa ON pa.[PersonId] = p.[Id]
+        CROSS JOIN (
+            SELECT STRING_AGG(dv.Id, ',') [Ids]
+            FROM [dbo].[DefinedValue] dv
+            WHERE dv.[DefinedTypeId] IN (381, 423) --LP Groups Curriculum, LPE Groups Curriculum
+                AND dv.[IsActive] = 1
+            ) AS [CurriculumIds]
+        WHERE gm.[GroupMemberStatus] != 0 AND gm.[IsArchived] = 0
+            AND pa.[Guid] = TRY_CAST(@personAliasGuid as UNIQUEIDENTIFIER)
+            AND g.[IsActive] = 1 AND g.[IsArchived] = 0
+            AND ti.[TagId] = 488 --Student Leader News Override
+    ) AS [Data]
 {% endsql %}
+
+{% assign role = roles | First %}
 
 {% assign today = 'Global' | PageParameter:'Date' | AsDateTime %}
 {% if today == null %}
@@ -136,8 +178,9 @@
         {% assign campusIds = campusIds | AddToArray:idAsInt %}
     {% endfor %}
 {% else %}
-    {% for group in groups %}
-        {% assign campusIds = campusIds | AddToArray:group.CampusId %}
+    {% assign ids = role.CampusIds | Split:',' | Uniq %}
+    {% for id in ids %}
+        {% assign campusIds = campusIds | AddToArray:id %}
     {% endfor %}
 {% endif %}
 
@@ -149,9 +192,20 @@
         {% assign curriculaIds = curriculaIds | AddToArray:idAsInt %}
     {% endfor %}
 {% else %}
-    {% for group in groups %}
-        {% assign curriculaIds = curriculaIds | AddToArray:group.CurriculumId %}
+    {% assign ids = role.CurriculumIds | Split:',' | Uniq %}
+    {% for id in ids %}
+        {% assign curriculaIds = curriculaIds | AddToArray:id %}
     {% endfor %}
+{% endif %}
+
+{% assign debug = 'Global' | PageParameter:'Debug' | AsBoolean %}
+{% if debug != null and debug == true %}
+    <ul>
+        <li>groupRoles: {{ role.GroupRoles | Split:',' | Uniq | Join:', ' }}</li>
+        <li>today: {{ today }}</li>
+        <li>campusIds: {{ campusIds | Join:', ' }}</li>
+        <li>curriculaIds: {{ curriculaIds | Join:', ' }}</li>
+    </ul>
 {% endif %}
 
 <!-- Campus News -->

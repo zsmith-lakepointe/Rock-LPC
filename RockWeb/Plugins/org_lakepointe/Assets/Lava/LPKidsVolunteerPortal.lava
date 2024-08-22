@@ -3,6 +3,16 @@
     Description:
         Lava content formatting and filtering for the LPKids
         Volunteer Portal page.
+    Debug Query Strings:
+        Date - Date object (ex '12/31/2022')
+        Preschool - Boolean written as integer ('0' for false, '1' for true)
+        Studio - Boolean written as integer ('0' for false, '1' for true)
+        Warehouse45 - Boolean written as integer ('0' for false, '1' for true)
+        KidZone - Boolean written as integer ('0' for false, '1' for true)
+        SpecialNeeds - Boolean written as integer ('0' for false, '1' for true)
+        YoungChristians - Boolean written as integer ('0' for false, '1' for true)
+        Campus - Comma seperated campus Guids
+        Debug - Boolean that shows debug information
 {% endcomment %}
 <div class="lpKidsVolunteerPortal">
 <style>
@@ -80,106 +90,116 @@
     }
 </style>
 
+{% sql personId:'{{ CurrentPerson.Id }}' return:'roles' %}
+    /* Query running from RockWeb/Plugins/org_lakepointe/Assets/Lava/LPKidsVolunteerPortal.lava */
+    /* Query written by Jon Corey on 08/21/2024 */
+    /* Purpose: Checks which kids areas the person serves in and therefore which content they should have access to. */
+    Select
+        Max([Preschool]) as [Preschool],
+        Max([Studio]) as [Studio],
+        Max([Warehouse45]) as [Warehouse45],
+        Max([KidZone]) as [KidZone],
+        Max([SpecialNeeds]) as [SpecialNeeds],
+        Max([YoungChristians]) as [YoungChristians],
+        String_Agg(Cast([Campuses] as nvarchar(36)), ',') as [Campuses]
+    From (
+        Select
+            Case When dv.Id = 9872 Then 1 Else 0 End as [Preschool],
+            Case When dv.Id = 9873 Then 1 Else 0 End as [Studio],
+            Case When dv.Id = 9874 Then 1 Else 0 End as [Warehouse45],
+            Case When dv.Id = 9875 Then 1 Else 0 End as [KidZone],
+            Case When dv.Id = 9896 Then 1 Else 0 End as [SpecialNeeds],
+            Case When dv.Id = 9897 Then 1 Else 0 End as [YoungChristians],
+            c.[Guid] as [Campuses]
+        From [dbo].[GroupMember] gm
+        Join [dbo].[Group] g on g.Id = gm.[GroupId]
+        Join [dbo].[AttributeValue] av on CharIndex(',' + Cast(gm.[GroupTypeId] AS nvarchar(255)) + ',', ',' + av.[Value] + ',') > 0
+        Join [DefinedValue] dv on dv.Id = av.[EntityId]
+        Left Join [dbo].[Campus] c on c.Id = g.[CampusId]
+        Where gm.[GroupMemberStatus] != 0 and gm.[IsArchived] = 0
+            and gm.[PersonId] = Try_Cast(@personId as int)
+            and g.[IsActive] = 1 and g.[IsArchived] = 0
+            and av.[AttributeId] = 123094 --Group Types
+            and dv.[IsActive] = 1 and dv.[DefinedTypeId] = 495 --Children's Content Categories
+
+        Union All
+
+        Select
+            Case When gm.[Id] is not null Then 1 Else 0 End as [Preschool],
+            Case When gm.[Id] is not null Then 1 Else 0 End as [Studio],
+            Case When gm.[Id] is not null Then 1 Else 0 End as [Warehouse45],
+            Case When gm.[Id] is not null Then 1 Else 0 End as [KidZone],
+            Case When gm.[Id] is not null Then 1 Else 0 End as [SpecialNeeds],
+            Case When gm.[Id] is not null Then 1 Else 0 End as [YoungChristians],
+            c.[Guid] as [Campuses]
+        From [dbo].[GroupMember] gm
+        Join [dbo].[Group] g on g.Id = gm.[GroupId]
+        Join [dbo].[TaggedItem] ti on ti.[EntityGuid] = g.[Guid]
+        Join [dbo].[Person] p on p.Id = gm.[PersonId]
+        Left Join [dbo].[Campus] c on c.Id = p.[PrimaryCampusId]
+        Where gm.[GroupMemberStatus] != 0 and gm.[IsArchived] = 0
+            and gm.[PersonId] = Try_Cast(@personId as int)
+            and g.[IsActive] = 1 and g.[IsArchived] = 0
+            and ti.[TagId] = 487 --Kids Leader News Override
+    ) as [Data]
+{% endsql %}
+
+{% assign role = roles | First %}
+{% assign itemCount = 0 %}
+
 {% assign today = 'Global' | PageParameter:'Date' | AsDateTime %}
 {% if today == null %}
     {% assign today = 'Now' | Date | AsDateTime %}
 {% endif %}
 
-{% sql personId:'{{ CurrentPerson.Id }}' return:'roles' %}
-    DECLARE
-        @groupId INT = null,
-        @coachCaptainId INT = null,
-        @columns NVARCHAR(MAX) = '',
-        @aggColumns NVARCHAR(MAX) = '',
-        @sql NVARCHAR(MAX) = '';
+{% assign preschool = 'Global' | PageParameter:'Preschool' | AsInteger %}
+{% if preschool == null or preschool == '' %}
+    {% assign preschool = role.Preschool %}
+{% endif %}
 
-    -- curriculum names
-    SELECT @columns += QUOTENAME(dv.Value) + ','
-    FROM dbo.[DefinedValue] dv
-    WHERE dv.DefinedTypeId = 495 AND dv.IsActive = 1
-    ORDER BY dv.[Order];
+{% assign studio = 'Global' | PageParameter:'Studio' | AsInteger %}
+{% if studio == null or studio == '' %}
+    {% assign studio = role.Studio %}
+{% endif %}
 
-    SET @columns = LEFT(@columns, LEN(@columns) - 1); -- remove the last comma
+{% assign warehouse45 = 'Global' | PageParameter:'Warehouse45' | AsInteger %}
+{% if warehouse45 == null or warehouse45 == '' %}
+    {% assign warehouse45 = role.Warehouse45 %}
+{% endif %}
 
-    -- column definitions
-    SELECT @aggColumns += FORMATMESSAGE('SUM([%s]) as [%s], ', dv.Value, dv.Value)
-    FROM dbo.[DefinedValue] dv
-    WHERE dv.DefinedTypeId = 495 AND dv.IsActive = 1
-    ORDER BY dv.[Order];
+{% assign kidZone = 'Global' | PageParameter:'KidZone' | AsInteger %}
+{% if kidZone == null or kidZone == '' %}
+    {% assign kidZone = role.KidZone %}
+{% endif %}
 
-    SET @aggColumns = LEFT(@aggColumns, LEN(@aggColumns) - 1); -- remove the last comma
+{% assign specialNeeds = 'Global' | PageParameter:'SpecialNeeds' | AsInteger %}
+{% if specialNeeds == null or specialNeeds == '' %}
+    {% assign specialNeeds = role.SpecialNeeds %}
+{% endif %}
 
-    -- override group
-    SET @groupId = (SELECT TOP 1 gm.GroupId FROM GroupMember gm WHERE gm.PersonId = @personId AND gm.GroupId = 927999 AND gm.GroupMemberStatus != 0 AND gm.IsArchived = 0);
-    SET @coachCaptainId = (SELECT TOP 1 gm.GroupId
-        FROM [GroupMember] gm
-	    JOIN [Group] g ON g.Id = gm.GroupId AND g.GroupTypeId IN (649, 650)
-	    WHERE gm.PersonId = @personId AND gm.GroupMemberStatus != 0 AND gm.IsArchived = 0);
+{% assign youngChristians = 'Global' | PageParameter:'YoungChristians' | AsInteger %}
+{% if youngChristians == null or youngChristians == '' %}
+    {% assign youngChristians = role.YoungChristians %}
+{% endif %}
 
-    IF @groupId = 927999 OR @coachCaptainId IS NOT NULL
-    BEGIN
-        -- person is in curriculum team or is a coach or captain - override all roles to 1
-        -- dynamic sql
-        SET @sql = '
-        SELECT TOP 1 '+ @aggColumns +', STRING_AGG(Campuses, '','') AS Campuses
-        FROM (
-            SELECT dv.[Value], a.[Count], a.Campuses
-            FROM DefinedValue dv
-            LEFT JOIN (
-                SELECT dv.Id, 1 AS [Count], MAX(c.[Campuses]) AS [Campuses]
-                FROM DefinedValue dv
-                CROSS JOIN (
-                    SELECT convert(nvarchar(36), c.[Guid]) AS [Campuses]
-                    FROM Person p
-                    JOIN Campus c ON c.Id = p.PrimaryCampusId
-                    WHERE p.Id = '+ @personId +'
-                ) AS c
-                WHERE dv.DefinedTypeId = 495 AND dv.IsActive = 1
-                GROUP BY dv.Id
-            ) a ON a.Id = dv.Id
-            WHERE dv.DefinedTypeId = 495 AND dv.IsActive = 1
-        ) AS sourceTable
-        PIVOT (
-            SUM(sourceTable.[Count])
-            FOR sourceTable.[Value] IN ('+ @columns +')
-        ) AS pt;';
+{% assign campuses = 'Global' | PageParameter:'Campuses' %}
+{% if campuses == null or campuses == '' %}
+    {% assign campuses = role.Campuses %}
+{% endif %}
 
-        EXECUTE sp_executesql @sql;
-    END
-    ELSE
-    BEGIN
-        -- dynamic sql
-        SET @sql = '
-        SELECT TOP 1 '+ @aggColumns +', STRING_AGG(Campuses, '','') AS Campuses
-        FROM (
-            SELECT dv.[Value], a.[Count], a.Campuses
-            FROM DefinedValue dv
-            LEFT JOIN (
-                SELECT dv.Id, COUNT(gm.Id) AS [Count], STRING_AGG(convert(nvarchar(36), c.Guid), '','') AS [Campuses]
-                FROM GroupMember gm
-                JOIN [Group] g ON g.Id = gm.GroupId
-                JOIN AttributeValue av ON CHARINDEX('','' + CAST(gm.GroupTypeId AS NVARCHAR(255)) + '','', '','' + av.[Value] + '','') > 0 AND av.AttributeId = 123094
-                JOIN DefinedValue dv ON dv.Id = av.EntityId AND dv.IsActive = 1
-                LEFT JOIN Campus c ON c.Id = g.CampusId
-                WHERE gm.PersonId = '+ @personId +'
-                    AND gm.GroupMemberStatus != 0 AND gm.IsArchived = 0
-                    AND g.IsActive = 1 AND g.IsArchived = 0
-                GROUP BY dv.Id
-            ) a ON a.Id = dv.Id
-            WHERE dv.DefinedTypeId = 495 AND dv.IsActive = 1
-        ) AS sourceTable
-        Pivot (
-            SUM(sourceTable.[Count])
-            FOR sourceTable.[Value] IN ('+ @columns +')
-        ) AS pt;';
-
-        EXECUTE sp_executesql @sql;
-    END
-{% endsql %}
-
-{% assign roleCount = roles | Size %}
-{% assign role = roles | First %}
-{% assign itemCount = 0 %}
+{% assign debug = 'Global' | PageParameter:'Debug' | AsBoolean %}
+{% if debug == true %}
+    <ul>
+        <li>today: {{ today }}</li>
+        <li>preschool: {{ preschool }}</li>
+        <li>studio: {{ studio }}</li>
+        <li>warehouse45: {{ warehouse45 }}</li>
+        <li>kidZone: {{ kidZone }}</li>
+        <li>specialNeeds: {{ specialNeeds }}</li>
+        <li>youngChristians: {{ youngChristians }}</li>
+        <li>campuses: {{ campuses }}</li>
+    </ul>
+{% endif %}
 
 <div id="channelHeader">
     <div class="row">
@@ -195,11 +215,7 @@
 <div class="spacer"></div>
 
 <!-- Campus -->
-{% assign campuses = '' %}
-{% assign campuses = role | Property:'Campuses' %}
-{% if campuses != null and campuses != '' %}{% assign isServing = true %}{% else %}{% assign isServing = false %}{% endif %}
-
-{% if isServing %}
+{% if campuses != null and campuses != '' %}
     {% sql now:'{{ today | Date:"yyyy-MM-ddTHH:mm:ss" }}' campuses:'{{ campuses }}' return:'Items' %}
         SELECT cci.Id, cci.Title, cci.Content, cci.Priority, cci.Status, cci.StartDateTime, cci.ExpireDateTime,
             image.Value AS [Image], video.Value AS [Video], (
@@ -316,8 +332,6 @@
         {% assign contentAudienceCount = contentAudiences | Size %}
         {% if contentAudienceCount == 0 %}
             {% assign isInAudience = true %}
-        {% elseif roleCount == 0 %}
-            {% assign isInAudience = false %}
         {% else %}
             {% assign isInAudience = false %}
             {% for contentAudience in contentAudiences %}
@@ -370,11 +384,7 @@
 {% endfor %}
 
 <!-- Preschool -->
-{% assign isServing = false %}
-{% assign count = role | Property:'Preschool' %}
-{% if count > 0 %}{% assign isServing = true %}{% else %}{% assign isServing = false %}{% endif %}
-
-{% if isServing %}
+{% if preschool > 0 %}
     {% sql now:'{{ today | Date:"yyyy-MM-ddTHH:mm:ss" }}' return:'Items' %}
         SELECT cci.Id, cci.Title, cci.Content, cci.Priority, cci.Status, cci.StartDateTime, cci.ExpireDateTime,
             monthlyToddlerLesson.Value as [MonthlyToddlerLesson],
@@ -517,11 +527,7 @@
 {% endif %}
 
 <!-- Studio -->
-{% assign isServing = false %}
-{% assign count = role | Property:'Studio' %}
-{% if count > 0 %}{% assign isServing = true %}{% else %}{% assign isServing = false %}{% endif %}
-
-{% if isServing %}
+{% if studio > 0 %}
     {% sql now:'{{ today | Date:"yyyy-MM-ddTHH:mm:ss" }}' return:'Items' %}
         SELECT cci.Id, cci.Title, cci.Content, cci.Priority, cci.Status, cci.StartDateTime, cci.ExpireDateTime,
             lesson1.Value as [Lesson1],
@@ -688,11 +694,7 @@
 {% endif %}
 
 <!-- Warehouse 45 -->
-{% assign isServing = false %}
-{% assign count = role | Property:'Warehouse 45' %}
-{% if count > 0 %}{% assign isServing = true %}{% else %}{% assign isServing = false %}{% endif %}
-
-{% if isServing %}
+{% if warehouse45 > 0 %}
     {% sql now:'{{ today | Date:"yyyy-MM-ddTHH:mm:ss" }}' return:'Items' %}
         SELECT cci.Id, cci.Title, cci.Content, cci.Priority, cci.Status, cci.StartDateTime, cci.ExpireDateTime,
             lgLesson1.Value as [LGLesson1],
@@ -861,11 +863,7 @@
 {% endif %}
 
 <!-- Kid Zone -->
-{% assign isServing = false %}
-{% assign count = role | Property:'Kid Zone' %}
-{% if count > 0 %}{% assign isServing = true %}{% else %}{% assign isServing = false %}{% endif %}
-
-{% if isServing %}
+{% if kidZone > 0 %}
     {% sql now:'{{ today | Date:"yyyy-MM-ddTHH:mm:ss" }}' return:'Items' %}
         SELECT cci.Id, cci.Title, cci.Content, cci.Priority, cci.Status, cci.StartDateTime, cci.ExpireDateTime,
             lesson1.Value as [Lesson1],
@@ -995,11 +993,7 @@
 {% endif %}
 
 <!-- Special Needs -->
-{% assign isServing = false %}
-{% assign count = role | Property:'Special Needs' %}
-{% if count > 0 %}{% assign isServing = true %}{% else %}{% assign isServing = false %}{% endif %}
-
-{% if isServing %}
+{% if specialNeeds > 0 %}
     {% sql now:'{{ today | Date:"yyyy-MM-ddTHH:mm:ss" }}' return:'Items' %}
         SELECT cci.Id, cci.Title, cci.Content, cci.Priority, cci.Status, cci.StartDateTime, cci.ExpireDateTime,
             soarLesson1.Value as [SoarLesson1],
@@ -1182,11 +1176,7 @@
 {% endif %}
 
 <!-- Young Christians -->
-{% assign isServing = false %}
-{% assign count = role | Property:'Young Christians' %}
-{% if count > 0 %}{% assign isServing = true %}{% else %}{% assign isServing = false %}{% endif %}
-
-{% if isServing %}
+{% if youngChristians > 0 %}
     {% sql now:'{{ today | Date:"yyyy-MM-ddTHH:mm:ss" }}' return:'Items' %}
         SELECT cci.Id, cci.Title, cci.Content, cci.Priority, cci.Status, cci.StartDateTime, cci.ExpireDateTime,
             v1.Value AS [Video1], v2.Value AS [Video2], l1.Value AS [Lesson1], l2.Value AS [Lesson2], l3.Value AS [Lesson3]

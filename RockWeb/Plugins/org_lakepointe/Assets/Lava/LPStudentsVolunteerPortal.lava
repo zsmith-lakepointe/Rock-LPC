@@ -10,6 +10,7 @@
         StudentConnect - Boolean written as integer ('0' for false, '1' for true)
         MiddleSchool - Boolean written as integer ('0' for false, '1' for true)
         HighSchool - Boolean written as integer ('0' for false, '1' for true)
+        Debug - Boolean that shows debug information
 {% endcomment %}
 <style>
     [style*="--aspect-ratio"] > :first-child {
@@ -92,34 +93,60 @@
 </style>
 
 {% sql personAliasGuid:'{{ CurrentPerson.PrimaryAlias.Guid }}' return:'roles' %}
-/* Query running from RockWeb/Plugins/org_lakepointe/Assets/Lava/LPStudentsVolunteerPortal.lava */
-/* Query written by Jon Corey on 04/03/2022 */
-/* Updated by Jon Corey on 04/04/2023 to ensure only one row is returned and that it has all nescessary data */
-/* Updated by Jon Corey on 06/13/2024 to use group type tags instead of hard-coded group type ids */
-/* Purpose: Check if the person serves in Student Connect, serves in United, serves with Middle School, and/or serves with High School. */
-/*          Returns one row where each column is the number of groups where the person serves in that area. */
-SELECT
-    COUNT(CASE WHEN saAv.[Value] LIKE '%6001B464-A8D9-46C5-B2CF-A576A7B11AB4%' THEN 1 ELSE NULL END) AS StudentConnect,
-    COUNT(CASE WHEN saAv.[Value] LIKE '%5DC7B5D0-8F01-4ACC-A62F-6A63B8BB9047%' THEN 1 ELSE NULL END) AS United,
-    COUNT(CASE WHEN agAv.[Value] LIKE '%Middle%' THEN 1 ELSE NULL END) AS MiddleSchool,
-    COUNT(CASE WHEN agAv.[Value] LIKE '%High%' THEN 1 ELSE NULL END) AS HighSchool,
-    STRING_AGG(g.CampusId, ',') AS Campuses
-FROM GroupMember gm
-JOIN PersonAlias pa ON gm.PersonId = pa.PersonId
-JOIN [Group] g ON gm.GroupId = g.Id
-JOIN GroupType gt ON gt.Id = g.GroupTypeId
-JOIN TaggedItem ti ON ti.EntityGuid = gt.[Guid] AND ti.TagId = 461 --LP Student Leader
-LEFT JOIN (
-    AttributeValue agAv
-    JOIN Attribute agA ON agA.Id = agAv.AttributeId AND agA.[Key] = 'SMServingAgeGroup'
-    ) ON agAv.EntityId = gm.Id
-LEFT JOIN (
-    AttributeValue saAv
-    JOIN Attribute saA ON saA.Id = saAv.AttributeId AND saA.[Key] = 'StudentMinistryServingArea'
-    ) ON saAv.EntityId = gm.Id
-WHERE pa.Guid = @personAliasGuid
-    AND g.IsActive = 1 AND g.IsArchived = 0
-    AND gm.GroupMemberStatus != 0 AND gm.IsArchived = 0;
+    /* Query running from RockWeb/Plugins/org_lakepointe/Assets/Lava/LPStudentsVolunteerPortal.lava */
+    /* Query written by Jon Corey on 04/03/2022 */
+    /* Updated by Jon Corey on 04/04/2023 to ensure only one row is returned and that it has all nescessary data */
+    /* Updated by Jon Corey on 06/13/2024 to use group type tags instead of hard-coded group type ids */
+    /* Updated by Jon Corey on 08/22/2024 to include content editors via group tags */
+    /* Purpose: Check if the person serves in Student Connect, serves in United, serves with Middle School, and/or serves with High School. */
+    SELECT
+        MAX([StudentConnect]) AS [StudentConnect],
+        MAX([United]) AS [United],
+        MAX([MiddleSchool]) AS [MiddleSchool],
+        MAX([HighSchool]) AS [HighSchool],
+        STRING_AGG([CampusId], ',') AS [Campuses]
+    FROM (
+        SELECT
+            CASE WHEN saAv.[Value] LIKE '%6001B464-A8D9-46C5-B2CF-A576A7B11AB4%' THEN 1 ELSE 0 END AS [StudentConnect],
+            CASE WHEN saAv.[Value] LIKE '%5DC7B5D0-8F01-4ACC-A62F-6A63B8BB9047%' THEN 1 ELSE 0 END AS [United],
+            CASE WHEN agAv.[Value] LIKE '%Middle%' THEN 1 ELSE 0 END AS [MiddleSchool],
+            CASE WHEN agAv.[Value] LIKE '%High%' THEN 1 ELSE 0 END AS [HighSchool],
+            g.[CampusId]
+        FROM [dbo].[GroupMember] gm
+        JOIN [dbo].[PersonAlias] pa ON gm.[PersonId] = pa.[PersonId]
+        JOIN [dbo].[Group] g ON gm.[GroupId] = g.[Id]
+        JOIN [dbo].[GroupType] gt ON gt.[Id] = g.[GroupTypeId]
+        JOIN [dbo].[TaggedItem] ti ON ti.[EntityGuid] = gt.[Guid] AND ti.[TagId] = 461 --LP Student Leader
+        LEFT JOIN (
+            [dbo].[AttributeValue] agAv
+            JOIN [dbo].[Attribute] agA ON agA.[Id] = agAv.[AttributeId] AND agA.[Key] = 'SMServingAgeGroup'
+            ) ON agAv.[EntityId] = gm.[Id]
+        LEFT JOIN (
+            [dbo].[AttributeValue] saAv
+            JOIN [dbo].[Attribute] saA ON saA.[Id] = saAv.[AttributeId] AND saA.[Key] = 'StudentMinistryServingArea'
+            ) ON saAv.[EntityId] = gm.[Id]
+        WHERE pa.[Guid] = TRY_CAST(@personAliasGuid as UNIQUEIDENTIFIER)
+            AND g.[IsActive] = 1 AND g.[IsArchived] = 0
+            AND gm.[GroupMemberStatus] != 0 AND gm.[IsArchived] = 0
+
+        UNION ALL
+
+        SELECT
+            CASE WHEN gm.[Id] is not null THEN 1 ELSE 0 END AS [StudentConnect],
+            CASE WHEN gm.[Id] is not null THEN 1 ELSE 0 END AS [United],
+            CASE WHEN gm.[Id] is not null THEN 1 ELSE 0 END AS [MiddleSchool],
+            CASE WHEN gm.[Id] is not null THEN 1 ELSE 0 END AS [HighSchool],
+            p.[PrimaryCampusId] AS [CampusId]
+        FROM [dbo].[GroupMember] gm
+        JOIN [dbo].[Group] g ON g.Id = gm.[GroupId]
+        JOIN [dbo].[TaggedItem] ti ON ti.[EntityGuid] = g.[Guid]
+        JOIN [dbo].[Person] p ON p.Id = gm.[PersonId]
+        JOIN [dbo].PersonAlias pa ON pa.[PersonId] = p.[Id]
+        WHERE gm.[GroupMemberStatus] != 0 AND gm.[IsArchived] = 0
+            AND pa.[Guid] = TRY_CAST(@personAliasGuid as UNIQUEIDENTIFIER)
+            AND g.[IsActive] = 1 AND g.[IsArchived] = 0
+            AND ti.[TagId] = 488 --Student Leader News Override
+    ) AS [Data]
 {% endsql %}
 
 {% comment %} Override Group {% endcomment %}
