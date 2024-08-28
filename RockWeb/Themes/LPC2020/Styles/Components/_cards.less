@@ -108,3 +108,36 @@
 .step-card {
 	border-radius: @border-radius-base;
 }
+
+.list-as-blocks {
+	a {
+		color: unset;
+	}
+
+	.card {
+		margin-bottom: 1rem;
+		padding: 0 !important;
+		transform: none;
+		height: 12rem;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		&>.row {
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			width: 100%;
+			padding: 0;
+		}
+		i {
+			font-size: 4.5rem;
+		}
+		.card-title {
+			color: @brand-primary;
+			font-size: 1rem;
+		}
+		.card-text:last-child {
+			padding-bottom: 0;
+		}
+	}
+}

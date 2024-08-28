@@ -1,16 +1,26 @@
-<div class="panel panel-default list-as-blocks clearfix">
-    <div class="panel-body">
-        <ul>
-            {% for childPage in Page.Pages %}
-                <li>
-                    <a href="{{ childPage.Url }}" {% if childPage.DisplayDescription != 'true' %} title="{{ childPage.Description }}"{% endif %}>
+<div class="row list-as-blocks">
+    {% for childPage in Page.Pages %}
+        <div class="col-lg-3 col-md-4 col-sm-6 col-xs-12">
+            <a href="{{ childPage.Url }}">
+                <div class="card">
+                    <div class="card-body row">
                         {% if childPage.IconCssClass != '' %}
-                            <i class="{{ childPage.IconCssClass }} fa-lg"></i>
+                            <div class="col-xs-4">
+                                <i class="{{ childPage.IconCssClass }}"></i>
+                            </div>
+                            <div class="col-xs-8">
+                                <h3 class="card-title">{{ childPage.Title }}</h3>
+                                <p class="card-text">{{ childPage.Description }}</p>
+                            </div>
+                        {% else %}
+                            <div class="col-xs-12">
+                                <h3 class="card-title">{{ childPage.Title }}</h3>
+                                <p class="card-text">{{ childPage.Description }}</p>
+                            </div>
                         {% endif %}
-                        <h3>{{ childPage.Title }}</h3>
-                    </a>
-                </li>
-            {% endfor %}
-        </ul>
-    </div>
+                    </div>
+                </div>
+            </a>
+        </div>
+    {% endfor %}
 </div>

@@ -1,31 +1,4 @@
 <!-- Curriclulm Selection -->
-<style>
-    .leader-tools a {
-        color: unset;
-    }
-    .leader-tools .card {
-        margin-bottom: 1rem;
-        padding: 0 !important;
-        transform: none;
-        height: 12rem;
-    }
-    .leader-tools .card>.row {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-    .leader-tools .card i {
-        font-size: 4.5rem;
-    }
-    .leader-tools .card-title {
-        color: var(--brand-primary);
-        font-size: 1rem;
-    }
-    .leader-tools .card-text:last-child {
-        padding-bottom: 0;
-    }
-</style>
-
 
 //- Figure out what curricula they should be able to see
 {% sql personAliasId:'{{ Person.PrimaryAlias.Id }}' return:'curricula'%}
@@ -78,9 +51,9 @@
     {% capture link %}{{ 'Global' | Attribute:'PublicApplicationRoot' }}page/{% case curricula[0].LanguageId %}{% when 5658 %}4667{% when 5659 %}4669{% endcase %}?CurriculumId={{ curricula[0].Id }}{% endcapture %}
     {{ link | PageRedirect }}
 {% else %}
-    <div class="leader-tools">
+    <div>
         <a href="/page/4655" class="btn btn-default mb-3"><i class="fa fa-angle-left"></i> Back</a>
-        <div class="row">
+        <div class="row list-as-blocks">
             {% for curriculum in curricula %}
                 {% capture link %}{{ 'Global' | Attribute:'PublicApplicationRoot' }}page/{% case curriculum.LanguageId %}{% when 5658 %}4667{% when 5659 %}4669{% endcase %}?CurriculumId={{ curriculum.Id }}{% endcapture %}
                 <div class="col-lg-3 col-md-4 col-sm-6 col-xs-12">

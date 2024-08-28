@@ -1,30 +1,4 @@
 <!-- Resources Selection -->
-<style>
-    .leader-tools a {
-        color: unset;
-    }
-    .leader-tools .card {
-        margin-bottom: 1rem;
-        padding: 0 !important;
-        transform: none;
-        height: 12rem;
-    }
-    .leader-tools .card>.row {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-    .leader-tools .card i {
-        font-size: 4.5rem;
-    }
-    .leader-tools .card-title {
-        color: var(--brand-primary);
-        font-size: 1rem;
-    }
-    .leader-tools .card-text:last-child {
-        padding-bottom: 0;
-    }
-</style>
 
 //- Figure out what curricula they should be able to see
 {% sql personAliasId:'{{ Person.PrimaryAlias.Id }}' return:'resources'%}
@@ -73,9 +47,9 @@
     {% capture link %}{{ 'Global' | Attribute:'PublicApplicationRoot' }}page/{% case resources[0].Id %}{% when 5658 %}4668{% when 5659 %}4671{% endcase %}{% endcapture %}
     {{ link | PageRedirect }}
 {% else %}
-    <div class="leader-tools">
+    <div>
         <a href="/page/4655" class="btn btn-default mb-3"><i class="fa fa-angle-left"></i> Back</a>
-        <div class="row">
+        <div class="row list-as-blocks">
             {% for resource in resources %}
                 <div class="col-lg-3 col-md-4 col-sm-6 col-xs-12">
                     {% case resource.Id %}
