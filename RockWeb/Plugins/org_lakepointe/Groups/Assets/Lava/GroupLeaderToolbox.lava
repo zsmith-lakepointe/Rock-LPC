@@ -1,8 +1,8 @@
 <!-- Group Leader Toolbox -->
 
 <div>
-    <!--  Group Leader Application -->
-    {% person dataview:'2704' where:'Id == {{ CurrentPerson.Id }}'  %}
+    <!-- Group Leader Application -->
+    {% person dataview:'2704' where:'Id == {{ CurrentPerson.Id }}' %}
         {% assign personGroupLeaderApplicationCount = personItems | Size %}
         {% if personGroupLeaderApplicationCount > 0 %}
             <div class="section">
@@ -80,13 +80,16 @@
         DECLARE @GroupsTag INT = 471 -- tag for groups toolbox
         DECLARE @GroupLeaderToolbox NVARCHAR(40) = '%BF778FB4-6613-4565-8A45-371CB9A7C172%'
 
-        SELECT GroupId, GroupName, STRING_AGG(Role, ', ') AS [Roles], GroupType, GroupTypeId, IconCssClass, Campus
+        SELECT GroupId, GroupName, STRING_AGG(Role, ', ') AS [Roles], GroupType, GroupTypeId, IconCssClass, Campus, [LeaderGroupId], [LeaderGroupName], [LeaderGroupIconCssClass]
         FROM
         (
             -- Leaders who are members of the group
             SELECT g.Id AS [GroupId], g.Name AS [GroupName], gtr.Name AS [Role]
                 , gt.Name AS [GroupType], gt.Id AS [GroupTypeId], gt.IconCssClass AS [IconCssClass]
                 , c.Name AS [Campus]
+                , 0 AS [LeaderGroupId]
+                , '' AS [LeaderGroupName]
+                , '' AS [LeaderGroupIconCssClass]
             FROM [Group] g
             LEFT JOIN [Campus] c ON c.Id = g.CampusId
             JOIN [GroupType] gt ON gt.Id = g.GroupTypeId
@@ -107,11 +110,15 @@
             SELECT g.Id AS [GroupId], g.Name AS [GroupName], 'Coach' AS [Role]
                 , gt.Name AS [GroupType], gt.Id AS [GroupTypeId], gt.IconCssClass AS [IconCssClass]
                 , c.Name AS [Campus]
+                , coachGroup.[Id] AS [LeaderGroupId]
+                , coachGroup.[Name] AS [LeaderGroupName]
+                , leaderGroupType.[IconCssClass] AS [LeaderGroupIconCssClass]
             FROM [Group] g
             LEFT JOIN [Campus] c ON c.Id = g.CampusId
             JOIN [GroupType] gt ON gt.Id = g.GroupTypeId
             JOIN [TaggedItem] ti ON ti.EntityGuid = gt.Guid AND ti.TagId = @GroupsTag
             JOIN [Group] coachGroup ON coachGroup.Id = g.ParentGroupId
+            JOIN [GroupType] leaderGroupType on leaderGroupType.Id = coachGroup.GroupTypeId
             JOIN [GroupMember] gm ON gm.GroupId = coachGroup.Id AND gm.GroupMemberStatus = 1 AND gm.IsArchived = 0
             JOIN [PersonAlias] pa ON pa.PersonId = gm.PersonId
                 AND pa.Id = @PersonAliasId
@@ -128,12 +135,16 @@
             SELECT g.Id AS [GroupId], g.Name AS [GroupName], 'Captain' AS [Role]
                 , gt.Name AS [GroupType], gt.Id AS [GroupTypeId], gt.IconCssClass AS [IconCssClass]
                 , c.Name AS [Campus]
+                , captainGroup.[Id] AS [LeaderGroupId]
+                , captainGroup.[Name] AS [LeaderGroupName]
+                , leaderGroupType.[IconCssClass] AS [LeaderGroupIconCssClass]
             FROM [Group] g
             LEFT JOIN [Campus] c ON c.Id = g.CampusId
             JOIN [GroupType] gt ON gt.Id = g.GroupTypeId
             JOIN [TaggedItem] ti ON ti.EntityGuid = gt.Guid AND ti.TagId = @GroupsTag
             JOIN [Group] coachGroup ON coachGroup.Id = g.ParentGroupId
             JOIN [Group] captainGroup ON captainGroup.Id = coachGroup.ParentGroupId
+            JOIN [GroupType] leaderGroupType on leaderGroupType.Id = captainGroup.GroupTypeId
             JOIN [GroupMember] gm ON gm.GroupId = captainGroup.Id AND gm.GroupMemberStatus = 1 AND gm.IsArchived = 0
             JOIN [PersonAlias] pa ON pa.PersonId = gm.PersonId
                 AND pa.Id = @PersonAliasId
@@ -150,6 +161,9 @@
             SELECT g.Id AS [GroupId], g.Name AS [GroupName], 'Pastor' AS [Role]
                 , gt.Name AS [GroupType], gt.Id AS [GroupTypeId], gt.IconCssClass AS [IconCssClass]
                 , c.Name AS [Campus]
+                , pastorGroup.[Id] AS [LeaderGroupId]
+                , pastorGroup.[Name] AS [LeaderGroupName]
+                , leaderGroupType.[IconCssClass] AS [LeaderGroupIconCssClass]
             FROM [Group] g
             LEFT JOIN [Campus] c ON c.Id = g.CampusId
             JOIN [GroupType] gt ON gt.Id = g.GroupTypeId
@@ -157,6 +171,7 @@
             JOIN [Group] coachGroup ON coachGroup.Id = g.ParentGroupId
             JOIN [Group] captainGroup ON captainGroup.Id = coachGroup.ParentGroupId
             JOIN [Group] pastorGroup ON pastorGroup.Id = captainGroup.ParentGroupId
+            JOIN [GroupType] leaderGroupType on leaderGroupType.Id = pastorGroup.GroupTypeId
             JOIN [GroupMember] gm ON gm.GroupId = pastorGroup.Id AND gm.GroupMemberStatus = 1 AND gm.IsArchived = 0
             JOIN [PersonAlias] pa ON pa.PersonId = gm.PersonId
                 AND pa.Id = @PersonAliasId
@@ -167,32 +182,75 @@
             WHERE g.IsActive = 1
                 AND g.IsArchived = 0
         ) a
-        GROUP BY a.Campus, a.GroupId, a.GroupName, a.GroupType, a.GroupTypeId, a.IconCssClass
-        ORDER BY [GroupName]
+        GROUP BY a.Campus, a.GroupId, a.GroupName, a.GroupType, a.GroupTypeId, a.IconCssClass, a.[LeaderGroupId], a.[LeaderGroupName], a.[LeaderGroupIconCssClass]
+        ORDER BY a.[LeaderGroupName], a.[GroupName]
     {% endsql %}
 
     {% assign groupcount = lifegroups | Size %}
     {% if groupcount > 0 %}
+        {% assign leaderGroups = lifegroups | Map:'LeaderGroupId' | Uniq %}
         <div class="section">
             <h2>Life Groups</h2>
             <hr>
             <div class="row list-as-blocks">
-                {% for lifegroup in lifegroups %}
-                    <div class="col-lg-3 col-md-4 col-sm-6 col-xs-12">
-                        <a href="/page/4656?GroupId={{ lifegroup.GroupId }}">
-                            <div class="card">
-                                <div class="card-body row">
-                                    <div class="col-xs-4">
-                                        <i class="{{ lifegroup.IconCssClass }}"></i>
+                {% for leaderGroup in leaderGroups %}
+                    {% assign teams = lifegroups | Where:'LeaderGroupId',leaderGroup %}
+                    {% assign teamCount = teams | Size %}
+
+                    {% if leaderGroup == 0 %}
+                        {% for team in teams %}
+                            <div class="col-lg-3 col-md-4 col-sm-6 col-xs-12">
+                                <a href="/page/4656?GroupId={{ team.GroupId }}">
+                                    <div class="card">
+                                        <div class="card-body row">
+                                            <div class="col-xs-4">
+                                                <i class="{{ team.IconCssClass }}"></i>
+                                            </div>
+                                            <div class="col-xs-8">
+                                                <h3 class="card-title">{{ team.GroupName }}</h3>
+                                                <p class="card-text">Manage your life group</p>
+                                            </div>
+                                        </div>
                                     </div>
-                                    <div class="col-xs-8">
-                                        <h3 class="card-title">{{ lifegroup.GroupName }}</h3>
-                                        <p class="card-text">Manage your life group</p>
+                                </a>
+                            </div>
+                        {% endfor %}
+                    {% elseif teamCount == 1 %}
+                        {% assign team = teams | First %}
+                        <div class="col-lg-3 col-md-4 col-sm-6 col-xs-12">
+                            <a href="/page/4656?GroupId={{ team.GroupId }}">
+                                <div class="card">
+                                    <div class="card-body row">
+                                        <div class="col-xs-4">
+                                            <i class="{{ team.IconCssClass }}"></i>
+                                        </div>
+                                        <div class="col-xs-8">
+                                            <h3 class="card-title">{{ team.GroupName }}</h3>
+                                            <p class="card-text">Manage your life group</p>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                        </a>
-                    </div>
+                            </a>
+                        </div>
+                    {% else %}
+                        {% assign team = teams | First %}
+                        {% assign link = '/page/5057?GroupId=' | Append:team.LeaderGroupId | Append:'&Type=LifeGroup' %}
+                        <div class="col-lg-3 col-md-4 col-sm-6 col-xs-12">
+                            <a href="{{ link }}">
+                                <div class="card">
+                                    <div class="card-body row">
+                                        <div class="col-xs-4">
+                                            <i class="{{ team.LeaderGroupIconCssClass }}"></i>
+                                        </div>
+                                        <div class="col-xs-8">
+                                            <h3 class="card-title">{{ team.LeaderGroupName }}</h3>
+                                            <p class="card-text">Manage the life groups you lead</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+                    {% endif %}
                 {% endfor %}
             </div>
         </div>
@@ -205,7 +263,7 @@
         DECLARE @GroupLeaderToolbox NVARCHAR(40) = '%BF778FB4-6613-4565-8A45-371CB9A7C172%'
         DECLARE @Scheduler NVARCHAR(40) = '%2b7997c0-e98b-40eb-9f6c-d9375bac79f1%'
 
-        SELECT GroupId, GroupName, STRING_AGG(Role, ', ') AS [Roles], GroupType, GroupTypeId, IconCssClass, Campus, CanSchedule
+        SELECT GroupId, GroupName, STRING_AGG(Role, ', ') AS [Roles], GroupType, GroupTypeId, IconCssClass, Campus, CanSchedule, [LeaderGroupId], [LeaderGroupName], [LeaderGroupIconCssClass]
         FROM
         (
             -- Leaders who are members of the Coach group
@@ -217,11 +275,15 @@
                     WHEN g.DisableScheduling = 1 THEN 0
                     ELSE gt.IsSchedulingEnabled
                     END AS [CanSchedule]
+                , coachGroup.[Id] AS [LeaderGroupId]
+                , coachGroup.[Name] AS [LeaderGroupName]
+                , leaderGroupType.[IconCssClass] AS [LeaderGroupIconCssClass]
             FROM [Group] g
             LEFT JOIN [Campus] c ON c.Id = g.CampusId
             JOIN [GroupType] gt ON gt.Id = g.GroupTypeId
             JOIN [TaggedItem] ti ON ti.EntityGuid = gt.Guid AND ti.TagId = @ServeTag
             JOIN [Group] coachGroup ON coachGroup.Id = g.ParentGroupId
+            JOIN [GroupType] leaderGroupType on leaderGroupType.Id = coachGroup.GroupTypeId
             JOIN [GroupMember] gm ON gm.GroupId = coachGroup.Id AND gm.GroupMemberStatus = 1 AND gm.IsArchived = 0
             JOIN [PersonAlias] pa ON pa.PersonId = gm.PersonId
                 AND pa.Id = @PersonAliasId
@@ -243,12 +305,16 @@
                     WHEN g.DisableScheduling = 1 THEN 0
                     ELSE gt.IsSchedulingEnabled
                     END AS [CanSchedule]
+                , captainGroup.[Id] AS [LeaderGroupId]
+                , captainGroup.[Name] AS [LeaderGroupName]
+                , leaderGroupType.[IconCssClass] AS [LeaderGroupIconCssClass]
             FROM [Group] g
             LEFT JOIN [Campus] c ON c.Id = g.CampusId
             JOIN [GroupType] gt ON gt.Id = g.GroupTypeId
             JOIN [TaggedItem] ti ON ti.EntityGuid = gt.Guid AND ti.TagId = @ServeTag
             JOIN [Group] coachGroup ON coachGroup.Id = g.ParentGroupId
             JOIN [Group] captainGroup ON captainGroup.Id = coachGroup.ParentGroupId
+            JOIN [GroupType] leaderGroupType on leaderGroupType.Id = captainGroup.GroupTypeId
             JOIN [GroupMember] gm ON gm.GroupId = captainGroup.Id AND gm.GroupMemberStatus = 1 AND gm.IsArchived = 0
             JOIN [PersonAlias] pa ON pa.PersonId = gm.PersonId
                 AND pa.Id = @PersonAliasId
@@ -270,6 +336,9 @@
                     WHEN g.DisableScheduling = 1 THEN 0
                     ELSE gt.IsSchedulingEnabled
                     END AS [CanSchedule]
+                , pastorGroup.[Id] AS [LeaderGroupId]
+                , pastorGroup.[Name] AS [LeaderGroupName]
+                , leaderGroupType.[IconCssClass] AS [LeaderGroupIconCssClass]
             FROM [Group] g
             LEFT JOIN [Campus] c ON c.Id = g.CampusId
             JOIN [GroupType] gt ON gt.Id = g.GroupTypeId
@@ -277,6 +346,7 @@
             JOIN [Group] coachGroup ON coachGroup.Id = g.ParentGroupId
             JOIN [Group] captainGroup ON captainGroup.Id = coachGroup.ParentGroupId
             JOIN [Group] pastorGroup ON pastorGroup.Id = captainGroup.ParentGroupId
+            JOIN [GroupType] leaderGroupType on leaderGroupType.Id = pastorGroup.GroupTypeId
             JOIN [GroupMember] gm ON gm.GroupId = pastorGroup.Id AND gm.GroupMemberStatus = 1 AND gm.IsArchived = 0
             JOIN [PersonAlias] pa ON pa.PersonId = gm.PersonId
                 AND pa.Id = @PersonAliasId
@@ -287,39 +357,89 @@
             WHERE g.IsActive = 1
                 AND g.IsArchived = 0
         ) a
-        GROUP BY a.Campus, a.GroupId, a.GroupName, a.GroupType, a.GroupTypeId, a.IconCssClass, a.CanSchedule
-        ORDER BY [GroupName]
+        GROUP BY a.Campus, a.GroupId, a.GroupName, a.GroupType, a.GroupTypeId, a.IconCssClass, a.CanSchedule, a.[LeaderGroupId], a.[LeaderGroupName], a.[LeaderGroupIconCssClass]
+        ORDER BY a.[LeaderGroupName], a.[GroupName]
     {% endsql %}
 
     {% assign groupcount = serveteams | Size %}
     {% if groupcount > 0 %}
+        {% assign leaderGroups = serveteams | Map:'LeaderGroupId' | Uniq %}
         <div class="section">
             <h2>Serve Teams</h2>
             <hr>
             <div class="row list-as-blocks">
-                {% for serveteam in serveteams %}
-                    {% assign link = '/page/4656?GroupId=' | Append:serveteam.GroupId %}
-                    {% if serveteam.CanSchedule == 1 %}
-                        {% assign hasSchedulingRights = serveteam.GroupId | HasRightsTo:'Schedule','Rock.Model.Group' %}
-                        {% if hasSchedulingRights == true %}
-                            {% assign link = '/schedulegroup?GroupId=' | Append:serveteam.GroupId %}
-                        {% endif %}
-                    {% endif %}
-                    <div class="col-lg-3 col-md-4 col-sm-6 col-xs-12">
-                        <a href="{{ link }}">
-                            <div class="card">
-                                <div class="card-body row">
-                                    <div class="col-xs-4">
-                                        <i class="{{ serveteam.IconCssClass }}"></i>
+                {% for leaderGroup in leaderGroups %}
+                    {% assign teams = serveteams | Where:'LeaderGroupId',leaderGroup %}
+                    {% assign teamCount = teams | Size %}
+
+                    {% if leaderGroup == 0 %}
+                        {% for team in teams %}
+                            {% assign link = '/page/4656?GroupId=' | Append:team.GroupId %}
+                            {% if team.CanSchedule == 1 %}
+                                {% assign hasSchedulingRights = team.GroupId | HasRightsTo:'Schedule','Rock.Model.Group' %}
+                                {% if hasSchedulingRights == true %}
+                                    {% assign link = '/schedulegroup?GroupId=' | Append:team.GroupId %}
+                                {% endif %}
+                            {% endif %}
+                            <div class="col-lg-3 col-md-4 col-sm-6 col-xs-12">
+                                <a href="{{ link }}">
+                                    <div class="card">
+                                        <div class="card-body row">
+                                            <div class="col-xs-4">
+                                                <i class="{{ team.IconCssClass }}"></i>
+                                            </div>
+                                            <div class="col-xs-8">
+                                                <h3 class="card-title">{{ team.GroupName }}</h3>
+                                                <p class="card-text">Manage and schedule your serve team</p>
+                                            </div>
+                                        </div>
                                     </div>
-                                    <div class="col-xs-8">
-                                        <h3 class="card-title">{{ serveteam.GroupName }}</h3>
-                                        <p class="card-text">Manage and schedule your serve team</p>
+                                </a>
+                            </div>
+                        {% endfor %}
+                    {% elseif teamCount == 1 %}
+                        {% assign team = teams | First %}
+                        {% assign link = '/page/4656?GroupId=' | Append:team.GroupId %}
+                        {% if team.CanSchedule == 1 %}
+                            {% assign hasSchedulingRights = team.GroupId | HasRightsTo:'Schedule','Rock.Model.Group' %}
+                            {% if hasSchedulingRights == true %}
+                                {% assign link = '/schedulegroup?GroupId=' | Append:team.GroupId %}
+                            {% endif %}
+                        {% endif %}
+                        <div class="col-lg-3 col-md-4 col-sm-6 col-xs-12">
+                            <a href="{{ link }}">
+                                <div class="card">
+                                    <div class="card-body row">
+                                        <div class="col-xs-4">
+                                            <i class="{{ team.IconCssClass }}"></i>
+                                        </div>
+                                        <div class="col-xs-8">
+                                            <h3 class="card-title">{{ team.GroupName }}</h3>
+                                            <p class="card-text">Manage and schedule your serve team</p>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                        </a>
-                    </div>
+                            </a>
+                        </div>
+                    {% else %}
+                        {% assign team = teams | First %}
+                        {% assign link = '/page/5057?GroupId=' | Append:team.LeaderGroupId | Append:'&Type=ServeTeam' %}
+                        <div class="col-lg-3 col-md-4 col-sm-6 col-xs-12">
+                            <a href="{{ link }}">
+                                <div class="card">
+                                    <div class="card-body row">
+                                        <div class="col-xs-4">
+                                            <i class="{{ team.LeaderGroupIconCssClass }}"></i>
+                                        </div>
+                                        <div class="col-xs-8">
+                                            <h3 class="card-title">{{ team.LeaderGroupName }}</h3>
+                                            <p class="card-text">Manage the serve teams you lead</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+                    {% endif %}
                 {% endfor %}
             </div>
         </div>
@@ -381,7 +501,7 @@
             {% sql personAliasId:'{{ Person.PrimaryAlias.Id }}' return:'curricula'%}
                 -- This will replace the old _org_lakepointe_sp_CanViewLgCurriculum
                 DECLARE @FeatureSetAttributeId INT = 132518
-                DECLARE @Curriculum NVARCHAR(40) = '%63E6EA73-7E54-4BF6-A060-100F028B19A1%' --  Curriculum
+                DECLARE @Curriculum NVARCHAR(40) = '%63E6EA73-7E54-4BF6-A060-100F028B19A1%' -- Curriculum
 
                 -- check if in an Override Group
                 DECLARE @Override INT;

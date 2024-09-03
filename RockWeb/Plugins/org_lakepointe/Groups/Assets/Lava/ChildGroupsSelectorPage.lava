@@ -1,0 +1,152 @@
+<!-- Child Groups Selection -->
+
+//- Figure out what groups they should be able to see
+{% sql personAliasId:'{{ Person.PrimaryAlias.Id }}' parentGroupId:'{{ PageParameter.GroupId }}' return:'groups'%}
+    DECLARE @FeatureSetAttributeId INT = 132518
+    DECLARE @GroupsTag INT = 471
+    DECLARE @ServeTag INT = 472
+    DECLARE @GroupLeaderToolbox NVARCHAR(40) = '%BF778FB4-6613-4565-8A45-371CB9A7C172%'
+    DECLARE @Scheduler NVARCHAR(40) = '%2b7997c0-e98b-40eb-9f6c-d9375bac79f1%'
+
+    SELECT GroupId, GroupName, STRING_AGG(Role, ', ') AS [Roles], GroupType, GroupTypeId, IconCssClass, Campus, CanSchedule, [LeaderGroupId], [LeaderGroupName], [LeaderGroupIconCssClass]
+    FROM
+    (
+        -- Leaders who are members of the Coach group
+        SELECT g.Id AS [GroupId], g.Name AS [GroupName], 'Coach' AS [Role]
+            , gt.Name AS [GroupType], gt.Id AS [GroupTypeId], gt.IconCssClass AS [IconCssClass]
+            , c.Name AS [Campus]
+            , CASE
+                WHEN av.[Value] NOT LIKE @Scheduler THEN 0
+                WHEN g.DisableScheduling = 1 THEN 0
+                ELSE gt.IsSchedulingEnabled
+                END AS [CanSchedule]
+            , coachGroup.[Id] AS [LeaderGroupId]
+            , coachGroup.[Name] AS [LeaderGroupName]
+            , leaderGroupType.[IconCssClass] AS [LeaderGroupIconCssClass]
+        FROM [Group] g
+        LEFT JOIN [Campus] c ON c.Id = g.CampusId
+        JOIN [GroupType] gt ON gt.Id = g.GroupTypeId
+        JOIN [TaggedItem] ti ON ti.EntityGuid = gt.Guid AND ti.TagId in (@ServeTag, @GroupsTag)
+        JOIN [Group] coachGroup ON coachGroup.Id = g.ParentGroupId
+        JOIN [GroupType] leaderGroupType on leaderGroupType.Id = coachGroup.GroupTypeId
+        JOIN [GroupMember] gm ON gm.GroupId = coachGroup.Id AND gm.GroupMemberStatus = 1 AND gm.IsArchived = 0
+        JOIN [PersonAlias] pa ON pa.PersonId = gm.PersonId
+            AND pa.Id = @PersonAliasId
+        JOIN [GroupTypeRole] gtr ON gtr.Id = gm.GroupRoleId
+        JOIN [AttributeValue] av ON av.EntityId = gtr.Id
+            AND av.AttributeId = @FeatureSetAttributeId
+            AND av.Value LIKE @GroupLeaderToolbox
+        WHERE g.IsActive = 1
+            AND g.IsArchived = 0
+            AND coachGroup.Id = @ParentGroupId
+
+        UNION ALL
+
+        -- Leaders who are members of the Captain group
+        SELECT g.Id AS [GroupId], g.Name AS [GroupName], 'Captain' AS [Role]
+            , gt.Name AS [GroupType], gt.Id AS [GroupTypeId], gt.IconCssClass AS [IconCssClass]
+            , c.Name AS [Campus]
+            , CASE
+                WHEN av.[Value] NOT LIKE @Scheduler THEN 0
+                WHEN g.DisableScheduling = 1 THEN 0
+                ELSE gt.IsSchedulingEnabled
+                END AS [CanSchedule]
+            , captainGroup.[Id] AS [LeaderGroupId]
+            , captainGroup.[Name] AS [LeaderGroupName]
+            , leaderGroupType.[IconCssClass] AS [LeaderGroupIconCssClass]
+        FROM [Group] g
+        LEFT JOIN [Campus] c ON c.Id = g.CampusId
+        JOIN [GroupType] gt ON gt.Id = g.GroupTypeId
+        JOIN [TaggedItem] ti ON ti.EntityGuid = gt.Guid AND ti.TagId in (@ServeTag, @GroupsTag)
+        JOIN [Group] coachGroup ON coachGroup.Id = g.ParentGroupId
+        JOIN [Group] captainGroup ON captainGroup.Id = coachGroup.ParentGroupId
+        JOIN [GroupType] leaderGroupType on leaderGroupType.Id = captainGroup.GroupTypeId
+        JOIN [GroupMember] gm ON gm.GroupId = captainGroup.Id AND gm.GroupMemberStatus = 1 AND gm.IsArchived = 0
+        JOIN [PersonAlias] pa ON pa.PersonId = gm.PersonId
+            AND pa.Id = @PersonAliasId
+        JOIN [GroupTypeRole] gtr ON gtr.Id = gm.GroupRoleId
+        JOIN [AttributeValue] av ON av.EntityId = gtr.Id
+            AND av.AttributeId = @FeatureSetAttributeId
+            AND av.Value LIKE @GroupLeaderToolbox
+        WHERE g.IsActive = 1
+            AND g.IsArchived = 0
+            AND captainGroup.Id = @ParentGroupId
+
+        UNION ALL
+
+        -- Leaders who are members of the Pastor group
+        SELECT g.Id AS [GroupId], g.Name AS [GroupName], 'Pastor' AS [Role]
+            , gt.Name AS [GroupType], gt.Id AS [GroupTypeId], gt.IconCssClass AS [IconCssClass]
+            , c.Name AS [Campus]
+            , CASE
+                WHEN av.[Value] NOT LIKE @Scheduler THEN 0
+                WHEN g.DisableScheduling = 1 THEN 0
+                ELSE gt.IsSchedulingEnabled
+                END AS [CanSchedule]
+            , pastorGroup.[Id] AS [LeaderGroupId]
+            , pastorGroup.[Name] AS [LeaderGroupName]
+            , leaderGroupType.[IconCssClass] AS [LeaderGroupIconCssClass]
+        FROM [Group] g
+        LEFT JOIN [Campus] c ON c.Id = g.CampusId
+        JOIN [GroupType] gt ON gt.Id = g.GroupTypeId
+        JOIN [TaggedItem] ti ON ti.EntityGuid = gt.Guid AND ti.TagId in (@ServeTag, @GroupsTag)
+        JOIN [Group] coachGroup ON coachGroup.Id = g.ParentGroupId
+        JOIN [Group] captainGroup ON captainGroup.Id = coachGroup.ParentGroupId
+        JOIN [Group] pastorGroup ON pastorGroup.Id = captainGroup.ParentGroupId
+        JOIN [GroupType] leaderGroupType on leaderGroupType.Id = pastorGroup.GroupTypeId
+        JOIN [GroupMember] gm ON gm.GroupId = pastorGroup.Id AND gm.GroupMemberStatus = 1 AND gm.IsArchived = 0
+        JOIN [PersonAlias] pa ON pa.PersonId = gm.PersonId
+            AND pa.Id = @PersonAliasId
+        JOIN [GroupTypeRole] gtr ON gtr.Id = gm.GroupRoleId
+        JOIN [AttributeValue] av ON av.EntityId = gtr.Id
+            AND av.AttributeId = @FeatureSetAttributeId
+            AND av.Value LIKE @GroupLeaderToolbox
+        WHERE g.IsActive = 1
+            AND g.IsArchived = 0
+            AND pastorGroup.Id = @ParentGroupId
+    ) a
+    GROUP BY a.Campus, a.GroupId, a.GroupName, a.GroupType, a.GroupTypeId, a.IconCssClass, a.CanSchedule, [LeaderGroupId], [LeaderGroupName], [LeaderGroupIconCssClass]
+    ORDER BY [LeaderGroupName], [GroupName]
+{% endsql %}
+
+{% assign groupcount = groups | Size %}
+{% if groupcount == 0 %}
+    <a href="/page/4655" class="btn btn-default mb-3"><i class="fa fa-angle-left"></i> Back</a>
+    <div class="alert alert-warning">
+        <p>We couldn't find any groups at this time. Please make sure you're signed into the right account and that you use the link on the Leader Tools page.</p>
+    </div>
+{% else %}
+    <a href="/page/4655" class="btn btn-default mb-3"><i class="fa fa-angle-left"></i> Back</a>
+    <div class="row list-as-blocks">
+        {% for group in groups %}
+            {% assign link = '/page/4656?GroupId=' | Append:group.GroupId %}
+            {% if group.CanSchedule == 1 %}
+                {% assign hasSchedulingRights = group.GroupId | HasRightsTo:'Schedule','Rock.Model.Group' %}
+                {% if hasSchedulingRights == true %}
+                    {% assign link = '/schedulegroup?GroupId=' | Append:group.GroupId %}
+                {% endif %}
+            {% endif %}
+            <div class="col-lg-3 col-md-4 col-sm-6 col-xs-12">
+                <a href="{{ link }}">
+                    <div class="card">
+                        <div class="card-body row">
+                            <div class="col-xs-4">
+                                <i class="{{ group.IconCssClass }}"></i>
+                            </div>
+                            <div class="col-xs-8">
+                                <h3 class="card-title">{{ group.GroupName }}</h3>
+                                {% if PageParameter.Type == 'LifeGroup' %}
+                                    <p class="card-text">Manage your life group</p>
+                                {% elseif PageParameter.Type == 'ServeTeam' %}
+                                    <p class="card-text">Manage and schedule your serve team</p>
+                                {% else %}
+                                    <p class="card-text">Manage your group</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </a>
+            </div>
+        {% endfor %}
+    </div>
+{% endif %}
