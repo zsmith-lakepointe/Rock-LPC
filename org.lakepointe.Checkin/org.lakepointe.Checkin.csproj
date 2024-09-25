@@ -97,6 +97,7 @@
     <Compile Include="SystemGuid\GroupRole.cs" />
     <Compile Include="Workflow\Action\Checkin\AddGroupsByBelongs.cs" />
     <Compile Include="Workflow\Action\Checkin\CreateCheckoutLabels.cs" />
+    <Compile Include="Workflow\Action\Checkin\FilterByRestricted.cs" />
     <Compile Include="Workflow\Action\Checkin\FilterCheckoutHoldingPeriod.cs" />
     <Compile Include="Workflow\Action\Checkin\CheckoutPreCheck.cs" />
     <Compile Include="Workflow\Action\Checkin\FilterGroupsByRequirements.cs" />
