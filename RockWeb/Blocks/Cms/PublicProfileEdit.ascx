@@ -76,8 +76,8 @@
 
                                     <Rock:RockRadioButtonList ID="rblRole" runat="server" RepeatDirection="Horizontal" Label="Role" Visible="false" AutoPostBack="true" OnSelectedIndexChanged="rblRole_SelectedIndexChanged" />
                                     <Rock:RockRadioButtonList ID="rblGender" runat="server" RepeatDirection="Horizontal" Label="Gender" FormGroupCssClass="gender-picker" Required="true">
-                                        <asp:ListItem Text="Male" Value="Male" />
-                                        <asp:ListItem Text="Female" Value="Female" />
+                                        <asp:ListItem Text="Male" Value="Male" Enabled="false" />
+                                        <asp:ListItem Text="Female" Value="Female" Enabled="false" />
                                     </Rock:RockRadioButtonList>
                                 </div>
                             </div>
